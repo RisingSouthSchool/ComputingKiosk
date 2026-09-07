@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Classroom Game Hub</title>
+  <style>
+    :root { color-scheme: dark; --ink: #f5f7fa; --muted: #aeb9c6; --bg: #10151c; --panel: #18212b; --focus: #ffd166; --accent: #52d6b5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top right, #243746 0, var(--bg) 42%); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header { max-width: 1200px; margin: 0 auto; padding: 42px 32px 22px; }
+    h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: .02em; }
+    .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
+    main { max-width: 1200px; margin: 0 auto; padding: 10px 32px 50px; }
+    #games { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+    .game-tile { appearance: none; border: 2px solid transparent; border-radius: 14px; background: var(--panel); color: var(--ink); min-height: 290px; padding: 18px; text-align: left; cursor: pointer; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+    .game-tile:hover, .game-tile:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
+    .game-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 10px; background: #2b3945; color: var(--accent); font-size: 5rem; font-weight: 700; overflow: hidden; }
+    .game-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
+    #empty, #error { color: var(--muted); padding: 30px 0; font-size: 1.2rem; }
+    #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
+    #player.open { display: block; }
+    #game-frame { border: 0; width: 100%; height: 100%; }
+    #back { position: absolute; z-index: 3; top: 16px; left: 16px; border: 2px solid var(--focus); border-radius: 8px; background: #10151cee; color: var(--ink); padding: 12px 18px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    #back:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+    #controller-status { position: fixed; right: 16px; bottom: 16px; z-index: 4; display: none; padding: 7px 10px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151cee; color: var(--muted); font-size: .85rem; }
+    #controller-status.visible { display: block; }
+    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile { min-height: 210px; padding: 10px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+  </style>
+</head>
+<body>
+  <section id="hub-view" aria-label="Game selection">
+    <header><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
+    <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
+  </section>
+  <section id="player" aria-label="Game player"><button id="back" type="button">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
+  <p id="controller-status" role="status">🎮 Controller connected</p>
+  <script>
+    const gamesElement = document.getElementById("games");
+    const player = document.getElementById("player");
+    const frame = document.getElementById("game-frame");
+    const back = document.getElementById("back");
+    const empty = document.getElementById("empty");
+    const error = document.getElementById("error");
+    const controllerStatus = document.getElementById("controller-status");
+    let tiles = [];
+    let previousGamepadButtons = [];
+    let previousDirection = null;
+
+    function showHub() {
+      player.classList.remove("open");
+      frame.src = "about:blank";
+      history.replaceState(null, "", location.pathname + location.search);
+      if (tiles.length) tiles[0].focus();
+    }
+
+    function openGame(game) {
+      frame.src = "games/" + encodeURIComponent(game.slug) + "/index.html";
+      player.classList.add("open");
+      history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
+      back.focus();
+    }
+
+    function render(games) {
+      empty.hidden = games.length !== 0;
+      games.forEach((game, index) => {
+        const tile = document.createElement("button");
+        tile.className = "game-tile";
+        tile.type = "button";
+        tile.dataset.index = index;
+        const icon = document.createElement("span");
+        icon.className = "game-icon";
+        if (game.hasIcon) { const image = document.createElement("img"); image.src = "games/" + encodeURIComponent(game.slug) + "/icon192.png"; image.alt = ""; icon.append(image); }
+        else icon.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
+        const title = document.createElement("span"); title.className = "game-title"; title.textContent = game.title;
+        tile.append(icon, title); tile.addEventListener("click", () => openGame(game)); gamesElement.append(tile);
+      });
+      tiles = [...document.querySelectorAll(".game-tile")];
+      if (tiles.length) tiles[0].focus();
+    }
+
+    function moveSelection(direction) {
+      if (!tiles.length || player.classList.contains("open")) return;
+      const current = document.activeElement?.dataset?.index;
+      if (current === undefined) return;
+      const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(gamesElement.clientWidth / 254));
+      let next = Number(current);
+      if (direction === "right") next++;
+      if (direction === "left") next--;
+      if (direction === "down") next += columns;
+      if (direction === "up") next -= columns;
+      if (next !== Number(current) && next >= 0 && next < tiles.length) tiles[next].focus();
+      return next !== Number(current) && next >= 0 && next < tiles.length;
+    }
+
+    document.addEventListener("keydown", (event) => {
+      const direction = { ArrowRight: "right", ArrowLeft: "left", ArrowDown: "down", ArrowUp: "up" }[event.key];
+      if (direction && moveSelection(direction)) event.preventDefault();
+    });
+    back.addEventListener("click", showHub);
+
+    function pollGamepad() {
+      const gamepads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
+      const gamepad = gamepads.find(Boolean);
+      controllerStatus.classList.toggle("visible", Boolean(gamepad));
+      if (gamepad) {
+        const buttonPressed = (index) => Boolean(gamepad.buttons[index]?.pressed);
+        const buttonJustPressed = (index) => buttonPressed(index) && !previousGamepadButtons[index];
+        const axis = gamepad.axes;
+        let direction = null;
+        if (buttonPressed(12) || axis[1] < -0.3) direction = "up";
+        if (buttonPressed(13) || axis[1] > 0.3) direction = "down";
+        if (buttonPressed(14) || axis[0] < -0.3) direction = "left";
+        if (buttonPressed(15) || axis[0] > 0.3) direction = "right";
+        if (direction !== previousDirection && direction) moveSelection(direction);
+        previousDirection = direction;
+        if (buttonJustPressed(0) && !player.classList.contains("open")) {
+          const current = document.activeElement?.dataset?.index;
+          if (current !== undefined) tiles[Number(current)]?.click();
+        }
+        if (buttonJustPressed(1) && player.classList.contains("open")) showHub();
+        previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
+      } else {
+        previousDirection = null;
+        previousGamepadButtons = [];
+      }
+      requestAnimationFrame(pollGamepad);
+    }
+
+    requestAnimationFrame(pollGamepad);
+    fetch("games.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("games.json"); return response.json(); }).then(render).catch(() => { error.hidden = false; });
+  </script>
+</body>
+</html>
