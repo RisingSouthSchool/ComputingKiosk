@@ -13,6 +13,18 @@ has an extra enclosing folder, and builds `games.json` automatically. A local
 web server opens the hub in the default browser. Leave the terminal window
 open while the hub is being used.
 
+## Start automatically at login
+
+To start the hub and open Chrome in kiosk mode whenever the user logs in, run
+`setup_autostart.command` once from inside the **Student Station** account.
+Do not run it from the admin account: the registration belongs to the account
+that runs the setup script. It installs a per-user macOS LaunchAgent and is
+safe to run again; it replaces the existing registration instead of creating a
+duplicate.
+
+To turn this off while debugging or reset it, run `remove_autostart.command`
+from the same Student Station account. This unloads and deletes the LaunchAgent.
+
 ## Skipped games
 
 The scanner prints a `Skipped ...` warning when an archive cannot be used. The
