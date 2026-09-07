@@ -1,0 +1,336 @@
+<!DOCTYPE html><html><head><title>Double J Crossy</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"bloodstain.png","version":41,"size":639,"properties":{"frames":1,"fps":5}},{"file":"car1.png","version":3,"size":910249,"properties":{"frames":1,"fps":5}},{"file":"car2.png","version":20,"size":1078613,"properties":{"frames":1,"fps":5}},{"file":"car3.png","version":2,"size":1074020,"properties":{"frames":1,"fps":5}},{"file":"car4.png","version":5,"size":1388156,"properties":{"frames":1,"fps":5}},{"file":"floor_empty.png","version":1,"size":258,"properties":{"frames":1,"fps":5}},{"file":"floor_road.png","version":25,"size":341,"properties":{"frames":1,"fps":5}},{"file":"goal.png","version":77,"size":11240,"properties":{"frames":1,"fps":5}},{"file":"icon.png","version":68,"size":25132,"properties":{"frames":1,"fps":5}},{"file":"sprite.png","version":122,"size":20717,"properties":{"frames":8,"fps":13}},{"file":"sprite2.png","version":3,"size":914,"properties":{"frames":1,"fps":5}},{"file":"sprite3.png","version":18,"size":22418,"properties":{"frames":8,"fps":13}},{"file":"sprite4.png","version":58,"size":22214,"properties":{"frames":8,"fps":13}},{"file":"sprite5.png","version":44,"size":20195,"properties":{"frames":8,"fps":13}},{"file":"sprite6.png","version":4,"size":2641,"properties":{"frames":1,"fps":5}},{"file":"sprite7.png","version":3,"size":2572,"properties":{"frames":1,"fps":5}},{"file":"sprite8.png","version":89,"size":1789,"properties":{"frames":1,"fps":5}},{"file":"sprite9.png","version":3,"size":2872,"properties":{"frames":1,"fps":5}},{"file":"sprite98.png","version":3,"size":2846,"properties":{"frames":1,"fps":5}}],"assets":[],"maps":{"level1":"{\"width\":5,\"height\":5,\"block_width\":32,\"block_height\":32,\"sprites\":[0,\"floor_empty:0,0\",\"floor_road\",\"floor_empty\"],\"data\":[1,1,1,1,1,2,2,2,2,2,3,3,3,3,3,2,2,2,2,2,3,3,3,3,3]}","level2":"{\"width\":9,\"height\":9,\"block_width\":32,\"block_height\":32,\"sprites\":[0,\"floor_empty\",\"floor_road\"],\"data\":[1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1]}","map":"{\"width\":9,\"height\":9,\"block_width\":32,\"block_height\":32,\"sprites\":[0,\"floor_empty\"],\"data\":[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}"},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = '16x9' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="parser.js"></script><script src="program.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="runner_v1_i.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+random.color = function()
+  local color = "rgb("
+  color += random.nextInt(256) + ","
+  color += random.nextInt(256) + ","
+  color += random.nextInt(256) + ")"
+  return color
+end
+
+distance = function(x1, y1, x2, y2)
+  local a = x2 - x1
+  local b = y2 - y1
+  local c = sqrt(pow(a, 2) + pow(b, 2))
+  return c
+end
+updat = function()
+  if bloodstain == 1 then
+   if level == 1 then
+    screen.drawSprite("bloodstain", carx, cary, 50, 20)
+ 
+   end
+  end
+  if bloodstain == 2 then
+   if level == 1 then
+    screen.drawSprite("bloodstain", carx2, cary2, 50, 20)
+
+   end
+  end  
+  if bloodstain == 3 then
+   if level == 1 then
+    screen.drawSprite("bloodstain", carx3, cary3, 50, 20)
+
+   end
+  end  
+  if bloodstain == 4 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx4, cary4, 40, 15)
+   end
+  end
+  if bloodstain == 5 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx5, cary5, 40, 15)
+   end
+  end  
+  if bloodstain == 6 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx6, cary6, 40, 15)
+   end
+  end  
+  if bloodstain == 7 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx7, cary7, 40, 15)
+   end
+  end  
+  if bloodstain == 8 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx8, cary8, 40, 15)
+   end
+  end  
+  if bloodstain == 9 then
+   if level == 1 then
+    rdm = 0
+   else
+    screen.drawSprite("bloodstain", carx9, cary9, 40, 15)
+   end
+  end
+end
+
+
+
+init = function()
+  bloodstain = 0
+  rdm = 0
+  cary9 = -66
+  cary8 = 66
+  cary7 = 66
+  cary4 = 0
+  cary5 = 0
+  cary6 = 0
+  carx4 = 0
+  carx5 = 150
+  carx6 = -150
+  carx = -200
+  carx7 = -200
+  cary = 41
+  carx2 = 0
+  carx8 = 0
+  cary2 = 41
+  print(75)
+    carx3 = -200
+    carx9 = -200
+  cary3 = -41
+  cartimer = 0
+ playerx = 0
+ playery = -75
+ level = 1
+   screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+   player = 1
+  faceing = 1
+end
+
+update = function()
+  
+  if playery >= 90 then
+    level = 2
+  end
+  
+  if level == 2 then
+   if distance(carx4,cary4,playerx,playery)<15 then
+     init()
+     bloodstain = 4
+   end
+   if distance(carx5,cary5,playerx,playery)<15 then
+    init()
+    bloodstain = 5
+   end
+   if distance(carx6,cary6,playerx,playery)<15 then
+    init()
+    bloodstain = 6
+   end
+   if distance(carx7,cary7,playerx,playery)<15 then
+    init()
+    bloodstain = 7
+  end
+  if distance(carx8,cary8,playerx,playery)<15 then
+   init()
+   bloodstain = 8
+  end
+  if distance(carx9,cary9,playerx,playery)<15 then
+   init()
+  bloodstain = 9
+  end
+  else
+   if distance(carx,cary,playerx,playery)<20 then
+    init()
+    bloodstain = 1
+  end
+  if distance(carx2,cary2,playerx,playery)<20 then
+   init()
+   bloodstain = 2
+  end
+  if distance(carx3,cary3,playerx,playery)<20 then
+  
+   init()
+   bloodstain = 3
+  end
+  end
+  screen.drawSprite("car1", carx, cary, 50, 20)
+ if level == 1 then
+  carx += 2
+  carx2 += 2
+ end
+ if level == 2 then
+  carx += 6
+  carx2 += 6
+ end
+  carx8 += 6 
+  carx7 += 6
+  carx9 += 12
+  carx3 += 10
+  carx6 += 5
+  carx5 += 5
+  carx4 += 5
+  if carx >= 200 then
+   carx = -200
+  end
+  if carx2 >= 200 then
+   carx2 = -200
+  end
+  if carx3 >= 200 then
+   carx3 = -200
+  end
+  if carx4 >= 200 then
+   carx4 = -200
+  end
+  if carx5 >= 200 then
+   carx5 = -200
+  end
+  if carx6 >= 200 then
+   carx6 = -200
+  end
+    if carx7 >= 200 then
+   carx7 = -200
+  end
+  if carx8 >= 200 then
+   carx8 = -200
+  end
+  if carx9 >= 200 then
+   carx9 = -200
+  end
+  screen.clear()
+ updat()
+ if keyboard.LEFT then
+  playerx -= 2 
+  screen.drawMap("level"+level, 0, 0, screen.width, screen.height)  
+  screen.drawSprite("sprite3", playerx, playery, 50, 50)
+  
+  faceing = 3
+ elsif keyboard.RIGHT then
+  playerx += 2
+  screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+  screen.drawSprite("sprite4", playerx, playery, 50, 50)
+  
+  faceing = 4
+ elsif keyboard.UP then
+  playery += 2 
+  screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+  screen.drawSprite("sprite", playerx, playery, 50, 50)
+  
+  faceing = 1
+ elsif keyboard.DOWN then
+  playery -= 2
+  screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+  screen.drawSprite("sprite5", playerx, playery, 50, 50)
+  
+  faceing = 2
+ else
+  if faceing == 1 then
+   screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+   screen.drawSprite("sprite6", playerx, playery, 50, 50)
+  elsif faceing == 2 then
+   screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+   screen.drawSprite("sprite7", playerx, playery, 50, 50)
+  elsif faceing == 3 then
+   screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+   screen.drawSprite("sprite98", playerx, playery, 50, 50)
+  else
+   screen.drawMap("level"+level, 0, 0, screen.width, screen.height)
+   screen.drawSprite("sprite9", playerx, playery, 50, 50)
+  end
+  
+end
+ if keyboard.R then
+  init()
+ end
+ if level == 2 then 
+  screen.drawSprite("car1", carx6, cary6, 40, 15)  
+  screen.drawSprite("car2", carx5, cary5, 40, 15) 
+  screen.drawSprite("car3", carx4, cary4, 40, 15) 
+  screen.drawSprite("car4", carx7, cary7, 40, 15)  
+ screen.drawSprite("car5", carx8, cary8, 40, 15) 
+  screen.drawSprite("car1", carx9, cary9, 40, 15) 
+ else
+  screen.drawSprite("car2", carx, cary, 50, 20)  
+  screen.drawSprite("car3", carx2, cary2, 50, 20) 
+  screen.drawSprite("car4", carx3, cary3, 50, 20) 
+ end
+ updat()
+ if playery <= -90 and level == 2 then
+    screen.drawText("YOU WIN!", 0, 15, 90, random.color())
+    screen.drawText("press r to restart", 0, -80,30, "rgb(255,255,255)")
+  end
+end
+
+draw = function()
+  if playerx > 180 then
+    playerx = -180
+  end
+  if playerx < -180 then
+    playerx = 180
+  end
+end
+
+
+
+</script></html>

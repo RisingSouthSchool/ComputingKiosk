@@ -1,0 +1,298 @@
+<!DOCTYPE html><html><head><title>Space Junkies :)</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><style>@font-face { font-family: "PearSoda" ; src: url("fonts/PearSoda.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell","PearSoda"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"asteroid.png","version":1,"size":8354,"properties":{}},{"file":"astronaunt.png","version":1,"size":31722,"properties":{}},{"file":"background.png","version":5,"size":348704,"properties":{"frames":1,"fps":5}},{"file":"gold.png","version":1,"size":173896,"properties":{}},{"file":"icon.png","version":10,"size":241,"properties":{"frames":1,"fps":5}},{"file":"sprite.png","version":1,"size":6892,"properties":{"frames":1,"fps":5}},{"file":"warning.png","version":1,"size":7156,"properties":{}}],"assets":[],"maps":{"map":"{\"width\":24,\"height\":16,\"block_width\":16,\"block_height\":16,\"sprites\":[0],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}"},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="parser.js"></script><script src="program.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="runner_v1_i.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+// helpers
+clicking = function(x, y, h, w)
+  if touch.touching and
+     mouse.x > x - w/2 and
+     mouse.x < x + w/2 and
+     mouse.y > y - h/2 and
+     mouse.y < y + h/2 then
+       return true
+  end
+end
+
+init = function()
+  hero = object
+    x = 0
+    y = -35
+    height = 16
+    width = 16
+    targetX = 0
+    moving = false
+    frame = 0
+  end
+
+  blocks = []
+  score = 0
+  bestScore = storage.get("bestScore")
+  gameOver = false
+  leftDown = false
+  rightDown = false
+  gameState = "menu"
+  menuBlocks = []
+
+  bgY = 0
+  bgSpeed = 0.5
+
+  // menu blocks
+  for i = 1 to-13
+    b = object
+      x = (floor(random.next()*11)-5)*16
+      y = floor(random.next()*100) - 50
+      angle = floor(random.next()*360)
+      speed = floor(random.next()*2) + 1
+      spin = floor(random.next()*3) + 1
+    end
+    menuBlocks.push(b)
+  end
+
+  // falling blocks
+  for i = 1 to 5
+    b = object
+      x = (floor(random.next()*11)-5) * 16
+      y = 120
+      angle = 0
+      speed = floor(random.next()*2) + 2
+      spin = floor(random.next()*5) + 2
+      state = "warning"
+      timer = 40
+    end    
+    blocks.push(b)
+  end
+end
+
+update = function()
+  storage.set("bestScore", bestScore)
+
+  if score > bestScore then
+    bestScore = score
+  end
+
+  // scrolling background
+  bgY -= bgSpeed
+  if bgY <= -180 then bgY = 0 end
+
+  // MENU
+  if gameState == "menu" then
+    for b in menuBlocks
+      b.y -= b.speed
+      b.angle += b.spin
+      if b.y < -100 then
+        b.x = (floor(random.next()*11)-5)*16
+        b.y = 100
+        b.angle = floor(random.next()*360)
+        b.speed = floor(random.next()*2) + 1
+        b.spin = floor(random.next()*3) + 1
+      end
+    end
+
+    if clicking(0, -20, 60, 200) then
+      gameState = "playing"
+      hero.x = 0
+      hero.y = -35
+      hero.targetX = 0
+      hero.moving = false
+      score = 0
+      gameOver = false
+
+      for b in blocks
+        b.x = (floor(random.next()*11)-5) * 16
+        b.y = 120
+        b.angle = 0
+        b.speed = floor(random.next()*2) + 2
+        b.spin = floor(random.next()*5) + 2
+        b.state = "warning"
+        b.timer = 40
+      end
+    end
+  end
+
+  // PLAYING
+  if gameState == "playing" then
+    if gameOver then return end
+
+    // INPUT
+    if not hero.moving then
+      if keyboard.LEFT and not leftDown then
+        if hero.x > -5*16 then
+          hero.targetX = hero.x - 16
+          hero.moving = true
+        end
+        hero.frame = 0
+        leftDown = true
+      elsif not keyboard.LEFT then
+        leftDown = false
+      end
+
+      if keyboard.RIGHT and not rightDown then
+        if hero.x < 5*16 then
+          hero.targetX = hero.x + 16
+          hero.moving = true
+        end
+        hero.frame = 1
+        rightDown = true
+      elsif not keyboard.RIGHT then
+        rightDown = false
+      end
+    end
+
+    // SMOOTH MOVEMENT
+    if hero.moving then
+      hero.x = hero.x + (hero.targetX - hero.x) * 0.3
+      if abs(hero.x - hero.targetX) < 0.5 then
+        hero.x = hero.targetX
+        hero.moving = false
+      end
+    end
+
+    // BLOCKS
+    for b in blocks
+      if b.state == "warning" then
+        b.timer -= 1
+        if b.timer <= 0 then
+          b.state = "falling"
+          b.y = 120
+        end
+
+      elsif b.state == "falling" then
+        b.y -= b.speed
+        b.angle += b.spin
+
+        if abs(hero.x - b.x) < 16 and abs(hero.y - b.y) < 16 then
+          gameOver = true
+        end
+
+        if b.y < -100 then
+          b.x = (floor(random.next()*11)-5) * 16
+          b.speed += 0.2
+          b.spin = floor(random.next()*5) + 2
+          b.angle = 0
+          b.state = "warning"
+          b.timer = 40
+          score += 1
+        end
+      end
+    end
+  end
+end
+
+draw = function()
+  // scrolling background
+  screen.drawSprite("background", 0, bgY, 400, 200)
+  screen.drawSprite("background", 0, bgY + 200, 400, 200)
+
+  screen.setFont("PearSoda")
+
+  // MENU
+  if gameState == "menu" then
+    for b in menuBlocks
+      screen.setDrawRotation(b.angle)
+      screen.drawSprite("gold", b.x, b.y, 16, 16)
+      screen.setDrawRotation(0)
+    end
+
+    screen.drawText("Space Junkies", 0, 60, 30, "white")
+
+    buttonColour = "purple"
+    if mouse.x > -100 and mouse.x < 100 and mouse.y > -50 and mouse.y < 10 then
+      buttonColour = "darkblue"
+    end
+
+    screen.drawRect(0, -20, 200, 60, buttonColour)
+    screen.drawText("START", 0, -20, 30, "white")
+  end
+
+  // PLAYING
+  if gameState == "playing" then
+    screen.drawText("best score: " + storage.get("bestScore"), 80, 80, 20, "white")
+
+    // ground row
+    for i = -5 to 5
+      screen.drawSprite("asteroid", i*16, -50, 16, 16)
+    end
+
+    // Astronaunt
+    screen.drawSprite("astronaunt", hero.x, hero.y, 32, 32)
+
+    // falling blocks + warnings
+    for b in blocks
+      if b.state == "warning" then
+        screen.drawSprite("warning", b.x, -35, 16, 16)
+      elsif b.state == "falling" then
+        screen.setDrawRotation(b.angle)
+        screen.drawSprite("gold", b.x, b.y, 16, 16)
+        screen.setDrawRotation(0)
+      end
+    end
+
+    screen.drawText("score: " + score, -80, 80, 20, "white")
+
+    if gameOver then
+      screen.drawText("GAME OVER", 0, 0, 40, "white")
+      screen.drawText("Final Score: " + score, 0, -50, 20, "white")
+      screen.drawText("reset to play again", 0, -75, 20, "white")
+    end
+  end
+end
+
+
+</script></html>

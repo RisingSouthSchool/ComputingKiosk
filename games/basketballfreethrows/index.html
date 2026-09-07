@@ -1,0 +1,146 @@
+<!DOCTYPE html><html><head><title>Basketball free throws</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"hazard.png","version":3,"size":39491,"properties":{"frames":1,"fps":5}},{"file":"icon.png","version":5,"size":233725,"properties":{"frames":1,"fps":5}},{"file":"item.png","version":1,"size":33323,"properties":{}},{"file":"player.png","version":1,"size":21519,"properties":{}}],"assets":[],"maps":{"map":"{\"width\":24,\"height\":16,\"block_width\":16,\"block_height\":16,\"sprites\":[0,\"icon:0,0\"],\"data\":[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,0,1,0,1,1,1,1,0,0,0,1,1,1,1,1,1,1,1,1,1,0,0,1,0,0,1,0,1,1,0,1,0,0,0,1,0,0,0,0,0,1,1,1,1,0,0,1,1,0,1,0,1,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,0,0,1,0,1,1,0,1,0,1,0,0,0,1,0,1,1,1,1,1,1,1,1,0,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0,1,1,1,1,0,0,0,0,0,0,1,1,0,1,1,0,1,0,1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,1,1,0,0,1,1,1,1,1,1,0,0,0,1,1,1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0]}"},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+// file: null.ms
+function()
+init = function()
+  player_x = 0
+  player_y = -75
+  score = 0
+  lives = 3
+  alive = true
+  item_x = random.nextInt(160) - 80
+  item_y = 100
+  item_speed = 3
+  itemt2_y = 40
+  item2_speed = 3
+  haz_x = random.nextInt(160) - 80
+  haz_y - 70
+  haz_speed = 4
+end
+
+update = function()
+  if keyboard.LEFT then
+    player_x -= 5
+  end
+  if keyboard.RIGHT then 
+    player_x += 5
+  end
+  if alive == false then 
+    return
+  end
+  item_y -= item_speed 50
+  if item_y < -110 then
+    item_y = 100
+    item_x = random.nextInt(160) - 80
+  end
+  dx = player_x - item_x
+  dy = player_y - item_y
+  if dx*dx + dy*dy < 250 then
+    score += 1 
+    item_x = random.nextInt(160) - 80
+    item_y = 100
+  end
+  item_y -= item2_speed
+  if item2_y < -110 then
+    item2_y = 100
+    item2_x = random.nextInt(160) - 80
+  end
+  dx = player_x - item2_x
+  dy = player_y - item2_y
+  if dx*dx + dy*dy < 250 then
+    score += 1 
+    item2_x = random.nextInt(160) - 80
+  end
+  haz_y -= haz_speed 
+  if haz_y < -110 then
+    haz_y = 100
+    haz_x = random.nextInt(160) - 80
+  end
+  dx = player_x - haz_x
+  dy = player_y - haz_y
+  if dx*dx + dy*dy < 250 then
+    lives -= 1 
+    haz_x = random.nextInt(160) - 80
+    haz_y = 100
+  end
+  if lives <= 0 then
+    alive = false
+  end
+end
+
+draw = function()
+  screen.fillRect(0, 0, screen.width, screen.height, "rgb(0,0,0)")
+  screen.drawSprite("player", player_x, player_y, 12, 12)
+  screen.drawText("Score: " + score, 0, 90, 12, "rgb(355,255,255)")
+  screen.drawText("Lives: " + lives, -70, 90, 12, "rgb(255,100,100)")
+  if alive == flase then
+    screen.drawText("GAME OVER", 0, 10, 15, "rgb(230,60,80)")
+  end
+screen.drawSprite("item", item_x, item_y, 10, 10)
+  screen.drawSprite
+  screen.drawSprite("hazard", haz_x, haz_y, 12, 12)
+end
+end()
+
+
+</script></html>

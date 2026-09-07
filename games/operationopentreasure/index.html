@@ -1,0 +1,213 @@
+<!DOCTYPE html><html><head><title>operation open treasure</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"background.png","version":1,"size":180649,"properties":{}},{"file":"coin.png","version":1,"size":121312,"properties":{}},{"file":"crab.png","version":1,"size":92527,"properties":{}},{"file":"crown.png","version":1,"size":57057,"properties":{}},{"file":"icon.png","version":0,"size":0,"properties":{}},{"file":"ring.png","version":2,"size":90862,"properties":{"frames":1,"fps":5}},{"file":"rocks.png","version":1,"size":31016,"properties":{}},{"file":"trash.png","version":1,"size":152516,"properties":{}}],"assets":[],"maps":{},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+// file: main.ms
+function()
+init = function()
+  crab_x = 0
+  crab_y = -75
+  score = 0
+  coin_x = 95
+  coin_y = 95
+  coin_speed = 2
+  ring_x = -30
+  ring_y = 300
+  ring_speed = 2.5
+  crown_x = 70
+  crown_y = 250
+  crown_speed = 3
+  rocks_x = -70
+  rocks_y = 150
+  rocks_speed = 2.5
+  trash_x = -100
+  trash_y = 200
+  trash_speed = 3
+  timer = 20 
+  mode = "play"
+end
+
+update = function()
+  if keyboard.LEFT then
+    crab_x -= 3
+  end
+  if keyboard.RIGHT then
+    crab_x += 3
+  end
+  coin_y -= coin_speed
+  if coin_y < -150 then
+    coin_y = 120
+  end
+  gapx = crab_x - coin_x
+  gapy = crab_y - coin_y
+  if gapx*gapx + gapy*gapy < 100 then
+    score += 1
+    coin_x = random.nextInt(400) - 200
+    coin_y = 120
+  end
+  ring_y -= ring_speed
+  if ring_y < -150 then
+    ring_y = 120
+  end
+  disx = crab_x - ring_x
+  disy = crab_y - ring_y
+  if disx*disx + disy*disy < 100 then
+    score += 1
+    ring_x = random.nextInt(400) - 200
+    ring_y = 120
+  end
+  crown_y -= crown_speed
+  if crown_y < -150 then
+    crown_y = 120
+  end
+  spacex = crab_x - crown_x
+  spacey = crab_y - crown_y
+  if spacex*spacex + spacey*spacey < 100 then
+    score += 1
+    crown_x = random.nextInt(400) - 200
+    crown_y = 120
+  end
+  rocks_y -= rocks_speed
+  if rocks_y < -150 then
+    rocks_y = 120
+  end
+  dx = crab_x - rocks_x 
+  dy = crab_y - rocks_y
+  if dx*dx + dy*dy < 150 then
+    score -= 1 
+    rocks_x = random.nextInt(400) - 200
+    rocks_y = 120
+  end
+  trash_y -= trash_speed
+  if trash_y < -150 then
+    trash_y = 120
+  end
+  gx = crab_x - trash_x
+  gy = crab_y - trash_y
+  if gx*gx + gy*gy < 150 then
+    score -= 1
+    trash_x = random.nextInt(400) - 200
+    trash_y = 120
+  end
+  if score < 0 then
+    score = 0
+end
+if timer > 0 then
+  timer -= 1/60
+    else
+   if timer -= 0 then
+    mode = "game over"
+    if keyboard.SPACE then
+      timer = 20
+      mode = "play"
+      score = 0
+    end
+    if mode == "game over" then
+      coin_speed = 0
+      crown_speed = 0
+      rocks_speed = 0
+      trash_speed = 0
+      ring_speed = 0
+      end
+    if keyboard.SPACE then 
+      coin_speed = 2
+      crown_speed = 3
+      rocks_speed = 2.5
+      trash_speed = 3
+      ring_speed = 2.5
+      end
+end
+end
+end
+
+draw = function()
+  screen.drawSprite("background", 0, 0 screen.width, screen.height)
+  screen.drawSprite("crab", crab_x, crab_-75, 60, 60)
+  screen.drawText("Score: " + score, -85,75,22 "rgb(0,0,0)")
+  screen.drawSprite("coin", coin_x, coin_y, 30, 30)
+  screen.drawSprite("ring", ring_x, ring_y, 35, 35)
+  screen.drawSprite("crown", crown_x, crown_y, 30,30)
+  screen.drawSprite("rocks", rocks_x, rocks_y, 35,35)
+  screen.drawSprite("trash", trash_x, trash_y, 25,25)
+  if mode == "play" then
+  screen.drawText("Remaining Time: " + round(timer), 60, 75,22)
+  else
+    if mode == "game over" then
+    screen.drawText("TIME OVER. SCORE: " + score, 0, 0, 30 "rgb(0,0,0)")
+    screen.drawText("press space to restart", 0,-20,20 "rgb(0,0,0)")
+    screen.drawText("Remaining Time: " + round(timer), 60, 75,22)
+end
+end
+end
+
+
+ 
+end()
+
+
+
+// file: source.ms
+function()
+
+end()
+
+
+</script></html>

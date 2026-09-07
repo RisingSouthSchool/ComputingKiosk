@@ -1,0 +1,307 @@
+<!DOCTYPE html><html><head><title>Street runner V1</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"bad.png","version":1,"size":68589,"properties":{}},{"file":"btn_quit.png","version":1,"size":2324,"properties":{}},{"file":"btn_quit_hover.png","version":1,"size":2324,"properties":{}},{"file":"btn_start.png","version":1,"size":3100,"properties":{}},{"file":"btn_start_hover.png","version":1,"size":3100,"properties":{}},{"file":"good.png","version":1,"size":6620,"properties":{}},{"file":"icon.png","version":2,"size":112,"properties":{"frames":1,"fps":5}},{"file":"player.png","version":1,"size":65682,"properties":{}}],"assets":[],"maps":{},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+// file: main.ms
+function()
+init = function()
+  state = "menu"
+  px = 0
+  score = 0
+  highscore = 0
+  timerHighscore = 0
+  lives = 3
+  objs = []
+  timer = 0
+  spawnRate = 35
+  baseSpeed = 2
+  combo = 0
+  flash = 0
+  flashColor = "white"
+  bgColor = "#111"
+  slowTimer = 0
+  timeLeft = 0
+  timerMode = 0
+  shakeX = 0
+  shakeY = 0
+  shakePower = 0
+end
+
+update = function()
+  if state == "menu" then
+    if keyboard.Z then
+      spawnRate = 45
+      baseSpeed = 2
+      bgColor = "#112211"
+      state = "game"
+      score = 0
+      lives = 3
+      objs = []
+      px = 0
+      combo = 0
+      slowTimer = 0
+      timerMode = 0
+    end
+    if keyboard.X then
+      spawnRate = 30
+      baseSpeed = 3
+      bgColor = "#222211"
+      state = "game"
+      score = 0
+      lives = 3
+      objs = []
+      px = 0
+      combo = 0
+      slowTimer = 0
+      timerMode = 0
+    end
+    if keyboard.C then
+      spawnRate = 20
+      baseSpeed = 5
+      bgColor = "#221111"
+      state = "game"
+      score = 0
+      lives = 3
+      objs = []
+      px = 0
+      combo = 0
+      slowTimer = 0
+      timerMode = 0
+    end
+    if keyboard.T then
+      spawnRate = 25
+      baseSpeed = 3
+      bgColor = "#112233"
+      state = "game"
+      score = 0
+      lives = 99
+      objs = []
+      px = 0
+      combo = 0
+      slowTimer = 0
+      timerMode = 1
+      timeLeft = 1800
+    end
+    return
+  end
+
+  if state == "gameover" then
+    if timerMode == 1 then
+      if score > timerHighscore then timerHighscore = score end
+    else
+      if score > highscore then highscore = score end
+    end
+    if keyboard.SPACE then state = "menu" end
+    return
+  end
+
+  if shakePower > 0 then
+    shakeX = random.nextInt(shakePower) - shakePower/2
+    shakeY = random.nextInt(shakePower) - shakePower/2
+    shakePower -= 1
+  else
+    shakeX = 0
+    shakeY = 0
+  end
+
+  if keyboard.LEFT then px -= 6 end
+  if keyboard.RIGHT then px += 6 end
+  if px < -150 then px = -150 end
+  if px > 150 then px = 150 end
+
+  spawnRate -= 0.005
+  if spawnRate < 10 then spawnRate = 10 end
+  if flash > 0 then flash -= 1 end
+  if slowTimer > 0 then slowTimer -= 1 end
+
+  if timerMode == 1 then
+    timeLeft -= 1
+    if timeLeft <= 0 then state = "gameover" end
+  end
+
+  timer -= 1
+  if timer <= 0 then
+    o.x = random.nextInt(280) - 140
+    o.y = 100
+    o.speed = baseSpeed + random.nextInt(3) + floor(score/10)
+    o.kind = random.nextInt(4)
+    objs += [o]
+    o = 0
+    timer = spawnRate
+  end
+
+  for i = objs.length - 1 to 0 by -1
+    sp = objs[i].speed
+    if slowTimer > 0 then sp = 1 end
+    objs[i].y -= sp
+    if abs(objs[i].x - px) < 30 and abs(objs[i].y - (-80)) < 30 then
+      if objs[i].kind == 0 then
+        combo += 1
+        score += combo
+        flash = 8
+        flashColor = "#4f4"
+      elsif objs[i].kind == 1 then
+        combo += 1
+        score += combo
+        flash = 8
+        flashColor = "#4f4"
+      elsif objs[i].kind == 2 then
+        if timerMode == 0 then lives -= 1 end
+        combo = 0
+        flash = 8
+        flashColor = "#f44"
+        shakePower = 8
+      elsif objs[i].kind == 3 then
+        if timerMode == 0 then lives += 1 end
+        flash = 8
+        flashColor = "#44f"
+      elsif objs[i].kind == 4 then
+        slowTimer = 200
+        flash = 8
+        flashColor = "#4ff"
+      end
+      objs.removeAt(i)
+    elsif objs[i].y < -120 then
+      objs.removeAt(i)
+    end
+  end
+
+  if lives <= 0 then state = "gameover" end
+end
+
+draw = function()
+  screen.clear()
+  screen.fillRect(shakeX, shakeY, screen_width, screen_height, bgColor)
+
+  if flash > 0 then
+    screen.fillRect(shakeX, shakeY, screen_width, screen_height, flashColor)
+  end
+
+  if state == "menu" then
+    screen.drawText("FALLING BLOCKS", 0, 90, 28, "white")
+    screen.drawText("Catch GREEN  avoid RED", 0, 60, 12, "#aaa")
+    screen.drawText("Z  -  EASY", 0, 25, 18, "#4f4")
+    screen.drawText("X  -  MEDIUM", 0, -10, 18, "#ff4")
+    screen.drawText("C  -  HARD", 0, -45, 18, "#f44")
+    screen.drawText("T  -  TIMER MODE", 0, -80, 18, "#4af")
+    if highscore > 0 then
+      screen.drawText("Best: " + highscore, -70, -110, 13, "#ff0")
+    end
+    if timerHighscore > 0 then
+      screen.drawText("Timer Best: " + timerHighscore, 70, -110, 13, "#4af")
+    end
+    return
+  end
+
+  if state == "gameover" then
+    screen.drawText("GAME OVER", shakeX, 40 + shakeY, 30, "red")
+    screen.drawText("Score: " + score, shakeX, shakeY, 20, "white")
+    if timerMode == 1 then
+      if score >= timerHighscore then
+        screen.drawText("NEW TIMER BEST!", shakeX, -30 + shakeY, 18, "#4af")
+      end
+    else
+      if score >= highscore then
+        screen.drawText("NEW BEST!", shakeX, -30 + shakeY, 18, "#ff0")
+      end
+    end
+    screen.drawText("Press SPACE for menu", shakeX, -65 + shakeY, 15, "yellow")
+    return
+  end
+
+  screen.fillRect(px + shakeX, -80 + shakeY, 40, 40, "#4af")
+
+  for obj in objs
+    if obj.kind == 0 or obj.kind == 1 then
+      screen.fillRect(obj.x + shakeX, obj.y + shakeY, 30, 30, "#4f4")
+    elsif obj.kind == 2 then
+      screen.fillRect(obj.x + shakeX, obj.y + shakeY, 30, 30, "#f44")
+    elsif obj.kind == 3 then
+      screen.fillRect(obj.x + shakeX, obj.y + shakeY, 30, 30, "#44f")
+    elsif obj.kind == 4 then
+      screen.fillRect(obj.x + shakeX, obj.y + shakeY, 30, 30, "#4ff")
+    end
+  end
+
+  screen.drawText("Score: " + score, -150 + shakeX, 100 + shakeY, 18, "white")
+
+  if timerMode == 1 then
+    screen.drawText(floor(timeLeft/60) + "s", shakeX, 100 + shakeY, 20, "#4af")
+  else
+    hearts = ""
+    for i = 1 to lives
+      hearts += "<3 "
+    end
+    screen.drawText(hearts, 60 + shakeX, 100 + shakeY, 18, "#f44")
+  end
+
+  if combo > 1 then
+    screen.drawText("COMBO x" + combo, shakeX, 60 + shakeY, 20, "#ff0")
+  end
+
+  if slowTimer > 0 then
+    screen.drawText("SLOW!", shakeX, 40 + shakeY, 18, "#4ff")
+  end
+end
+end()
+
+
+</script></html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html><html><head><title>tyrese and max run</title><meta http-equiv="content-type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui=1"><meta charset="UTF-8"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="description" content=""><link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" href="icon64.png"><link rel="apple-touch-icon" sizes="180x180" href="icon180.png"><link rel="icon" type="image/png" sizes="32x32" href="icon32.png"><link rel="icon" type="image/png" sizes="16x16" href="icon16.png"><style>html,body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  overflow:hidden;
+  font-family: Verdana;
+}
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+#canvaswrapper {
+  text-align: center ;
+}
+</style><style>@font-face { font-family: "BitCell" ; src: url("fonts/BitCell.ttf") format("truetype"); }</style><script>window.fonts = ["BitCell"]</script></head><body class="noselect custom-cursor" oncontextmenu="return false;"><div id="canvaswrapper"></div><script type="text/javascript">var resources = {"images":[{"file":"icon.png","version":0,"size":0,"properties":{}}],"assets":[],"maps":{},"sounds":[],"music":[]};
+var graphics = "M1";
+
+</script><script type="text/javascript">var orientation = 'any' ;
+var aspect = 'free' ;
+var ms_libs = [] ;
+window.skip_service_worker = true;
+window.exported_project = true;
+window.ms_use_server = false ;
+</script><script src="compiler.js"></script><script src="parser.js"></script><script src="processor.js"></script><script src="program.js"></script><script src="routine.js"></script><script src="runner.js"></script><script src="token.js"></script><script src="tokenizer.js"></script><script src="transpiler.js"></script><script src="microengine.js"></script></body><script type="text/javascript">//
+//
+// The game is started with the code below.
+// Once you have received the "started" signal (see below),
+// you can do the following:
+// 1) Inject functions or objects into the global context of the microStudio engine, example:
+//
+//   window.player.setGlobal("special_callback",function(x) { console.info(x) }) ;
+//   // Your microScript code can now call the "special_callback" function
+//
+// 2) Call microScript global functions from your JavaScript code, example:
+//
+//   window.player.call("call_me_from_javascript",[10,1000]) ;
+//   // arguments to the function call are provided as an array
+//
+// 3) Run a microScript code snippet from your JavaScript code, example:
+//
+//   window.player.exec("player.position_x = 50",function(result) { console.log(result) ; }) ;
+//
+
+window.addEventListener("load",function() {
+  window.player = new Player(function(event) {
+    if (event.name == "started") {
+      // signal that the game is started
+    }
+    else if (event.name == "log") {
+      // console.info(event.data) ;
+    }
+  }) ;
+  document.body.focus() ;
+}) ;
+
+</script><script id="code" type="text/x-microscript">
+
+
+// file: main.ms
+function()
+collide_AABB = function(r1,r2)
+  return r1.x - r1.width/2 < r2.x + r2.width/2 and
+         r1.x + r1.width/2 > r2.x - r2.width/2 and
+         r1.y - r1.height/2 < r2.y + r2.height/2 and
+         r1.y + r1.height/2 > r2.y - r2.height/2
+end
+
+randRange = function(low, high)
+  return (high - low) * random.next() + low
+end
+
+spawn_blade = function(position)
+  return object
+    x = position + random.next()*200
+    y = -50
+    width = 5
+    height = 15
+    draw_width = 20
+    draw_height = 20
+    passed = false
+  end
+end
+
+test_passed = function(target, blade)
+  if target.x > blade.x + 20 and (not blade.passed) then
+    score += 1
+    blade.passed = true
+    audio.beep("saw tempo 990 volume 50 span 20 C6")
+  end
+end
+
+init = function()
+  gameover = 0
+  running = 0
+  blades = [spawn_blade(200), spawn_blade(400), spawn_blade(600), spawn_blade(800), spawn_blade(1000)]
+  score = 0
+  position = 0
+
+  camera = object
+    x = 0
+    y = 0
+    update = function(target)
+      this.x = target.x
+      this.y = target.y
+    end
+  end
+
+  monster = object
+    draw_x = 300
+    draw_y = 0
+    x = 250
+    y = 0
+    speed = 5
+    width = 10
+    height = 10
+
+    spawn = function(pos)
+      this.x = pos
+      this.start_pos = pos
+      this.y = randRange(0, -25)
+    end
+
+    draw = function(camera)
+      screen.drawSprite("monster", this.x - camera.x, this.y - camera.y, 32)
+    end
+
+    update = function()
+      this.x -= this.speed
+      this.draw_x -= this.speed
+      if this.x - this.start_pos < -500 then
+        this.spawn(hero.x + 250)
+      end
+    end
+  end
+
+  hero = object
+    x = -80
+    y = -50
+    ground_y = -50
+    vy = 0
+    dead = false
+    width = 20
+    height = 20
+    speed = 2
+    jumping_now = false
+    forceland_now = false
+    superjumping_now = false
+
+    jump = function()
+      if not this.jumping_now then
+        this.jumping_now = true
+        this.superjumping_now = false
+        this.vy = 7.5
+      end
+    end
+
+    superjump = function()
+      if not this.jumping_now then
+        this.jumping_now = true
+        this.superjumping_now = true
+        this.vy = 10
+      end
+    end
+
+    forceland = function()
+      if this.jumping_now then
+        this.vy = -7.5
+        this.forceland_now = true
+      end
+    end
+
+    draw = function(camera)
+      local sx = this.x - camera.x
+      local sy = this.y - camera.y
+      if this.dead then
+        screen.drawSprite("lario_dead", sx, sy, 20)
+      elsif this.forceland_now then
+        screen.drawSprite("lario_forceland", sx, sy, 20)
+      elsif this.jumping_now then
+        // Draw superjump sprite if superjumping, else jump sprite
+        if this.superjumping_now then
+          screen.drawSprite("lario_superjump", sx, sy, 20)
+        else
+          screen.drawSprite("lario_jump", sx, sy, 20)
+        end
+      elsif not running then
+        screen.drawSprite("lario_chilling", sx, sy, 20)
+      elsif keyboard.C then
+        screen.drawSprite("lario_chilling", sx, sy, 20)
+      elsif keyboard.M then
+        screen.drawSprite("lario_moonwalk", sx, sy, 20)
+      else
+        screen.drawSprite("lario", sx, sy, 20)
+      end
+    end
+
+    update = function()
+      if (touch.touching or keyboard.SPACE or keyboard.UP) and (not this.jumping_now) then
+        this.jump()
+        audio.beep("square tempo 10000 volume 10 span 100 C3 to C6")
+      end
+      if keyboard.B and (not this.jumping_now) then
+        this.superjump()
+        audio.beep("square tempo 4000 volume 20 span 100 C2 to C6")
+      end
+      if keyboard.DOWN and this.jumping_now and gameover == 0 then
+        this.forceland()
+      else
+        this.forceland_now = false
+      end
+      this.x += this.speed
+      this.vy -= 0.3
+      this.y = this.y + this.vy
+      if this.y <= this.ground_y then
+        this.y = this.ground_y
+        this.jumping_now = false
+        this.superjumping_now = false
+        this.forceland_now = false
+      end
+      this.speed += 0.001
+    end
+  end
+end
+
+update = function()
+  if running == 1 then
+    monster.update()
+    if collide_AABB(hero, monster) then
+      gameover = 1
+      running = 0
+      hero.dead = true
+      audio.beep("saw tempo 5000 volume 100 span 10 C5 to C6 to C5 to C6")
+    end
+  end
+
+  if keyboard.M and running == 1 then
+    audio.playMusic("michealjacksonmoonwalkmadewith", 1, 1)
+  else
+    audio.playMusic("michealjacksonmoonwalkmadewith", 0, 0)
+  end
+
+  if keyboard.C and running == 1 then
+    audio.playMusic("clubmusicloop74178", 1, 1)
+  else
+    audio.playMusic("clubmusicloop74178", 0, 0)
+  end
+
+  if gameover > 0 then
+    gameover += 1
+    if gameover > 300 then
+      init()
+    end
+  elsif running then
+    hero.update()
+    camera.x = hero.x + 80
+    position = hero.x
+
+    for i=0 to blades.length-1
+      if blades[i].x < camera.x - 120 then
+        blades[i] = spawn_blade(camera.x + 80)
+      end
+      if collide_AABB(hero, blades[i]) then
+        running = 0
+        gameover = 1
+        hero.dead = true
+        audio.beep("saw tempo 5000 volume 100 span 10 C5 to C6 to C5 to C6")
+      else
+        test_passed(hero, blades[i])
+      end
+    end
+  else
+    if touch.touching or keyboard.SPACE or keyboard.UP or keyboard.B then
+      running = 1
+    end
+  end
+end
+
+draw = function()
+  screen.fillRect(0, 0, screen.width, screen.height, "rgb(57,0,57)")
+  screen.drawMap("runmap", 0, 0, 520, 200)
+  screen.drawSprite("sun", 137.5, 75, 32, 32)
+  screen.drawText("Score:", -160, 75, 20, "rgb(0,0,0.1)")
+  screen.drawText(score, -120, 75, 20, "rgb(0,0,0.1)")
+
+  for i = -6 to 6
+    screen.drawSprite("wall", i * 40 - position % 40, -80, 40)
+  end
+
+  for i=0 to blades.length-1
+    screen.drawSprite("blade", blades[i].x - camera.x, blades[i].y - camera.y, blades[i].draw_width, blades[i].draw_height, 20)
+  end
+
+  hero.draw(camera)
+  monster.draw(camera)
+
+  if gameover > 0 then
+    screen.fillRect(0, 0, screen.width, screen.height, "rgba(255,0,0,.5)")
+    screen.drawText("GAME OVER", 0, 0, 50, "#FFF")
+  elsif not running then
+    screen.drawText("TYRESE AND MAX RUN", 0, 30, 50, "rgb(100,0,0)")
+    screen.drawText("How to play in the Docs", 0, -30, 25, "rgb(100,0,0)")
+    screen.drawText("CLICK ON MOUSE TO ADD SOUND!", 0, 0, 25, "rgb(100,0,0)")
+  end
+end
+end()
+
+
+</script></html>

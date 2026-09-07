@@ -1,12 +1,52 @@
 [
   {
+    "slug": "basketballfreethrows",
+    "title": "Basketball free throws",
+    "hasIcon": true
+  },
+  {
+    "slug": "crosser22",
+    "title": "Double J Crossy",
+    "hasIcon": true
+  },
+  {
+    "slug": "extremegolfgametempname",
+    "title": "EXTREME GOLF GAME(TEMP NAME",
+    "hasIcon": true
+  },
+  {
     "slug": "jumpking",
     "title": "Jump King!",
     "hasIcon": true
   },
   {
+    "slug": "ok",
+    "title": "ok",
+    "hasIcon": true
+  },
+  {
+    "slug": "operationopentreasure",
+    "title": "operation open treasure",
+    "hasIcon": true
+  },
+  {
+    "slug": "spacejunkiesfinal2",
+    "title": "Space Junkies :)",
+    "hasIcon": true
+  },
+  {
     "slug": "spiritbound",
     "title": "Spiritbound",
+    "hasIcon": true
+  },
+  {
+    "slug": "streetrunnerv1",
+    "title": "Street runner V1",
+    "hasIcon": true
+  },
+  {
+    "slug": "tyreseandmaxrun",
+    "title": "tyrese and max run",
     "hasIcon": true
   }
 ]

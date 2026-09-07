@@ -34,7 +34,7 @@
     <header><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
     <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
   </section>
-  <section id="player" aria-label="Game player"><button id="back" type="button">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
+  <section id="player" aria-label="Game player"><button id="back" type="button" tabindex="-1">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
   <p id="controller-status" role="status">🎮 Controller connected</p>
   <script>
     const gamesElement = document.getElementById("games");
@@ -59,7 +59,7 @@
       frame.src = "games/" + encodeURIComponent(game.slug) + "/index.html";
       player.classList.add("open");
       history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
-      back.focus();
+      frame.focus();
     }
 
     function render(games) {
