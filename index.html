@@ -13,11 +13,15 @@
     .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
     main { max-width: 1200px; margin: 0 auto; padding: 10px 32px 50px; }
     #games { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
-    .game-tile { appearance: none; border: 2px solid transparent; border-radius: 14px; background: var(--panel); color: var(--ink); min-height: 290px; padding: 18px; text-align: left; cursor: pointer; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
-    .game-tile:hover, .game-tile:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
+    .game-tile { position: relative; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 290px; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+    .game-tile:hover, .game-tile:focus-within { transform: translateY(-4px); border-color: var(--focus); background: #22303c; }
+    .game-launch { appearance: none; border: 0; width: 100%; min-height: 290px; padding: 18px 18px 58px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
+    .game-launch:focus-visible { outline: 3px solid var(--focus); outline-offset: -5px; border-radius: 10px; }
     .game-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 10px; background: #2b3945; color: var(--accent); font-size: 5rem; font-weight: 700; overflow: hidden; }
     .game-icon img { width: 100%; height: 100%; object-fit: cover; }
     .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
+    .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
+    .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
     #empty, #error { color: var(--muted); padding: 30px 0; font-size: 1.2rem; }
     #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
     #player.open { display: block; }
@@ -26,7 +30,7 @@
     #back:focus-visible { outline: 3px solid white; outline-offset: 3px; }
     #controller-status { position: fixed; right: 16px; bottom: 16px; z-index: 4; display: none; padding: 7px 10px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151cee; color: var(--muted); font-size: .85rem; }
     #controller-status.visible { display: block; }
-    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile { min-height: 210px; padding: 10px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
   </style>
 </head>
 <body>
@@ -45,6 +49,10 @@
     const error = document.getElementById("error");
     const controllerStatus = document.getElementById("controller-status");
     let tiles = [];
+    let games = [];
+    let votes = {};
+    const voteQueues = new Map();
+    const pendingVotes = new Map();
     let previousGamepadButtons = [];
     let previousDirection = null;
 
@@ -62,22 +70,78 @@
       frame.focus();
     }
 
-    function render(games) {
-      empty.hidden = games.length !== 0;
-      games.forEach((game, index) => {
-        const tile = document.createElement("button");
+    function voteCount(slug) {
+      const count = Number(votes[slug]);
+      return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+    }
+
+    function sortedGames() {
+      return [...games].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+    }
+
+    function selectedGame() {
+      const current = document.activeElement?.dataset?.index;
+      if (current === undefined) return null;
+      return games.find(game => game.slug === tiles[Number(current)]?.dataset.slug) || null;
+    }
+
+    function render(selectedSlug = null) {
+      const orderedGames = sortedGames();
+      empty.hidden = orderedGames.length !== 0;
+      gamesElement.replaceChildren();
+      orderedGames.forEach((game, index) => {
+        const tile = document.createElement("article");
         tile.className = "game-tile";
-        tile.type = "button";
         tile.dataset.index = index;
+        tile.dataset.slug = game.slug;
+        const launch = document.createElement("button");
+        launch.className = "game-launch";
+        launch.type = "button";
+        launch.dataset.index = index;
+        launch.dataset.slug = game.slug;
         const icon = document.createElement("span");
         icon.className = "game-icon";
         if (game.hasIcon) { const image = document.createElement("img"); image.src = "games/" + encodeURIComponent(game.slug) + "/icon192.png"; image.alt = ""; icon.append(image); }
         else icon.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
         const title = document.createElement("span"); title.className = "game-title"; title.textContent = game.title;
-        tile.append(icon, title); tile.addEventListener("click", () => openGame(game)); gamesElement.append(tile);
+        launch.append(icon, title);
+        launch.addEventListener("click", () => openGame(game));
+        const vote = document.createElement("button");
+        vote.className = "vote-button";
+        vote.type = "button";
+        vote.tabIndex = -1;
+        vote.textContent = "👍 " + voteCount(game.slug);
+        vote.setAttribute("aria-label", "Like " + game.title);
+        vote.addEventListener("click", event => castVote(game, event));
+        tile.append(launch, vote);
+        gamesElement.append(tile);
       });
-      tiles = [...document.querySelectorAll(".game-tile")];
-      if (tiles.length) tiles[0].focus();
+      tiles = [...document.querySelectorAll(".game-launch")];
+      const tileToFocus = selectedSlug ? tiles.find(tile => tile.dataset.slug === selectedSlug) : tiles[0];
+      tileToFocus?.focus();
+    }
+
+    function castVote(game, event) {
+      event?.stopPropagation();
+      const slug = game.slug;
+      votes[slug] = voteCount(slug) + 1;
+      pendingVotes.set(slug, (pendingVotes.get(slug) || 0) + 1);
+      render(slug);
+      const previousRequest = voteQueues.get(slug) || Promise.resolve();
+      const request = previousRequest.then(async () => {
+        const response = await fetch("/api/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) });
+        if (!response.ok) throw new Error("vote request failed");
+        const result = await response.json();
+        const pending = (pendingVotes.get(slug) || 1) - 1;
+        pendingVotes.set(slug, pending);
+        votes[slug] = result.count + pending;
+        render(slug);
+      }).catch(() => {
+        pendingVotes.set(slug, Math.max(0, (pendingVotes.get(slug) || 1) - 1));
+        votes[slug] = Math.max(0, voteCount(slug) - 1);
+        render(slug);
+      });
+      voteQueues.set(slug, request);
     }
 
     function moveSelection(direction) {
@@ -95,6 +159,11 @@
     }
 
     document.addEventListener("keydown", (event) => {
+      if (event.key.toLowerCase() === "v" && !player.classList.contains("open")) {
+        const game = selectedGame();
+        if (game) { event.preventDefault(); castVote(game); }
+        return;
+      }
       const direction = { ArrowRight: "right", ArrowLeft: "left", ArrowDown: "down", ArrowUp: "up" }[event.key];
       if (direction && moveSelection(direction)) event.preventDefault();
     });
@@ -116,8 +185,11 @@
         if (direction !== previousDirection && direction) moveSelection(direction);
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open")) {
-          const current = document.activeElement?.dataset?.index;
-          if (current !== undefined) tiles[Number(current)]?.click();
+          selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
+        }
+        if (buttonJustPressed(3) && !player.classList.contains("open")) {
+          const game = selectedGame();
+          if (game) castVote(game);
         }
         if (buttonJustPressed(1) && player.classList.contains("open")) showHub();
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
@@ -129,7 +201,14 @@
     }
 
     requestAnimationFrame(pollGamepad);
-    fetch("games.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("games.json"); return response.json(); }).then(render).catch(() => { error.hidden = false; });
+    Promise.all([
+      fetch("games.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("games.json"); return response.json(); }),
+      fetch("/api/votes", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("votes.json"); return response.json(); })
+    ]).then(([gameList, voteList]) => {
+      games = gameList;
+      votes = voteList && typeof voteList === "object" ? voteList : {};
+      render();
+    }).catch(() => { error.hidden = false; });
   </script>
 </body>
 </html>

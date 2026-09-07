@@ -9,7 +9,7 @@ echo "Scanning game exports..."
 python3 "$HUB_DIR/scan_and_build.py"
 echo
 echo "Starting the game hub at http://127.0.0.1:$PORT"
-python3 -m http.server "$PORT" --directory "$HUB_DIR" &
+python3 "$HUB_DIR/server.py" --port "$PORT" &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null' EXIT INT TERM
 open "http://127.0.0.1:$PORT/"
