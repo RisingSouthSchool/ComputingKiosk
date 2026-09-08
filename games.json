@@ -2,51 +2,91 @@
   {
     "slug": "basketballfreethrows",
     "title": "Basketball free throws",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "crosser22",
     "title": "Double J Crossy",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "extremegolfgametempname",
     "title": "EXTREME GOLF GAME(TEMP NAME",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "jumpking",
     "title": "Jump King!",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "generated",
+    "iconFile": "generated_icon.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "ok",
     "title": "ok",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "generated",
+    "iconFile": "generated_icon.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "operationopentreasure",
     "title": "operation open treasure",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "generated",
+    "iconFile": "generated_icon.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "spacejunkiesfinal2",
     "title": "Space Junkies :)",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "spiritbound",
     "title": "Spiritbound",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "streetrunnerv1",
     "title": "Street runner V1",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": false
   },
   {
     "slug": "tyreseandmaxrun",
     "title": "tyrese and max run",
-    "hasIcon": true
+    "hasIcon": true,
+    "iconSource": "placeholder",
+    "iconFile": "placeholder_icon.png",
+    "blurb": "",
+    "featured": false
   }
 ]

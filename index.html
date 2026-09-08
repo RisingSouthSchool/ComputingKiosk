@@ -31,6 +31,22 @@
     #controller-status { position: fixed; right: 16px; bottom: 16px; z-index: 4; display: none; padding: 7px 10px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151cee; color: var(--muted); font-size: .85rem; }
     #controller-status.visible { display: block; }
     @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+
+    /* Attract mode: idle showcase layered over the hub, same palette and font. */
+    #attract { position: fixed; inset: 0; z-index: 1; display: none; background: radial-gradient(circle at 30% 20%, #243746 0, var(--bg) 55%); opacity: 0; transition: opacity .6s ease; }
+    #attract.open { display: block; }
+    #attract.visible { opacity: 1; }
+    .attract-slide { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 6vh 8vw 14vh; text-align: center; opacity: 0; transition: opacity .8s ease; pointer-events: none; }
+    .attract-slide.showing { opacity: 1; }
+    .attract-art { width: min(38vh, 42vw); aspect-ratio: 1; border-radius: 24px; background: var(--panel); box-shadow: 0 20px 60px #0008; display: grid; place-items: center; overflow: hidden; color: var(--accent); font-size: min(18vh, 20vw); font-weight: 700; }
+    .attract-art img { width: 100%; height: 100%; object-fit: cover; }
+    .attract-name { margin: 0; font-size: clamp(2rem, 6vw, 4.4rem); font-weight: 700; letter-spacing: .02em; line-height: 1.05; }
+    .attract-student { margin: 0; color: var(--accent); font-size: clamp(1rem, 2.2vw, 1.5rem); font-weight: 600; }
+    .attract-blurb { margin: 0; color: var(--muted); font-size: clamp(1rem, 2.4vw, 1.6rem); max-width: 26ch; line-height: 1.4; }
+    #attract-prompt { position: absolute; left: 0; right: 0; bottom: 6vh; text-align: center; color: var(--muted); font-size: clamp(.95rem, 1.8vw, 1.25rem); letter-spacing: .04em; }
+    #attract-prompt span { display: inline-block; border: 1px solid #ffffff33; border-radius: 999px; padding: 10px 22px; background: #10151c99; animation: attract-pulse 2.4s ease-in-out infinite; }
+    @keyframes attract-pulse { 0%, 100% { opacity: .65; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { #attract, .attract-slide { transition-duration: .01s; } #attract-prompt span { animation: none; } }
   </style>
 </head>
 <body>
@@ -39,6 +55,7 @@
     <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
   </section>
   <section id="player" aria-label="Game player"><button id="back" type="button" tabindex="-1">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
+  <section id="attract" aria-hidden="true"><div class="attract-slide"></div><div class="attract-slide"></div><p id="attract-prompt"><span>Touch, click or press any key to explore</span></p></section>
   <p id="controller-status" role="status">🎮 Controller connected</p>
   <script>
     const gamesElement = document.getElementById("games");
@@ -55,6 +72,7 @@
     const pendingVotes = new Map();
     let previousGamepadButtons = [];
     let previousDirection = null;
+    let previousGamepadSignature = "";
 
     function showHub() {
       player.classList.remove("open");
@@ -68,6 +86,14 @@
       player.classList.add("open");
       history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
       frame.focus();
+    }
+
+    // scan_and_build.py writes iconSource/iconFile; older manifests only have
+    // hasIcon, so fall back to that and finally to the initial-letter tile.
+    const ICON_FILES = { custom: "icon192.png", generated: "generated_icon.png", placeholder: "placeholder_icon.png" };
+    function iconUrl(game) {
+      const file = game.iconFile || ICON_FILES[game.iconSource] || (game.hasIcon ? "icon192.png" : null);
+      return file ? "games/" + encodeURIComponent(game.slug) + "/" + file : null;
     }
 
     function voteCount(slug) {
@@ -101,7 +127,8 @@
         launch.dataset.slug = game.slug;
         const icon = document.createElement("span");
         icon.className = "game-icon";
-        if (game.hasIcon) { const image = document.createElement("img"); image.src = "games/" + encodeURIComponent(game.slug) + "/icon192.png"; image.alt = ""; icon.append(image); }
+        const iconSrc = iconUrl(game);
+        if (iconSrc) { const image = document.createElement("img"); image.src = iconSrc; image.alt = ""; icon.append(image); }
         else icon.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
         const title = document.createElement("span"); title.className = "game-title"; title.textContent = game.title;
         launch.append(icon, title);
@@ -144,6 +171,116 @@
       voteQueues.set(slug, request);
     }
 
+    const attract = document.getElementById("attract");
+    const attractSlides = [...attract.querySelectorAll(".attract-slide")];
+    const IDLE_MS = 20000;
+    const SLIDE_MS = 6000;
+    let idleTimer = null;
+    let cycleTimer = null;
+    let attractIndex = 0;
+    let activeSlide = 0;
+    let attractOpen = false;
+    let lastPointer = null;
+    let wokeAt = -Infinity;
+    const WAKE_GUARD_MS = 450; // covers mousedown->click and touch's click delay
+
+    // Featured games are the showcase; until any are tagged, show everything so
+    // the screen is never blank.
+    function attractList() {
+      const featured = games.filter(game => game.featured);
+      return featured.length ? featured : games.slice();
+    }
+
+    function fillSlide(slide, game) {
+      slide.replaceChildren();
+      const art = document.createElement("div");
+      art.className = "attract-art";
+      const source = iconUrl(game);
+      if (source) { const image = document.createElement("img"); image.src = source; image.alt = ""; art.append(image); }
+      else art.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
+      const name = document.createElement("h2");
+      name.className = "attract-name";
+      name.textContent = game.title || game.slug;
+      slide.append(art, name);
+      const student = game.student || game.students || game.author;
+      if (student) { const line = document.createElement("p"); line.className = "attract-student"; line.textContent = student; slide.append(line); }
+      if (game.blurb) { const line = document.createElement("p"); line.className = "attract-blurb"; line.textContent = game.blurb; slide.append(line); }
+    }
+
+    function advanceAttract(list) {
+      const game = list[attractIndex % list.length];
+      attractIndex++;
+      const next = (activeSlide + 1) % attractSlides.length;
+      fillSlide(attractSlides[next], game);
+      attractSlides[next].classList.add("showing");
+      attractSlides[activeSlide].classList.remove("showing");
+      activeSlide = next;
+    }
+
+    function enterAttract() {
+      idleTimer = null;
+      // Never take over while a game is actually being played; keep checking so
+      // the timer resumes on its own once the player closes.
+      if (player.classList.contains("open")) { idleTimer = setTimeout(enterAttract, IDLE_MS); return; }
+      if (attractOpen) return;
+      const list = attractList();
+      if (!list.length) return;
+      attractOpen = true;
+      attractIndex = 0;
+      attract.classList.add("open");
+      attract.setAttribute("aria-hidden", "false");
+      advanceAttract(list);
+      void attract.offsetWidth; // flush the display change so the fade-in runs
+      attract.classList.add("visible");
+      cycleTimer = setInterval(() => advanceAttract(list), SLIDE_MS);
+    }
+
+    function exitAttract() {
+      attractOpen = false;
+      clearInterval(cycleTimer);
+      cycleTimer = null;
+      // Drop straight out with no fade and wipe both slides, so returning to the
+      // grid is instant and re-entry never flashes the previous game.
+      attract.classList.remove("visible", "open");
+      attract.setAttribute("aria-hidden", "true");
+      attractSlides.forEach(slide => { slide.classList.remove("showing"); slide.replaceChildren(); });
+      activeSlide = 0;
+    }
+
+    // Returns true when this activity cancelled attract mode, so the caller can
+    // swallow the input instead of also acting on it.
+    function noteActivity() {
+      const cancelled = attractOpen;
+      if (cancelled) { exitAttract(); wokeAt = performance.now(); }
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(enterAttract, IDLE_MS);
+      return cancelled;
+    }
+
+    // A tap that wakes the hub fires mousedown, then mouseup, then click. Only
+    // the first cancels attract mode, so suppress the rest of the gesture too --
+    // otherwise the wake tap would fall through and launch whatever game landed
+    // under the cursor.
+    function wakingUp() {
+      return performance.now() - wokeAt < WAKE_GUARD_MS;
+    }
+
+    document.addEventListener("mousemove", (event) => {
+      // Ignore repeats at the same coordinates: some browsers emit a mousemove
+      // when content shifts under a stationary cursor, which would keep attract
+      // mode from ever starting.
+      if (lastPointer && lastPointer.x === event.clientX && lastPointer.y === event.clientY) return;
+      lastPointer = { x: event.clientX, y: event.clientY };
+      noteActivity();
+    });
+    // passive:false so the wake gesture can actually be swallowed; touch and
+    // wheel listeners on document are passive by default otherwise.
+    ["keydown", "mousedown", "mouseup", "click", "touchstart", "touchend", "wheel"].forEach(type =>
+      document.addEventListener(type, (event) => {
+        const cancelled = noteActivity();
+        if (cancelled || wakingUp()) { if (event.cancelable) event.preventDefault(); event.stopPropagation(); }
+      }, { capture: true, passive: false }));
+
     function moveSelection(direction) {
       if (!tiles.length || player.classList.contains("open")) return;
       const current = document.activeElement?.dataset?.index;
@@ -182,6 +319,23 @@
         if (buttonPressed(13) || axis[1] > 0.3) direction = "down";
         if (buttonPressed(14) || axis[0] < -0.3) direction = "left";
         if (buttonPressed(15) || axis[0] > 0.3) direction = "right";
+
+        // Count a press or a stick deflection as activity, but only when the
+        // state actually changes, so a drifting stick cannot hold attract mode
+        // off forever.
+        const signature = gamepad.buttons.map(button => button.pressed ? "1" : "0").join("")
+          + "|" + [...axis].map(value => Math.abs(value) > 0.35 ? (value > 0 ? "+" : "-") : "0").join("");
+        const engaged = /[1+-]/.test(signature);
+        const changed = signature !== previousGamepadSignature;
+        previousGamepadSignature = signature;
+        if (engaged && changed && noteActivity()) {
+          // The input that woke the hub is consumed: do not also move or launch.
+          previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
+          previousDirection = direction;
+          requestAnimationFrame(pollGamepad);
+          return;
+        }
+
         if (direction !== previousDirection && direction) moveSelection(direction);
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open")) {
@@ -196,6 +350,7 @@
       } else {
         previousDirection = null;
         previousGamepadButtons = [];
+        previousGamepadSignature = "";
       }
       requestAnimationFrame(pollGamepad);
     }
@@ -208,6 +363,7 @@
       games = gameList;
       votes = voteList && typeof voteList === "object" ? voteList : {};
       render();
+      if (games.length) idleTimer = setTimeout(enterAttract, IDLE_MS);
     }).catch(() => { error.hidden = false; });
   </script>
 </body>
