@@ -8,6 +8,9 @@ cd "$HUB_DIR" || exit 1
 echo "Scanning game exports..."
 python3 "$HUB_DIR/scan_and_build.py"
 echo
+echo "Scanning Python console projects..."
+python3 "$HUB_DIR/python_scan.py"
+echo
 echo "Starting the game hub at http://127.0.0.1:$PORT"
 python3 "$HUB_DIR/server.py" --port "$PORT" &
 SERVER_PID=$!

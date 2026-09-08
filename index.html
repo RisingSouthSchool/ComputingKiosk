@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Play our games</title>
+  <link rel="stylesheet" href="vendor/xterm/xterm.css">
   <style>
     :root { color-scheme: dark; --ink: #f5f7fa; --muted: #aeb9c6; --bg: #10151c; --panel: #18212b; --focus: #ffd166; --accent: #52d6b5; }
     * { box-sizing: border-box; }
@@ -12,7 +13,7 @@
     h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: .02em; }
     .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
     main { max-width: 1200px; margin: 0 auto; padding: 10px 32px 50px; }
-    #games { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+    #games, #python-projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
     .game-tile { position: relative; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 290px; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     .game-tile:hover, .game-tile:focus-within { transform: translateY(-4px); border-color: var(--focus); background: #22303c; }
     .game-launch { appearance: none; border: 0; width: 100%; min-height: 290px; padding: 18px 18px 58px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
@@ -50,11 +51,39 @@
     #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
     #player.open { display: block; }
     #game-frame { border: 0; width: 100%; height: 100%; }
-    #back { position: absolute; z-index: 3; top: 16px; left: 16px; border: 2px solid var(--focus); border-radius: 8px; background: #10151cee; color: var(--ink); padding: 12px 18px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-    #back:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+    #back, #terminal-back { position: absolute; z-index: 3; top: 16px; left: 16px; border: 2px solid var(--focus); border-radius: 8px; background: #10151cee; color: var(--ink); padding: 12px 18px; font-size: 1rem; font-weight: 700; cursor: pointer; }
+    #back:focus-visible, #terminal-back:focus-visible { outline: 3px solid white; outline-offset: 3px; }
     #controller-status { position: fixed; right: 16px; bottom: 16px; z-index: 4; display: none; padding: 7px 10px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151cee; color: var(--muted); font-size: .85rem; }
     #controller-status.visible { display: block; }
-    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+    #python-view { display: none; }
+    #python-view.open { display: block; }
+    .python-icon { font-size: 3.5rem; }
+    .project-student { position: absolute; right: 14px; bottom: 12px; color: var(--muted); font-size: .85rem; font-weight: 600; }
+    #terminal-view { position: fixed; inset: 0; display: none; background: radial-gradient(circle at top right, #1a2733 0, #0a0e13 55%); z-index: 2; align-items: center; justify-content: center; padding: 70px 24px 24px; }
+    #terminal-view.open { display: flex; }
+    #terminal-card { width: min(1000px, 100%); height: min(720px, 100%); display: flex; flex-direction: column; border: 1px solid #52d6b555; border-radius: 16px; background: #0d1117; box-shadow: 0 24px 60px #0009; overflow: hidden; }
+    #terminal-titlebar { flex: 0 0 auto; display: flex; align-items: baseline; gap: 12px; padding: 14px 20px; background: linear-gradient(180deg, #18212b, #141b23); border-bottom: 1px solid #52d6b533; }
+    #terminal-title { font-size: 1.15rem; font-weight: 700; color: var(--ink); }
+    #terminal-student { font-size: .9rem; font-weight: 600; color: var(--accent); }
+    #terminal-body { flex: 1; min-height: 0; position: relative; }
+    #terminal-prelaunch, #terminal-boot, #terminal-ended { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; padding: 24px; }
+    #terminal-body [hidden] { display: none; }
+    #prelaunch-description { color: var(--muted); font-size: 1.05rem; max-width: 46ch; line-height: 1.5; margin: 0; }
+    #start-program { appearance: none; border: 2px solid var(--focus); border-radius: 10px; background: #22303c; color: var(--ink); padding: 14px 26px; font-size: 1.1rem; font-weight: 700; cursor: pointer; font-family: inherit; }
+    #start-program:hover, #start-program:focus-visible { background: #2c3d4b; outline: none; }
+    #terminal-boot p { margin: 0; color: var(--muted); font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 1.05rem; }
+    #boot-line1 { color: var(--accent); font-weight: 700; }
+    #boot-dots { display: inline-block; width: 1.6em; text-align: left; }
+    #terminal-holder { position: absolute; inset: 0; padding: 14px; }
+    #terminal-holder .xterm { height: 100%; }
+    #terminal-ended p { margin: 0; }
+    #ended-title { font-size: 1.4rem; font-weight: 700; }
+    #ended-detail { color: var(--muted); font-size: .95rem; }
+    #terminal-ended.tone-ok #ended-title { color: var(--accent); }
+    #terminal-ended.tone-warn #ended-title { color: var(--focus); }
+    #terminal-ended.tone-error #ended-title { color: #ff6b6b; }
+    #terminal-ended.tone-muted #ended-title { color: var(--muted); }
+    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games, #python-projects { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
 
     /* Attract mode: idle showcase layered over the hub, same palette and font. */
     #attract { position: fixed; inset: 0; z-index: 1; display: none; background: radial-gradient(circle at 30% 20%, #243746 0, var(--bg) 55%); opacity: 0; transition: opacity .6s ease; }
@@ -93,9 +122,38 @@
     <header><button id="hub-back" type="button">&larr; Categories</button><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
     <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
   </section>
+  <section id="python-view" aria-label="Python console project selection">
+    <header><button id="python-back" type="button">&larr; Categories</button><h1>Python Console Projects</h1><p class="subtitle">Year 11 programming, live terminal programs</p></header>
+    <main><div id="python-projects" aria-live="polite"></div><p id="python-empty" hidden>No Python projects found yet. Add an export zip to the py_zips folder, then run start.command.</p><p id="python-error" hidden>Could not load pythonProjects.json. Run start.command again.</p></main>
+  </section>
   <section id="player" aria-label="Game player"><button id="back" type="button" tabindex="-1">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
+  <section id="terminal-view" aria-label="Python console session">
+    <button id="terminal-back" type="button" tabindex="-1">Back to Hub</button>
+    <div id="terminal-card">
+      <div id="terminal-titlebar">
+        <span id="terminal-title"></span>
+        <span id="terminal-student" hidden></span>
+      </div>
+      <div id="terminal-body">
+        <div id="terminal-prelaunch">
+          <p id="prelaunch-description"></p>
+          <button id="start-program" type="button">&#9654; Start program</button>
+        </div>
+        <div id="terminal-boot" hidden>
+          <p id="boot-line1"></p>
+          <p id="boot-line2">Connecting to console session<span id="boot-dots"></span></p>
+        </div>
+        <div id="terminal-holder" hidden></div>
+        <div id="terminal-ended" hidden>
+          <p id="ended-title"></p>
+          <p id="ended-detail"></p>
+        </div>
+      </div>
+    </div>
+  </section>
   <section id="attract" aria-hidden="true"><div class="attract-slide"></div><div class="attract-slide"></div><p id="attract-prompt"><span>Touch, click or press any key to explore</span></p></section>
   <p id="controller-status" role="status">🎮 Controller connected</p>
+  <script src="vendor/xterm/xterm.js"></script>
   <script>
     const gamesElement = document.getElementById("games");
     const player = document.getElementById("player");
@@ -108,13 +166,33 @@
     const hubView = document.getElementById("hub-view");
     const hubBack = document.getElementById("hub-back");
     const categoriesElement = document.getElementById("categories");
+    const pythonView = document.getElementById("python-view");
+    const pythonBack = document.getElementById("python-back");
+    const pythonProjectsElement = document.getElementById("python-projects");
+    const pythonEmpty = document.getElementById("python-empty");
+    const pythonError = document.getElementById("python-error");
+    const terminalView = document.getElementById("terminal-view");
+    const terminalBack = document.getElementById("terminal-back");
+    const terminalTitle = document.getElementById("terminal-title");
+    const terminalStudent = document.getElementById("terminal-student");
+    const terminalPrelaunch = document.getElementById("terminal-prelaunch");
+    const prelaunchDescription = document.getElementById("prelaunch-description");
+    const startProgramButton = document.getElementById("start-program");
+    const terminalBoot = document.getElementById("terminal-boot");
+    const bootLine1 = document.getElementById("boot-line1");
+    const bootDots = document.getElementById("boot-dots");
+    const terminalHolder = document.getElementById("terminal-holder");
+    const terminalEnded = document.getElementById("terminal-ended");
+    const endedTitle = document.getElementById("ended-title");
+    const endedDetail = document.getElementById("ended-detail");
     const featuredBanner = document.getElementById("featured-banner");
     const featuredIconWrap = document.getElementById("featured-icon");
     const featuredTitle = document.getElementById("featured-title");
     const featuredStudent = document.getElementById("featured-student");
     const featuredBlurb = document.getElementById("featured-blurb");
     const CATEGORIES = [
-      { id: "games", title: "Games", subtitle: "Play and vote on student-made games", icon: "🎮", real: true },
+      { id: "games", title: "Games", subtitle: "Play and vote on student-made games", icon: "🎮", real: true, enter: () => enterHub() },
+      { id: "python", title: "Python projects", subtitle: "Year 11 programming, live terminal programs.", icon: "🐍", real: true, enter: () => enterPython() },
       { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱" },
       { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
       { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
@@ -122,12 +200,37 @@
       { id: "networks", title: "Networks & security", subtitle: "Network design projects", icon: "🌐" }
     ];
     let view = "landing";
-    let landingGamesTile = null;
     let landingFocusables = [];
     let currentFeaturedGame = null;
     let tiles = [];
     let games = [];
     let votes = {};
+    let pythonProjects = [];
+    let pythonTiles = [];
+    let currentProject = null;
+    let currentSocket = null;
+    let term = null;
+    let liveTermReady = false;
+    let outputBuffer = [];
+    let pendingEnded = null;
+    let sessionEndingHandled = false;
+    let bootTimer = null;
+    const TERMINAL_THEME = {
+      background: "#0d1117", foreground: "#f5f7fa", cursor: "#ffd166", cursorAccent: "#0d1117",
+      selectionBackground: "#52d6b555",
+      black: "#10151c", red: "#ff6b6b", green: "#52d6b5", yellow: "#ffd166",
+      blue: "#6cb6ff", magenta: "#c792ea", cyan: "#52d6b5", white: "#f5f7fa",
+      brightBlack: "#3a4750", brightRed: "#ff8787", brightGreen: "#7fe3c9", brightYellow: "#ffe08a",
+      brightBlue: "#8fc6ff", brightMagenta: "#d9b3ef", brightCyan: "#8fe9d4", brightWhite: "#ffffff"
+    };
+    const SESSION_END_MESSAGES = {
+      exit: { title: "Program finished", tone: "ok" },
+      crash: { title: "Program stopped unexpectedly", tone: "error" },
+      timeout: { title: "Session timed out", tone: "warn" },
+      spawn_error: { title: "Could not start the program", tone: "error" },
+      disconnected: { title: "Session ended", tone: "muted" },
+      error: { title: "Session ended unexpectedly", tone: "error" }
+    };
     const voteQueues = new Map();
     const pendingVotes = new Map();
     let previousGamepadButtons = [];
@@ -143,14 +246,15 @@
       frame.src = "about:blank";
       history.replaceState(null, "", location.pathname + location.search);
       if (view === "hub") { if (tiles.length) tiles[0].focus(); }
-      else (landingFocusables[0] || landingGamesTile)?.focus();
+      else landingFocusables[0]?.focus();
     }
 
     function showLanding() {
       view = "landing";
       hubView.classList.remove("open");
+      pythonView.classList.remove("open");
       landingView.classList.add("open");
-      (landingFocusables[0] || landingGamesTile)?.focus();
+      landingFocusables[0]?.focus();
     }
 
     function enterHub() {
@@ -160,12 +264,199 @@
       render();
     }
 
+    function enterPython() {
+      view = "python";
+      landingView.classList.remove("open");
+      pythonView.classList.add("open");
+      renderPython();
+    }
+
     function openGame(game) {
       frame.src = "games/" + encodeURIComponent(game.slug) + "/index.html";
       player.classList.add("open");
       history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
       frame.focus();
     }
+
+    function sortedPythonProjects() {
+      return [...pythonProjects].sort((first, second) => String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+    }
+
+    function renderPython(selectedSlug = null) {
+      const ordered = sortedPythonProjects();
+      pythonEmpty.hidden = ordered.length !== 0;
+      pythonProjectsElement.replaceChildren();
+      ordered.forEach((project, index) => {
+        const tile = document.createElement("article");
+        tile.className = "game-tile";
+        tile.dataset.index = index;
+        tile.dataset.slug = project.slug;
+        const launch = document.createElement("button");
+        launch.className = "game-launch";
+        launch.type = "button";
+        launch.dataset.index = index;
+        launch.dataset.slug = project.slug;
+        const icon = document.createElement("span");
+        icon.className = "game-icon python-icon";
+        icon.textContent = "🐍";
+        const title = document.createElement("span"); title.className = "game-title"; title.textContent = project.title;
+        launch.append(icon, title);
+        launch.addEventListener("click", () => openPrelaunch(project));
+        tile.append(launch);
+        if (project.student) {
+          const student = document.createElement("span");
+          student.className = "project-student";
+          student.textContent = project.student;
+          tile.append(student);
+        }
+        pythonProjectsElement.append(tile);
+      });
+      pythonTiles = [...document.querySelectorAll("#python-projects .game-launch")];
+      const tileToFocus = selectedSlug ? pythonTiles.find(tile => tile.dataset.slug === selectedSlug) : pythonTiles[0];
+      tileToFocus?.focus();
+    }
+
+    function backToPythonList() {
+      view = "python";
+      const tile = currentProject ? pythonTiles.find(t => t.dataset.slug === currentProject.slug) : null;
+      (tile || pythonTiles[0])?.focus();
+    }
+
+    // --- Python console terminal session ---------------------------------
+    // State machine: prelaunch (project info) -> boot (cosmetic animation,
+    // runs while the real WebSocket connects in parallel) -> live (real
+    // xterm.js terminal) -> ended (styled message) -> back to the list.
+    // The server's "ended" signal can arrive at any point; it is always
+    // honoured, just deferred to the live phase if it arrives during boot.
+
+    function setTerminalSection(section) {
+      terminalPrelaunch.hidden = section !== "prelaunch";
+      terminalBoot.hidden = section !== "boot";
+      terminalHolder.hidden = section !== "live";
+      terminalEnded.hidden = section !== "ended";
+    }
+
+    function openPrelaunch(project) {
+      currentProject = project;
+      terminalTitle.textContent = project.title;
+      terminalStudent.hidden = !project.student;
+      terminalStudent.textContent = project.student || "";
+      prelaunchDescription.textContent = project.blurb || "Runs as a live terminal program.";
+      setTerminalSection("prelaunch");
+      terminalView.classList.add("open");
+      startProgramButton.focus();
+    }
+
+    function runBootAnimation(project) {
+      const who = project.student ? project.student + "’s" : project.title;
+      bootLine1.textContent = `Loading ${who} program`;
+      let dots = 0;
+      const tick = () => { dots = (dots + 1) % 4; bootDots.textContent = ".".repeat(dots); };
+      tick();
+      bootTimer = setInterval(tick, 350);
+    }
+
+    function stopBootAnimation() {
+      clearInterval(bootTimer);
+      bootTimer = null;
+    }
+
+    function openSocket(project) {
+      return fetch("/api/pty-port", { cache: "no-store" })
+        .then(response => { if (!response.ok) throw new Error("could not reach the hub server"); return response.json(); })
+        .then(({ port }) => new Promise((resolve, reject) => {
+          const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+          const socket = new WebSocket(`${protocol}//${location.hostname}:${port}/py/${encodeURIComponent(project.slug)}`);
+          socket.binaryType = "arraybuffer";
+          currentSocket = socket;
+          let opened = false;
+          socket.addEventListener("open", () => { opened = true; resolve(); });
+          socket.addEventListener("message", (event) => {
+            if (typeof event.data === "string") {
+              let payload;
+              try { payload = JSON.parse(event.data); } catch { return; }
+              if (payload && payload.type === "ended") handleSessionEnded(payload);
+              return;
+            }
+            const text = new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(event.data));
+            if (liveTermReady) term.write(text); else outputBuffer.push(text);
+          });
+          socket.addEventListener("close", () => {
+            if (!opened) { reject(new Error("connection closed before it opened")); return; }
+            handleSessionEnded({ reason: "disconnected", detail: "the connection to the hub server was lost" });
+          });
+          socket.addEventListener("error", () => { if (!opened) reject(new Error("connection error")); });
+        }));
+    }
+
+    function showLiveTerminal() {
+      setTerminalSection("live");
+      term = new Terminal({ fontSize: 16, convertEol: true, cursorBlink: true, theme: TERMINAL_THEME });
+      term.open(terminalHolder);
+      term.focus();
+      liveTermReady = true;
+      outputBuffer.forEach(chunk => term.write(chunk));
+      outputBuffer = [];
+      term.onData(data => {
+        if (currentSocket && currentSocket.readyState === WebSocket.OPEN) {
+          currentSocket.send(JSON.stringify({ type: "input", data }));
+        }
+      });
+      if (pendingEnded) {
+        const info = pendingEnded;
+        pendingEnded = null;
+        handleSessionEnded(info);
+      }
+    }
+
+    function startProgram() {
+      const project = currentProject;
+      setTerminalSection("boot");
+      runBootAnimation(project);
+      const minimumBootMs = 1200;
+      const startedAt = Date.now();
+      openSocket(project).then(() => {
+        const wait = Math.max(0, minimumBootMs - (Date.now() - startedAt));
+        setTimeout(() => { stopBootAnimation(); showLiveTerminal(); }, wait);
+      }).catch(error => {
+        stopBootAnimation();
+        showSessionEnded({ reason: "spawn_error", detail: String(error && error.message || error) });
+      });
+    }
+
+    function handleSessionEnded(info) {
+      // The server always sends one "ended" message before it closes the
+      // socket, which then fires its own synthetic "disconnected" call here
+      // too. Whichever reason arrives first wins; ignore the rest so a
+      // crash/timeout/exit that lands mid-boot is never overwritten by the
+      // close event that immediately follows it.
+      if (sessionEndingHandled || pendingEnded) return;
+      if (!liveTermReady) { pendingEnded = info; return; }
+      showSessionEnded(info);
+    }
+
+    function showSessionEnded(info) {
+      sessionEndingHandled = true;
+      setTerminalSection("ended");
+      const meta = SESSION_END_MESSAGES[info.reason] || SESSION_END_MESSAGES.error;
+      terminalEnded.className = "tone-" + meta.tone;
+      endedTitle.textContent = meta.title;
+      endedDetail.textContent = info.detail || "";
+      setTimeout(() => { closeTerminalSession(); backToPythonList(); }, 2000);
+    }
+
+    function closeTerminalSession() {
+      if (currentSocket) { try { currentSocket.close(); } catch (error) { /* already closing */ } currentSocket = null; }
+      if (term) { term.dispose(); term = null; }
+      stopBootAnimation();
+      terminalView.classList.remove("open");
+      liveTermReady = false;
+      sessionEndingHandled = false;
+      pendingEnded = null;
+      outputBuffer = [];
+    }
+
+    startProgramButton.addEventListener("click", startProgram);
 
     // scan_and_build.py writes iconSource/iconFile; older manifests only have
     // hasIcon, so fall back to that and finally to the initial-letter tile.
@@ -222,7 +513,7 @@
         tile.append(icon, title);
         if (category.subtitle) { const subtitle = document.createElement("span"); subtitle.className = "category-subtitle"; subtitle.textContent = category.subtitle; tile.append(subtitle); }
         if (!category.real) { const badge = document.createElement("span"); badge.className = "coming-soon-badge"; badge.textContent = "Coming soon"; tile.append(badge); }
-        if (category.real) { tile.addEventListener("click", enterHub); landingGamesTile = tile; }
+        if (category.real) { tile.addEventListener("click", category.enter); }
         categoriesElement.append(tile);
       });
     }
@@ -417,15 +708,16 @@
       }, { capture: true, passive: false }));
 
     function moveSelection(direction) {
-      if (player.classList.contains("open")) return false;
-      const list = view === "hub" ? tiles : landingFocusables;
+      if (player.classList.contains("open") || terminalView.classList.contains("open")) return false;
+      const list = view === "hub" ? tiles : view === "python" ? pythonTiles : landingFocusables;
       if (!list.length) return false;
       const current = document.activeElement?.dataset?.index;
       if (current === undefined) return false;
       const index = Number(current);
       let next = index;
-      if (view === "hub") {
-        const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(gamesElement.clientWidth / 254));
+      if (view === "hub" || view === "python") {
+        const container = view === "hub" ? gamesElement : pythonProjectsElement;
+        const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(container.clientWidth / 254));
         if (direction === "right") next++;
         if (direction === "left") next--;
         if (direction === "down") next += columns;
@@ -452,7 +744,12 @@
     }
 
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && view === "hub" && !player.classList.contains("open")) {
+      if (event.key === "Escape" && terminalView.classList.contains("open")) {
+        event.preventDefault();
+        terminalBack.click();
+        return;
+      }
+      if (event.key === "Escape" && (view === "hub" || view === "python") && !player.classList.contains("open")) {
         event.preventDefault();
         showLanding();
         return;
@@ -467,6 +764,8 @@
     });
     back.addEventListener("click", closePlayer);
     hubBack.addEventListener("click", showLanding);
+    pythonBack.addEventListener("click", showLanding);
+    terminalBack.addEventListener("click", () => { closeTerminalSession(); backToPythonList(); });
     featuredBanner.addEventListener("click", launchFeatured);
     featuredBanner.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); launchFeatured(); }
@@ -504,10 +803,9 @@
 
         if (direction !== previousDirection && direction) moveSelection(direction);
         previousDirection = direction;
-        if (buttonJustPressed(0) && !player.classList.contains("open")) {
+        if (buttonJustPressed(0) && !player.classList.contains("open") && !terminalView.classList.contains("open")) {
           if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
-          else if (view === "landing" && document.activeElement === featuredBanner) featuredBanner.click();
-          else if (view === "landing" && document.activeElement === landingGamesTile) landingGamesTile.click();
+          else if (view === "python" || view === "landing") document.activeElement?.click();
         }
         if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
           const game = selectedGame();
@@ -515,7 +813,8 @@
         }
         if (buttonJustPressed(1)) {
           if (player.classList.contains("open")) closePlayer();
-          else if (view === "hub") showLanding();
+          else if (terminalView.classList.contains("open")) terminalBack.click();
+          else if (view === "hub" || view === "python") showLanding();
         }
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
       } else {
@@ -543,6 +842,14 @@
       hubView.classList.add("open");
       error.hidden = false;
     });
+
+    // Loaded independently of games.json: a hub with no Python projects yet
+    // (or scanned before python_scan.py has ever run) should not block the
+    // rest of the hub from working.
+    fetch("pythonProjects.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("pythonProjects.json"); return response.json(); })
+      .then(projectList => { pythonProjects = Array.isArray(projectList) ? projectList : []; })
+      .catch(() => { pythonProjects = []; pythonError.hidden = false; });
   </script>
 </body>
 </html>

@@ -13,6 +13,42 @@ has an extra enclosing folder, and builds `games.json` automatically. A local
 web server opens the hub in the default browser. Leave the terminal window
 open while the hub is being used.
 
+## Add a Python console project
+
+1. Put the student's `.zip` submission in `py_zips/`.
+2. Double-click `start.command`.
+
+This needs the `websockets` package installed once, since it isn't part of
+stock Python 3:
+
+```
+python3 -m pip install websockets
+```
+
+`python_scan.py` extracts each new submission into `python_projects/<slug>/`,
+preserving its internal folder structure exactly as zipped (a `Game/` or
+`imposter/` subfolder with supporting files stays put). It finds the entry
+point to run using this priority order:
+
+1. A file literally named `main.py`, anywhere in the zip.
+2. If none, a file whose name matches the zip's own name.
+3. If none, and there is exactly one `.py` file anywhere in the zip, that one.
+4. Otherwise the submission is skipped, and the scanner prints which `.py`
+   files it found and why it would not guess. Re-export the project so one of
+   the above rules applies unambiguously, or rename a file to `main.py`.
+
+Results go in `pythonProjects.json`: `slug`, `title` (derived from the zip's
+name), `entryFile`, and two fields you fill in by hand and that survive
+re-scans — `student` and `blurb` (shown on the project's pre-launch screen).
+
+On the hub, a Python project opens as a real, live terminal session (using a
+pty on the server, streamed to the browser over WebSocket) rather than a
+static page, so `input()`, `curses`, and other interactive terminal programs
+work as they would running locally. Every session is force-closed after 10
+minutes, and any way the program can end -- finishing normally, crashing,
+being killed by the timeout, or losing the connection -- always returns to
+the Python projects list automatically.
+
 ## Start automatically at login
 
 To start the hub and open Chrome in kiosk mode whenever the user logs in, run
