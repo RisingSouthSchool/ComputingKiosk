@@ -26,7 +26,8 @@
     #landing-view.open, #hub-view.open { display: block; }
     #hub-back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
     #hub-back:hover, #hub-back:focus-visible { background: #22303c; outline: none; }
-    #featured-banner { display: flex; gap: 24px; align-items: center; background: var(--panel); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 10px 25px #0005; }
+    #featured-banner { display: flex; gap: 24px; align-items: center; border: 2px solid transparent; background: var(--panel); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 10px 25px #0005; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+    #featured-banner:hover, #featured-banner:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
     .featured-icon { width: 140px; height: 140px; flex: 0 0 auto; border-radius: 14px; background: #2b3945; display: grid; place-items: center; color: var(--accent); font-size: 3.5rem; font-weight: 700; overflow: hidden; }
     .featured-icon img { width: 100%; height: 100%; object-fit: cover; }
     .featured-label { margin: 0; color: var(--accent); font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
@@ -76,7 +77,7 @@
   <section id="landing-view" class="open" aria-label="Student work showcase">
     <header><h1>Computing Department Showcase</h1><p class="subtitle">Explore student work</p></header>
     <main>
-      <div id="featured-banner" hidden>
+      <div id="featured-banner" tabindex="0" role="button" hidden>
         <div class="featured-icon" id="featured-icon"></div>
         <div class="featured-info">
           <p class="featured-label">Featured project</p>
@@ -122,6 +123,8 @@
     ];
     let view = "landing";
     let landingGamesTile = null;
+    let landingFocusables = [];
+    let currentFeaturedGame = null;
     let tiles = [];
     let games = [];
     let votes = {};
@@ -131,19 +134,23 @@
     let previousDirection = null;
     let previousGamepadSignature = "";
 
-    function showHub() {
-      view = "hub";
+    // Closes the player and reveals whichever view was open before it launched
+    // (hub grid or landing screen) -- view is left untouched here since it
+    // already reflects that, letting this work the same regardless of
+    // whether the game was launched from a hub tile or the featured banner.
+    function closePlayer() {
       player.classList.remove("open");
       frame.src = "about:blank";
       history.replaceState(null, "", location.pathname + location.search);
-      if (tiles.length) tiles[0].focus();
+      if (view === "hub") { if (tiles.length) tiles[0].focus(); }
+      else (landingFocusables[0] || landingGamesTile)?.focus();
     }
 
     function showLanding() {
       view = "landing";
       hubView.classList.remove("open");
       landingView.classList.add("open");
-      landingGamesTile?.focus();
+      (landingFocusables[0] || landingGamesTile)?.focus();
     }
 
     function enterHub() {
@@ -188,6 +195,7 @@
 
     function renderFeatured() {
       const game = featuredGame();
+      currentFeaturedGame = game;
       featuredBanner.hidden = !game;
       if (!game) return;
       featuredIconWrap.replaceChildren();
@@ -217,6 +225,19 @@
         if (category.real) { tile.addEventListener("click", enterHub); landingGamesTile = tile; }
         categoriesElement.append(tile);
       });
+    }
+
+    // Shared focus/navigation order for the landing screen: the featured
+    // banner (when it's showing a real game) followed by the category
+    // tiles, in DOM order -- mirrors how `tiles` drives the hub grid.
+    function updateLandingFocusables() {
+      const categoryButtons = [...categoriesElement.querySelectorAll("button.category-tile")];
+      landingFocusables = featuredBanner.hidden ? categoryButtons : [featuredBanner, ...categoryButtons];
+      landingFocusables.forEach((element, index) => { element.dataset.index = index; });
+    }
+
+    function launchFeatured() {
+      if (currentFeaturedGame) openGame(currentFeaturedGame);
     }
 
     function selectedGame() {
@@ -396,17 +417,38 @@
       }, { capture: true, passive: false }));
 
     function moveSelection(direction) {
-      if (!tiles.length || view !== "hub" || player.classList.contains("open")) return;
+      if (player.classList.contains("open")) return false;
+      const list = view === "hub" ? tiles : landingFocusables;
+      if (!list.length) return false;
       const current = document.activeElement?.dataset?.index;
-      if (current === undefined) return;
-      const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(gamesElement.clientWidth / 254));
-      let next = Number(current);
-      if (direction === "right") next++;
-      if (direction === "left") next--;
-      if (direction === "down") next += columns;
-      if (direction === "up") next -= columns;
-      if (next !== Number(current) && next >= 0 && next < tiles.length) tiles[next].focus();
-      return next !== Number(current) && next >= 0 && next < tiles.length;
+      if (current === undefined) return false;
+      const index = Number(current);
+      let next = index;
+      if (view === "hub") {
+        const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(gamesElement.clientWidth / 254));
+        if (direction === "right") next++;
+        if (direction === "left") next--;
+        if (direction === "down") next += columns;
+        if (direction === "up") next -= columns;
+      } else {
+        // Landing screen: the featured banner (when present) is a full-width
+        // row on its own above the category grid, so it can't share the
+        // grid's uniform ±columns arithmetic -- handle it as row 0.
+        const hasBanner = list[0] === featuredBanner;
+        const gridStart = hasBanner ? 1 : 0;
+        const columns = window.innerWidth <= 600 ? 1 : window.innerWidth <= 900 ? 2 : 3;
+        if (index < gridStart) {
+          if (direction === "down") next = gridStart;
+        } else {
+          const gridIndex = index - gridStart;
+          if (direction === "right") next = index + 1;
+          if (direction === "left") next = index - 1;
+          if (direction === "down") next = index + columns;
+          if (direction === "up") next = gridIndex - columns >= 0 ? index - columns : (hasBanner ? 0 : index);
+        }
+      }
+      if (next !== index && next >= 0 && next < list.length) { list[next].focus(); return true; }
+      return false;
     }
 
     document.addEventListener("keydown", (event) => {
@@ -423,8 +465,12 @@
       const direction = { ArrowRight: "right", ArrowLeft: "left", ArrowDown: "down", ArrowUp: "up" }[event.key];
       if (direction && moveSelection(direction)) event.preventDefault();
     });
-    back.addEventListener("click", showHub);
+    back.addEventListener("click", closePlayer);
     hubBack.addEventListener("click", showLanding);
+    featuredBanner.addEventListener("click", launchFeatured);
+    featuredBanner.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") { event.preventDefault(); launchFeatured(); }
+    });
 
     function pollGamepad() {
       const gamepads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
@@ -460,6 +506,7 @@
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open")) {
           if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
+          else if (view === "landing" && document.activeElement === featuredBanner) featuredBanner.click();
           else if (view === "landing" && document.activeElement === landingGamesTile) landingGamesTile.click();
         }
         if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
@@ -467,7 +514,7 @@
           if (game) castVote(game);
         }
         if (buttonJustPressed(1)) {
-          if (player.classList.contains("open")) showHub();
+          if (player.classList.contains("open")) closePlayer();
           else if (view === "hub") showLanding();
         }
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
@@ -488,6 +535,7 @@
       votes = voteList && typeof voteList === "object" ? voteList : {};
       renderFeatured();
       renderCategories();
+      updateLandingFocusables();
       showLanding();
       if (games.length) idleTimer = setTimeout(enterAttract, IDLE_MS);
     }).catch(() => {
