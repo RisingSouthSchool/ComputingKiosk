@@ -22,6 +22,29 @@
     .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
     .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
+    #landing-view, #hub-view { display: none; }
+    #landing-view.open, #hub-view.open { display: block; }
+    #hub-back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+    #hub-back:hover, #hub-back:focus-visible { background: #22303c; outline: none; }
+    #featured-banner { display: flex; gap: 24px; align-items: center; background: var(--panel); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 10px 25px #0005; }
+    .featured-icon { width: 140px; height: 140px; flex: 0 0 auto; border-radius: 14px; background: #2b3945; display: grid; place-items: center; color: var(--accent); font-size: 3.5rem; font-weight: 700; overflow: hidden; }
+    .featured-icon img { width: 100%; height: 100%; object-fit: cover; }
+    .featured-label { margin: 0; color: var(--accent); font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .featured-info h2 { margin: 6px 0 0; font-size: clamp(1.4rem, 3vw, 2.2rem); }
+    .featured-student { margin: 6px 0 0; color: var(--accent); font-weight: 600; }
+    .featured-blurb { margin: 8px 0 0; color: var(--muted); max-width: 60ch; line-height: 1.4; }
+    #categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .category-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 170px; padding: 20px; box-shadow: 0 10px 25px #0005; color: var(--ink); text-align: left; font-family: inherit; appearance: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+    button.category-tile { cursor: pointer; }
+    button.category-tile:hover, button.category-tile:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
+    .category-tile.placeholder { opacity: .5; }
+    .category-icon { font-size: 2.4rem; }
+    .category-title { font-size: 1.25rem; font-weight: 700; }
+    .category-subtitle { color: var(--muted); font-size: .9rem; line-height: 1.35; }
+    .category-tile.placeholder .category-title, .category-tile.placeholder .category-subtitle { max-width: calc(100% - 76px); }
+    .coming-soon-badge { position: absolute; top: 14px; right: 14px; border: 1px solid #ffffff33; border-radius: 999px; background: #10151c99; color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; white-space: nowrap; }
+    @media (max-width: 900px) { #categories { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; } .featured-icon { width: 100px; height: 100px; } }
     #empty, #error { color: var(--muted); padding: 30px 0; font-size: 1.2rem; }
     #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
     #player.open { display: block; }
@@ -50,8 +73,23 @@
   </style>
 </head>
 <body>
+  <section id="landing-view" class="open" aria-label="Student work showcase">
+    <header><h1>Computing Department Showcase</h1><p class="subtitle">Explore student work</p></header>
+    <main>
+      <div id="featured-banner" hidden>
+        <div class="featured-icon" id="featured-icon"></div>
+        <div class="featured-info">
+          <p class="featured-label">Featured project</p>
+          <h2 id="featured-title"></h2>
+          <p id="featured-student" class="featured-student" hidden></p>
+          <p id="featured-blurb" class="featured-blurb" hidden></p>
+        </div>
+      </div>
+      <div id="categories" aria-live="polite"></div>
+    </main>
+  </section>
   <section id="hub-view" aria-label="Game selection">
-    <header><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
+    <header><button id="hub-back" type="button">&larr; Categories</button><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
     <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
   </section>
   <section id="player" aria-label="Game player"><button id="back" type="button" tabindex="-1">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
@@ -65,6 +103,25 @@
     const empty = document.getElementById("empty");
     const error = document.getElementById("error");
     const controllerStatus = document.getElementById("controller-status");
+    const landingView = document.getElementById("landing-view");
+    const hubView = document.getElementById("hub-view");
+    const hubBack = document.getElementById("hub-back");
+    const categoriesElement = document.getElementById("categories");
+    const featuredBanner = document.getElementById("featured-banner");
+    const featuredIconWrap = document.getElementById("featured-icon");
+    const featuredTitle = document.getElementById("featured-title");
+    const featuredStudent = document.getElementById("featured-student");
+    const featuredBlurb = document.getElementById("featured-blurb");
+    const CATEGORIES = [
+      { id: "games", title: "Games", subtitle: "Play and vote on student-made games", icon: "🎮", real: true },
+      { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱" },
+      { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
+      { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
+      { id: "data", title: "Data & spreadsheets", subtitle: "Databases, spreadsheets, Python", icon: "📊" },
+      { id: "networks", title: "Networks & security", subtitle: "Network design projects", icon: "🌐" }
+    ];
+    let view = "landing";
+    let landingGamesTile = null;
     let tiles = [];
     let games = [];
     let votes = {};
@@ -75,10 +132,25 @@
     let previousGamepadSignature = "";
 
     function showHub() {
+      view = "hub";
       player.classList.remove("open");
       frame.src = "about:blank";
       history.replaceState(null, "", location.pathname + location.search);
       if (tiles.length) tiles[0].focus();
+    }
+
+    function showLanding() {
+      view = "landing";
+      hubView.classList.remove("open");
+      landingView.classList.add("open");
+      landingGamesTile?.focus();
+    }
+
+    function enterHub() {
+      view = "hub";
+      landingView.classList.remove("open");
+      hubView.classList.add("open");
+      render();
     }
 
     function openGame(game) {
@@ -103,6 +175,48 @@
 
     function sortedGames() {
       return [...games].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+    }
+
+    // Prefer a manually featured game; among several, or when none are
+    // featured, fall back to whichever has the most votes.
+    function featuredGame() {
+      if (!games.length) return null;
+      const featured = games.filter(game => game.featured);
+      const pool = featured.length ? featured : games;
+      return [...pool].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)))[0];
+    }
+
+    function renderFeatured() {
+      const game = featuredGame();
+      featuredBanner.hidden = !game;
+      if (!game) return;
+      featuredIconWrap.replaceChildren();
+      const source = iconUrl(game);
+      if (source) { const image = document.createElement("img"); image.src = source; image.alt = ""; featuredIconWrap.append(image); }
+      else featuredIconWrap.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
+      featuredTitle.textContent = game.title;
+      const student = game.student || game.students || game.author;
+      featuredStudent.hidden = !student;
+      featuredStudent.textContent = student || "";
+      featuredBlurb.hidden = !game.blurb;
+      featuredBlurb.textContent = game.blurb || "";
+    }
+
+    function renderCategories() {
+      categoriesElement.replaceChildren();
+      CATEGORIES.forEach(category => {
+        const tile = document.createElement(category.real ? "button" : "div");
+        tile.className = "category-tile" + (category.real ? "" : " placeholder");
+        if (category.real) tile.type = "button";
+        else tile.setAttribute("aria-disabled", "true");
+        const icon = document.createElement("span"); icon.className = "category-icon"; icon.textContent = category.icon;
+        const title = document.createElement("span"); title.className = "category-title"; title.textContent = category.title;
+        tile.append(icon, title);
+        if (category.subtitle) { const subtitle = document.createElement("span"); subtitle.className = "category-subtitle"; subtitle.textContent = category.subtitle; tile.append(subtitle); }
+        if (!category.real) { const badge = document.createElement("span"); badge.className = "coming-soon-badge"; badge.textContent = "Coming soon"; tile.append(badge); }
+        if (category.real) { tile.addEventListener("click", enterHub); landingGamesTile = tile; }
+        categoriesElement.append(tile);
+      });
     }
 
     function selectedGame() {
@@ -282,7 +396,7 @@
       }, { capture: true, passive: false }));
 
     function moveSelection(direction) {
-      if (!tiles.length || player.classList.contains("open")) return;
+      if (!tiles.length || view !== "hub" || player.classList.contains("open")) return;
       const current = document.activeElement?.dataset?.index;
       if (current === undefined) return;
       const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(gamesElement.clientWidth / 254));
@@ -296,7 +410,12 @@
     }
 
     document.addEventListener("keydown", (event) => {
-      if (event.key.toLowerCase() === "v" && !player.classList.contains("open")) {
+      if (event.key === "Escape" && view === "hub" && !player.classList.contains("open")) {
+        event.preventDefault();
+        showLanding();
+        return;
+      }
+      if (event.key.toLowerCase() === "v" && view === "hub" && !player.classList.contains("open")) {
         const game = selectedGame();
         if (game) { event.preventDefault(); castVote(game); }
         return;
@@ -305,6 +424,7 @@
       if (direction && moveSelection(direction)) event.preventDefault();
     });
     back.addEventListener("click", showHub);
+    hubBack.addEventListener("click", showLanding);
 
     function pollGamepad() {
       const gamepads = navigator.getGamepads ? [...navigator.getGamepads()] : [];
@@ -339,13 +459,17 @@
         if (direction !== previousDirection && direction) moveSelection(direction);
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open")) {
-          selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
+          if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
+          else if (view === "landing" && document.activeElement === landingGamesTile) landingGamesTile.click();
         }
-        if (buttonJustPressed(3) && !player.classList.contains("open")) {
+        if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
           const game = selectedGame();
           if (game) castVote(game);
         }
-        if (buttonJustPressed(1) && player.classList.contains("open")) showHub();
+        if (buttonJustPressed(1)) {
+          if (player.classList.contains("open")) showHub();
+          else if (view === "hub") showLanding();
+        }
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
       } else {
         previousDirection = null;
@@ -362,9 +486,15 @@
     ]).then(([gameList, voteList]) => {
       games = gameList;
       votes = voteList && typeof voteList === "object" ? voteList : {};
-      render();
+      renderFeatured();
+      renderCategories();
+      showLanding();
       if (games.length) idleTimer = setTimeout(enterAttract, IDLE_MS);
-    }).catch(() => { error.hidden = false; });
+    }).catch(() => {
+      landingView.classList.remove("open");
+      hubView.classList.add("open");
+      error.hidden = false;
+    });
   </script>
 </body>
 </html>
