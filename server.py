@@ -287,6 +287,7 @@ class PtySession:
         if self._finish_once:
             return
         self._finish_once = True
+        print(f"[python-console] {self.entry_path} ending: reason={reason} detail={detail!r}", file=sys.stderr)
         try:
             await self.websocket.send(json.dumps({"type": "ended", "reason": reason, "detail": detail}))
         except ConnectionClosed:
@@ -324,13 +325,17 @@ class PtySession:
 
 async def pty_connection_handler(websocket):
     path = urlsplit(websocket.request.path).path
+    print(f"[python-console] connection opened for path {path!r}", file=sys.stderr)
     match = PTY_PATH_PATTERN.fullmatch(path)
     if not match:
+        print(f"[python-console] rejecting {path!r}: does not match /py/<slug>", file=sys.stderr)
         await websocket.close(1008, "unknown session path")
         return
     slug = match.group(1)
     project_dir, entry_path = load_python_project(slug)
     if project_dir is None:
+        print(f"[python-console] no runnable project for slug {slug!r} "
+              f"(check pythonProjects.json and python_projects/{slug}/)", file=sys.stderr)
         try:
             await websocket.send(json.dumps({
                 "type": "ended", "reason": "spawn_error",
@@ -340,7 +345,16 @@ async def pty_connection_handler(websocket):
             pass
         await websocket.close(1008, "unknown project")
         return
-    await PtySession(websocket, project_dir, entry_path).run()
+    print(f"[python-console] starting session for {slug!r} -> {entry_path}", file=sys.stderr)
+    try:
+        await PtySession(websocket, project_dir, entry_path).run()
+    except Exception as error:  # noqa: BLE001 - a bug here must never take the server down or hang the browser
+        print(f"[python-console] session for {slug!r} raised: {error!r}", file=sys.stderr)
+        try:
+            await websocket.send(json.dumps({"type": "ended", "reason": "error", "detail": str(error)}))
+        except ConnectionClosed:
+            pass
+    print(f"[python-console] connection closed for {slug!r}", file=sys.stderr)
 
 
 async def run_pty_server(host, port):
@@ -359,6 +373,7 @@ def start_pty_server(host, port):
         )
         return
     PYTHON_PROJECTS_DIR.mkdir(exist_ok=True)
+    print(f"[python-console] sys.executable = {sys.executable}", file=sys.stderr)
 
     def runner():
         try:
