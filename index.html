@@ -230,7 +230,7 @@
       { id: "python", title: "Python projects", subtitle: "Year 11 programming, live terminal programs.", icon: "🐍", real: true, enter: () => enterPython() },
       { id: "databases", title: "Y11 Databases", subtitle: "Year 11 databases: SQL and Python, live terminal programs", icon: "🗄️", real: true, enter: () => enterDatabases() },
       { id: "webapps", title: "Web apps", subtitle: "Year 10: AI created, human designed", icon: "💻", real: true, enter: () => enterWebapps() },
-      { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱" },
+      { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱", real: true, enter: () => enterEscapeRooms() },
       { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
       { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
       { id: "data", title: "Data & spreadsheets", subtitle: "Spreadsheets and data analysis", icon: "📊" },
@@ -327,6 +327,14 @@
       landingView.classList.remove("open");
       webappsView.classList.add("open");
       renderWebapps();
+    }
+
+    // The escape-room gallery is a page of its own (escape-rooms/index.html) shown
+    // in the same player as games, so Back to Hub returns to the landing screen.
+    function enterEscapeRooms() {
+      frame.src = "escape-rooms/index.html";
+      player.classList.add("open");
+      frame.focus();
     }
 
     // Games and web apps share the player; each item carries the folder it

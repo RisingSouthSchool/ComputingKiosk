@@ -19,7 +19,7 @@ import threading
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 def _import_websockets():
     from websockets.asyncio.server import serve
@@ -56,6 +56,12 @@ DB_MANIFEST = ROOT / "databaseProjects.json"
 SESSION_TIMEOUT_SECONDS = 10 * 60
 PTY_PATH_PATTERN = re.compile(r"^/(py|db)/([a-z0-9_-]+)$")
 PTY_PORT = None  # set in main(); exposed to the client via /api/pty-port
+
+# Student walkthrough videos for the Minecraft escape rooms. The folder is in
+# the repo (so every kiosk has it after an update) but the videos in it are
+# git-ignored: they live only on the kiosk and survive every sync.
+ESCAPE_ROOMS_DIR = ROOT / "escape-rooms"
+VIDEO_TYPES = {".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/mp4"}  # H.264 .mov plays as mp4 in Chrome
 
 
 def read_votes():
@@ -163,8 +169,68 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def list_escape_rooms(self):
+        """Videos currently in escape-rooms/, newest first. Read on every request
+        so dropping a file in the folder is all it takes to add one."""
+        videos = []
+        if ESCAPE_ROOMS_DIR.is_dir():
+            for entry in ESCAPE_ROOMS_DIR.iterdir():
+                if entry.is_file() and not entry.name.startswith(".") and entry.suffix.lower() in VIDEO_TYPES:
+                    videos.append(entry)
+        videos.sort(key=lambda entry: entry.stat().st_mtime, reverse=True)
+        return [{"file": entry.name, "title": re.sub(r"\s+", " ", re.sub(r"[_-]+", " ", entry.stem)).strip()} for entry in videos]
+
+    def serve_escape_video(self, name):
+        """Serve one video with HTTP Range support (SimpleHTTPRequestHandler has
+        none), so Chrome can scrub and skip through it."""
+        file = (ESCAPE_ROOMS_DIR / name).resolve()
+        if file.parent != ESCAPE_ROOMS_DIR.resolve() or file.suffix.lower() not in VIDEO_TYPES or not file.is_file():
+            self.send_error(404)
+            return
+        size = file.stat().st_size
+        start, end = 0, size - 1
+        match = re.match(r"bytes=(\d*)-(\d*)$", self.headers.get("Range", "").strip())
+        status = 200
+        if match and (match.group(1) or match.group(2)):
+            if match.group(1):
+                start = int(match.group(1))
+                end = min(int(match.group(2)), size - 1) if match.group(2) else size - 1
+            else:  # "bytes=-N": the last N bytes
+                start = max(size - int(match.group(2)), 0)
+            if start > end or start >= size:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.end_headers()
+                return
+            status = 206
+        self.send_response(status)
+        self.send_header("Content-Type", VIDEO_TYPES[file.suffix.lower()])
+        self.send_header("Accept-Ranges", "bytes")
+        self.send_header("Content-Length", str(end - start + 1))
+        if status == 206:
+            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.end_headers()
+        try:
+            with file.open("rb") as handle:
+                handle.seek(start)
+                remaining = end - start + 1
+                while remaining > 0:
+                    chunk = handle.read(min(1024 * 1024, remaining))
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+                    remaining -= len(chunk)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # the viewer skipped ahead or closed the video
+
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path == "/api/escape-rooms":
+            self.send_json(self.list_escape_rooms())
+            return
+        if path.startswith("/escape-rooms/") and path != "/escape-rooms/index.html":
+            self.serve_escape_video(unquote(path[len("/escape-rooms/"):]))
+            return
         if path == "/api/votes":
             with VOTES_LOCK:
                 self.send_json(read_votes())

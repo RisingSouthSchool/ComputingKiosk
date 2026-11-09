@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Escape-room videos stay on the kiosk only; the folder and gallery page are tracked.
+escape-rooms/*
+!escape-rooms/.gitkeep
+!escape-rooms/index.html
