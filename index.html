@@ -13,7 +13,7 @@
     h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: .02em; }
     .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
     main { max-width: 1200px; margin: 0 auto; padding: 10px 32px 50px; }
-    #games, #python-projects, #webapp-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+    #games, #python-projects, #db-projects, #webapp-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
     .game-tile { position: relative; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 290px; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     .game-tile:hover, .game-tile:focus-within { transform: translateY(-4px); border-color: var(--focus); background: #22303c; }
     .game-launch { appearance: none; border: 0; width: 100%; min-height: 290px; padding: 18px 18px 58px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
@@ -67,6 +67,8 @@
     #controller-status.visible { display: block; }
     #python-view { display: none; }
     #python-view.open { display: block; }
+    #databases-view { display: none; }
+    #databases-view.open { display: block; }
     .python-icon { font-size: 3.5rem; }
     .project-student { position: absolute; right: 14px; bottom: 12px; color: var(--muted); font-size: .85rem; font-weight: 600; }
     #terminal-view { position: fixed; inset: 0; display: none; background: radial-gradient(circle at top right, #1a2733 0, #0a0e13 55%); z-index: 2; align-items: center; justify-content: center; padding: 70px 24px 24px; }
@@ -93,7 +95,7 @@
     #terminal-ended.tone-warn #ended-title { color: var(--focus); }
     #terminal-ended.tone-error #ended-title { color: #ff6b6b; }
     #terminal-ended.tone-muted #ended-title { color: var(--muted); }
-    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games, #python-projects, #webapp-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games, #python-projects, #db-projects, #webapp-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
 
     /* Attract mode: idle showcase layered over the hub, same palette and font. */
     #attract { position: fixed; inset: 0; z-index: 1; display: none; background: radial-gradient(circle at 30% 20%, #243746 0, var(--bg) 55%); opacity: 0; transition: opacity .6s ease; }
@@ -140,6 +142,10 @@
   <section id="python-view" aria-label="Python console project selection">
     <header><button id="python-back" type="button">&larr; Categories</button><h1>Python Console Projects</h1><p class="subtitle">Year 11 programming, live terminal programs</p></header>
     <main><div id="python-projects" aria-live="polite"></div><p id="python-empty" hidden>No Python projects found yet. Add an export zip to the py_zips folder, then run start.command.</p><p id="python-error" hidden>Could not load pythonProjects.json. Run start.command again.</p></main>
+  </section>
+  <section id="databases-view" aria-label="Year 11 database project selection">
+    <header><button id="databases-back" type="button">&larr; Categories</button><h1>Y11 Databases</h1><p class="subtitle">Year 11 databases, live terminal programs</p></header>
+    <main><div id="db-projects" aria-live="polite"></div><p id="db-empty" hidden>No database projects found yet. Add a folder to db_projects and list it in databaseProjects.json.</p><p id="db-error" hidden>Could not load databaseProjects.json. Run start.command again.</p></main>
   </section>
   <section id="webapps-view" aria-label="Web app selection">
     <header><button id="webapps-back" type="button">&larr; Categories</button><h1>Web Apps</h1><p class="subtitle">Year 10: AI created, human designed</p></header>
@@ -190,6 +196,11 @@
     const pythonProjectsElement = document.getElementById("python-projects");
     const pythonEmpty = document.getElementById("python-empty");
     const pythonError = document.getElementById("python-error");
+    const databasesView = document.getElementById("databases-view");
+    const databasesBack = document.getElementById("databases-back");
+    const dbProjectsElement = document.getElementById("db-projects");
+    const dbEmpty = document.getElementById("db-empty");
+    const dbError = document.getElementById("db-error");
     const webappsView = document.getElementById("webapps-view");
     const webappsBack = document.getElementById("webapps-back");
     const webappListElement = document.getElementById("webapp-list");
@@ -217,11 +228,12 @@
     const CATEGORIES = [
       { id: "games", title: "Games", subtitle: "Play and vote on student-made games", icon: "🎮", real: true, enter: () => enterHub() },
       { id: "python", title: "Python projects", subtitle: "Year 11 programming, live terminal programs.", icon: "🐍", real: true, enter: () => enterPython() },
+      { id: "databases", title: "Y11 Databases", subtitle: "Year 11 databases: SQL and Python, live terminal programs", icon: "🗄️", real: true, enter: () => enterDatabases() },
       { id: "webapps", title: "Web apps", subtitle: "Year 10: AI created, human designed", icon: "💻", real: true, enter: () => enterWebapps() },
       { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱" },
       { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
       { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
-      { id: "data", title: "Data & spreadsheets", subtitle: "Databases, spreadsheets, Python", icon: "📊" },
+      { id: "data", title: "Data & spreadsheets", subtitle: "Spreadsheets and data analysis", icon: "📊" },
       { id: "networks", title: "Networks & security", subtitle: "Network design projects", icon: "🌐" }
     ];
     let view = "landing";
@@ -232,6 +244,8 @@
     let votes = {};
     let pythonProjects = [];
     let pythonTiles = [];
+    let dbProjects = [];
+    let dbTiles = [];
     let webapps = [];
     let webappTiles = [];
     let currentProject = null;
@@ -281,6 +295,7 @@
       view = "landing";
       hubView.classList.remove("open");
       pythonView.classList.remove("open");
+      databasesView.classList.remove("open");
       webappsView.classList.remove("open");
       landingView.classList.add("open");
       landingFocusables[0]?.focus();
@@ -300,6 +315,13 @@
       renderPython();
     }
 
+    function enterDatabases() {
+      view = "databases";
+      landingView.classList.remove("open");
+      databasesView.classList.add("open");
+      renderDatabases();
+    }
+
     function enterWebapps() {
       view = "webapps";
       landingView.classList.remove("open");
@@ -316,14 +338,12 @@
       frame.focus();
     }
 
-    function sortedPythonProjects() {
-      return [...pythonProjects].sort((first, second) => String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
-    }
-
-    function renderPython(selectedSlug = null) {
-      const ordered = sortedPythonProjects();
-      pythonEmpty.hidden = ordered.length !== 0;
-      pythonProjectsElement.replaceChildren();
+    // Python and database projects share one tile layout and one terminal
+    // player; only the manifest, icon and server route ("py" / "db") differ.
+    function renderProjectTiles(projects, container, emptyElement, iconText, selectedSlug) {
+      const ordered = [...projects].sort((first, second) => String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+      emptyElement.hidden = ordered.length !== 0;
+      container.replaceChildren();
       ordered.forEach((project, index) => {
         const tile = document.createElement("article");
         tile.className = "game-tile";
@@ -336,7 +356,7 @@
         launch.dataset.slug = project.slug;
         const icon = document.createElement("span");
         icon.className = "game-icon python-icon";
-        icon.textContent = "🐍";
+        icon.textContent = iconText;
         const title = document.createElement("span"); title.className = "game-title"; title.textContent = project.title;
         launch.append(icon, title);
         launch.addEventListener("click", () => openPrelaunch(project));
@@ -347,17 +367,28 @@
           student.textContent = project.student;
           tile.append(student);
         }
-        pythonProjectsElement.append(tile);
+        container.append(tile);
       });
-      pythonTiles = [...document.querySelectorAll("#python-projects .game-launch")];
-      const tileToFocus = selectedSlug ? pythonTiles.find(tile => tile.dataset.slug === selectedSlug) : pythonTiles[0];
+      const launchTiles = [...container.querySelectorAll(".game-launch")];
+      const tileToFocus = selectedSlug ? launchTiles.find(tile => tile.dataset.slug === selectedSlug) : launchTiles[0];
       tileToFocus?.focus();
+      return launchTiles;
     }
 
-    function backToPythonList() {
-      view = "python";
-      const tile = currentProject ? pythonTiles.find(t => t.dataset.slug === currentProject.slug) : null;
-      (tile || pythonTiles[0])?.focus();
+    function renderPython(selectedSlug = null) {
+      pythonTiles = renderProjectTiles(pythonProjects, pythonProjectsElement, pythonEmpty, "🐍", selectedSlug);
+    }
+
+    function renderDatabases(selectedSlug = null) {
+      dbTiles = renderProjectTiles(dbProjects, dbProjectsElement, dbEmpty, "🗄️", selectedSlug);
+    }
+
+    function backToProjectList() {
+      const isDb = currentProject?.kind === "db";
+      view = isDb ? "databases" : "python";
+      const list = isDb ? dbTiles : pythonTiles;
+      const tile = currentProject ? list.find(t => t.dataset.slug === currentProject.slug) : null;
+      (tile || list[0])?.focus();
     }
 
     // --- Python console terminal session ---------------------------------
@@ -407,7 +438,7 @@
         .then(({ port }) => new Promise((resolve, reject) => {
           if (myToken !== launchToken) { reject(new Error("cancelled")); return; }
           const protocol = location.protocol === "https:" ? "wss:" : "ws:";
-          const socket = new WebSocket(`${protocol}//${location.hostname}:${port}/py/${encodeURIComponent(project.slug)}`);
+          const socket = new WebSocket(`${protocol}//${location.hostname}:${port}/${project.kind === "db" ? "db" : "py"}/${encodeURIComponent(project.slug)}`);
           socket.binaryType = "arraybuffer";
           currentSocket = socket;
           let opened = false;
@@ -485,7 +516,7 @@
       terminalEnded.className = "tone-" + meta.tone;
       endedTitle.textContent = meta.title;
       endedDetail.textContent = info.detail || "";
-      setTimeout(() => { closeTerminalSession(); backToPythonList(); }, meta.tone === "error" ? 9000 : 2000);
+      setTimeout(() => { closeTerminalSession(); backToProjectList(); }, meta.tone === "error" ? 9000 : 2000);
     }
 
     function closeTerminalSession() {
@@ -800,14 +831,14 @@
 
     function moveSelection(direction) {
       if (player.classList.contains("open") || terminalView.classList.contains("open")) return false;
-      const list = view === "hub" ? tiles : view === "python" ? pythonTiles : view === "webapps" ? webappTiles : landingFocusables;
+      const list = view === "hub" ? tiles : view === "python" ? pythonTiles : view === "databases" ? dbTiles : view === "webapps" ? webappTiles : landingFocusables;
       if (!list.length) return false;
       const current = document.activeElement?.dataset?.index;
       if (current === undefined) return false;
       const index = Number(current);
       let next = index;
-      if (view === "hub" || view === "python" || view === "webapps") {
-        const container = view === "hub" ? gamesElement : view === "python" ? pythonProjectsElement : webappListElement;
+      if (view === "hub" || view === "python" || view === "databases" || view === "webapps") {
+        const container = view === "hub" ? gamesElement : view === "python" ? pythonProjectsElement : view === "databases" ? dbProjectsElement : webappListElement;
         const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(container.clientWidth / 254));
         if (direction === "right") next++;
         if (direction === "left") next--;
@@ -854,7 +885,7 @@
         terminalBack.click();
         return;
       }
-      if (event.key === "Escape" && (view === "hub" || view === "python" || view === "webapps") && !player.classList.contains("open")) {
+      if (event.key === "Escape" && (view === "hub" || view === "python" || view === "databases" || view === "webapps") && !player.classList.contains("open")) {
         event.preventDefault();
         showLanding();
         return;
@@ -870,8 +901,9 @@
     back.addEventListener("click", closePlayer);
     hubBack.addEventListener("click", showLanding);
     pythonBack.addEventListener("click", showLanding);
+    databasesBack.addEventListener("click", showLanding);
     webappsBack.addEventListener("click", showLanding);
-    terminalBack.addEventListener("click", () => { closeTerminalSession(); backToPythonList(); });
+    terminalBack.addEventListener("click", () => { closeTerminalSession(); backToProjectList(); });
     featuredBanner.addEventListener("click", launchFeatured);
     featuredBanner.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") { event.preventDefault(); launchFeatured(); }
@@ -911,7 +943,7 @@
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open") && !terminalView.classList.contains("open")) {
           if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
-          else if (view === "python" || view === "webapps" || view === "landing") document.activeElement?.click();
+          else if (view === "python" || view === "databases" || view === "webapps" || view === "landing") document.activeElement?.click();
         }
         if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
           const game = selectedGame();
@@ -920,7 +952,7 @@
         if (buttonJustPressed(1)) {
           if (player.classList.contains("open")) closePlayer();
           else if (terminalView.classList.contains("open")) terminalBack.click();
-          else if (view === "hub" || view === "python" || view === "webapps") showLanding();
+          else if (view === "hub" || view === "python" || view === "databases" || view === "webapps") showLanding();
         }
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
       } else {
@@ -963,6 +995,12 @@
       .then(response => { if (!response.ok) throw new Error("pythonProjects.json"); return response.json(); })
       .then(projectList => { pythonProjects = Array.isArray(projectList) ? projectList : []; })
       .catch(() => { pythonProjects = []; pythonError.hidden = false; });
+
+    // Year 11 database projects: same idea, own manifest, run via /db/<slug>.
+    fetch("databaseProjects.json", { cache: "no-store" })
+      .then(response => { if (!response.ok) throw new Error("databaseProjects.json"); return response.json(); })
+      .then(projectList => { dbProjects = Array.isArray(projectList) ? projectList.map(project => ({ ...project, kind: "db" })) : []; })
+      .catch(() => { dbProjects = []; dbError.hidden = false; });
   
 
     // Version marker + update button on the landing screen.

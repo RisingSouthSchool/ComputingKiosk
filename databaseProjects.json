@@ -1,0 +1,51 @@
+[
+  {
+    "slug": "steam-library",
+    "title": "Steam Game Library",
+    "entryFile": "steam_database.py",
+    "student": "",
+    "blurb": "A Steam-style database of users, genres, games and who owns which game."
+  },
+  {
+    "slug": "pedalboard",
+    "title": "Pedalboard Database",
+    "entryFile": "pedalboard_database.py",
+    "student": "",
+    "blurb": "Bands, songs, guitar pedals and the pedal settings used for each song."
+  },
+  {
+    "slug": "artist-tracker",
+    "title": "Artist Tracker",
+    "entryFile": "tracker.py",
+    "student": "",
+    "blurb": "Artists, albums, tracks and collaborations, with queries to explore the music data."
+  },
+  {
+    "slug": "restaurant-orders",
+    "title": "Restaurant Orders",
+    "entryFile": "restaurant.py",
+    "student": "",
+    "blurb": "A pizza restaurant database: customers, menu, orders and order items."
+  },
+  {
+    "slug": "piano-store",
+    "title": "Piano Store",
+    "entryFile": "bridge.py",
+    "student": "",
+    "blurb": "A piano shop database covering pianos, employees, customers and purchases."
+  },
+  {
+    "slug": "card-marketplace",
+    "title": "Trading Card Marketplace",
+    "entryFile": "pythonsql.py",
+    "student": "",
+    "blurb": "User accounts, card collections and buy/sell listings for trading cards."
+  },
+  {
+    "slug": "world-cup-2026",
+    "title": "World Cup 2026",
+    "entryFile": "WorldCup2026viewer.py",
+    "student": "",
+    "blurb": "Teams, players, stadiums, groups and match events for the 2026 World Cup."
+  }
+]

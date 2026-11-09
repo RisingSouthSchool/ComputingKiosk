@@ -8,6 +8,7 @@ import json
 import os
 import pty
 import re
+import shutil
 import signal
 import struct
 import subprocess
@@ -47,8 +48,13 @@ SLUG_PATTERN = re.compile(r"^[a-z0-9_-]+$")
 
 PYTHON_PROJECTS_DIR = ROOT / "python_projects"
 PYTHON_MANIFEST = ROOT / "pythonProjects.json"
+# Year 11 database projects run through the same terminal as the Python
+# projects, but on a throwaway copy of their folder (see PtySession) so a
+# student's .db file is never changed by someone using the kiosk.
+DB_PROJECTS_DIR = ROOT / "db_projects"
+DB_MANIFEST = ROOT / "databaseProjects.json"
 SESSION_TIMEOUT_SECONDS = 10 * 60
-PTY_PATH_PATTERN = re.compile(r"^/py/([a-z0-9_-]+)$")
+PTY_PATH_PATTERN = re.compile(r"^/(py|db)/([a-z0-9_-]+)$")
 PTY_PORT = None  # set in main(); exposed to the client via /api/pty-port
 
 
@@ -215,11 +221,13 @@ class HubServer(ThreadingHTTPServer):
     daemon_threads = True
 
 
-def load_python_project(slug):
-    """Look up a slug in pythonProjects.json. Returns (project_dir, entry_path)
-    or (None, None) if the slug is unknown or its entry file is missing."""
+def load_python_project(slug, kind="py"):
+    """Look up a slug in pythonProjects.json (kind "py") or databaseProjects.json
+    (kind "db"). Returns (project_dir, entry_path) or (None, None) if the slug is
+    unknown or its entry file is missing."""
+    manifest_path, projects_dir = (DB_MANIFEST, DB_PROJECTS_DIR) if kind == "db" else (PYTHON_MANIFEST, PYTHON_PROJECTS_DIR)
     try:
-        manifest = json.loads(PYTHON_MANIFEST.read_text(encoding="utf-8"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return None, None
     if not isinstance(manifest, list):
@@ -229,7 +237,7 @@ def load_python_project(slug):
             entry_file = entry.get("entryFile")
             if not isinstance(entry_file, str) or not entry_file:
                 return None, None
-            project_dir = (PYTHON_PROJECTS_DIR / slug).resolve()
+            project_dir = (projects_dir / slug).resolve()
             entry_path = (project_dir / entry_file).resolve()
             if project_dir not in entry_path.parents:
                 return None, None  # entryFile escapes its own project folder
@@ -252,10 +260,12 @@ class PtySession:
     exception, crash, kill, timeout, or a spawn failure -- funnels through
     `_finish()` so the browser always gets exactly one "ended" signal."""
 
-    def __init__(self, websocket, project_dir, entry_path):
+    def __init__(self, websocket, project_dir, entry_path, scratch=False):
         self.websocket = websocket
         self.project_dir = project_dir
         self.entry_path = entry_path
+        self.scratch = scratch  # run on a temporary copy of project_dir
+        self.scratch_dir = None
         self.loop = asyncio.get_running_loop()
         self.master_fd = None
         self.process = None
@@ -295,15 +305,22 @@ class PtySession:
                 task.cancel()
             self._cleanup_process()
             self._cleanup_fd()
+            self._cleanup_scratch()
 
     def _spawn(self):
+        run_path = self.entry_path
+        if self.scratch:
+            self.scratch_dir = Path(tempfile.mkdtemp(prefix="kiosk-db-"))
+            run_root = self.scratch_dir / "project"
+            shutil.copytree(self.project_dir, run_root)
+            run_path = run_root / self.entry_path.relative_to(self.project_dir)
         master_fd, slave_fd = pty.openpty()
         set_winsize(slave_fd)
         try:
             env = dict(os.environ, TERM="xterm-256color", PYTHONUNBUFFERED="1")
             self.process = subprocess.Popen(
-                [sys.executable, self.entry_path.name],
-                cwd=str(self.entry_path.parent),
+                [sys.executable, run_path.name],
+                cwd=str(run_path.parent),
                 stdin=slave_fd,
                 stdout=slave_fd,
                 stderr=slave_fd,
@@ -419,6 +436,11 @@ class PtySession:
             except ProcessLookupError:
                 pass
 
+    def _cleanup_scratch(self):
+        if self.scratch_dir is not None:
+            shutil.rmtree(self.scratch_dir, ignore_errors=True)
+            self.scratch_dir = None
+
     def _cleanup_fd(self):
         if self.master_fd is None:
             return
@@ -438,14 +460,14 @@ async def pty_connection_handler(websocket):
     print(f"[python-console] connection opened for path {path!r}", file=sys.stderr)
     match = PTY_PATH_PATTERN.fullmatch(path)
     if not match:
-        print(f"[python-console] rejecting {path!r}: does not match /py/<slug>", file=sys.stderr)
+        print(f"[python-console] rejecting {path!r}: does not match /py/<slug> or /db/<slug>", file=sys.stderr)
         await websocket.close(1008, "unknown session path")
         return
-    slug = match.group(1)
-    project_dir, entry_path = load_python_project(slug)
+    kind, slug = match.group(1), match.group(2)
+    project_dir, entry_path = load_python_project(slug, kind)
     if project_dir is None:
         print(f"[python-console] no runnable project for slug {slug!r} "
-              f"(check pythonProjects.json and python_projects/{slug}/)", file=sys.stderr)
+              f"(check {"databaseProjects.json and db_projects" if kind == "db" else "pythonProjects.json and python_projects"}/{slug}/)", file=sys.stderr)
         try:
             await websocket.send(json.dumps({
                 "type": "ended", "reason": "spawn_error",
@@ -457,7 +479,7 @@ async def pty_connection_handler(websocket):
         return
     print(f"[python-console] starting session for {slug!r} -> {entry_path}", file=sys.stderr)
     try:
-        await PtySession(websocket, project_dir, entry_path).run()
+        await PtySession(websocket, project_dir, entry_path, scratch=(kind == "db")).run()
     except Exception as error:  # noqa: BLE001 - a bug here must never take the server down or hang the browser
         print(f"[python-console] session for {slug!r} raised: {error!r}", file=sys.stderr)
         try:

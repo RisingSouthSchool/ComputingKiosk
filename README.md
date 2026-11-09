@@ -46,6 +46,25 @@ minutes, and any way the program can end -- finishing normally, crashing,
 being killed by the timeout, or losing the connection -- always returns to
 the Python projects list automatically.
 
+## Add a Year 11 database project
+
+Database projects (Python + SQLite) live in `db_projects/`, one folder per
+project, and appear under the **Y11 Databases** tile on the landing screen.
+
+1. Make a folder, e.g. `db_projects/my-project/`, with the program, its `.db`
+   file and any `.sql` files. Use a neutral folder name; do not put student
+   names in file names, code or the database itself.
+2. Add an entry to `databaseProjects.json`: `slug` (the folder name), `title`,
+   `entryFile` (the `.py` to run, relative to the folder), `blurb`, and leave
+   `student` empty.
+3. Make the scripts executable (`chmod +x db_projects/my-project/*.py`) and
+   commit.
+
+They run in the same live terminal as the Python projects, but on a temporary
+copy of the folder that is deleted afterwards, so changes made while using a
+program never alter the stored `.db` file. Projects that import `cs50` need
+that package installed for the kiosk's Python (`pip3 install cs50`).
+
 ## Add a web app
 
 Single-page web apps (the Year 10 "AI created, human designed" project) live in
