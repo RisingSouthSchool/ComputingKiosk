@@ -14,6 +14,9 @@ echo
 echo "Scanning web apps..."
 python3 "$HUB_DIR/webapp_scan.py"
 echo
+echo "Saving web app photos for offline use..."
+python3 "$HUB_DIR/cache_remote_images.py"
+echo
 echo "Starting the game hub at http://127.0.0.1:$PORT"
 python3 "$HUB_DIR/server.py" --port "$PORT" &
 SERVER_PID=$!

@@ -63,9 +63,19 @@ without a custom `icon192.png`. Hand-edit `title`, `student`, `blurb` and
 `featured` in `webapps.json`; they survive re-scans. New apps start with
 `featured: true`; set it to `false` to keep one out of the featured list.
 
-Web apps open in the same player as games. Some apps load libraries, fonts or
-images from the internet (Tailwind, Three.js, Font Awesome and others), so
-those apps need the kiosk to be online to display properly.
+Web apps open in the same player as games, and are set up to run offline:
+
+- Libraries, icons and fonts (Three.js, Chart.js, fengari, Font Awesome, the
+  Google fonts) are saved in `vendor/web/`, and each Tailwind app has its own
+  compiled `tailwind.css` next to its `index.html`.
+- Photos on the internet (recipe photos, Minecraft avatars) are downloaded by
+  `cache_remote_images.py`, which `start.command` runs each launch. Run
+  `start.command` once while the kiosk is online and they are saved to each
+  app's `images/` folder for good. Until then, an app shows a plain grey tile
+  with the first letter instead of a broken image.
+- A new app copied from an AI tool will usually still point at CDNs. Its
+  scripts, styles and fonts need swapping for the local files in `vendor/web/`
+  (and Tailwind compiling to a `tailwind.css`) before it works offline.
 
 ## Start automatically at login
 
