@@ -116,6 +116,20 @@ when the served version changes, for example after the background auto-sync
 (`setup_autosync.command`) has pulled an update. Votes (`votes.json`) are always
 kept. The button needs the hub folder to be a git clone.
 
+## Likes and spam limits
+
+Games and web apps both have a 👍 button (keyboard `V`, gamepad Y). The kiosk is
+shared, so there are no accounts; instead:
+
+- A person can like each game or web app **once per visit**. A new visit starts
+  whenever the hub has been idle long enough to drop into attract mode.
+- The server also refuses a second like for the same item within
+  `VOTE_COOLDOWN_SECONDS` (10), and more than `VOTE_GLOBAL_LIMIT` (20) likes in
+  `VOTE_GLOBAL_WINDOW_SECONDS` (60) across everything. These are constants at
+  the top of `server.py`; they reset when the server restarts.
+- Only games and web apps that actually exist can be liked, so junk keys can't
+  get into `votes.json`. Web app likes are stored as `webapp:<slug>`.
+
 ## Year and type tags
 
 Two more hand-edited fields in `games.json` (kept across re-scans) drive the

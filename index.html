@@ -28,6 +28,7 @@
     .filter-chip:hover, .filter-chip:focus-visible { border-color: var(--focus); background: #22303c; outline: none; }
     .filter-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #10151c; }
     .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
+    .vote-button.voted { border-color: var(--accent); color: var(--accent); cursor: default; }
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
     #version-bar { position: fixed; right: 14px; bottom: 8px; display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: #10151cf2; border: 1px solid #ffffff26; border-radius: 10px; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.04em; color: #fff; z-index: 5; }
     #repo-version { opacity: 0.9; user-select: none; }
@@ -557,7 +558,7 @@
     }
 
     function renderWebapps(selectedSlug = null) {
-      const ordered = [...webapps].sort((first, second) => String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+      const ordered = [...webapps].sort((first, second) => voteCount(voteKey(second)) - voteCount(voteKey(first)) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
       webappEmpty.hidden = ordered.length !== 0;
       webappListElement.replaceChildren();
       ordered.forEach((app, index) => {
@@ -578,7 +579,15 @@
         const title = document.createElement("span"); title.className = "game-title"; title.textContent = app.title;
         launch.append(icon, title);
         launch.addEventListener("click", () => openGame(app));
-        tile.append(launch);
+        const vote = document.createElement("button");
+        vote.className = "vote-button";
+        vote.type = "button";
+        vote.tabIndex = -1;
+        vote.textContent = "👍 " + voteCount(voteKey(app));
+        vote.classList.toggle("voted", likedThisVisit.has(voteKey(app)));
+        vote.setAttribute("aria-label", "Like " + app.title);
+        vote.addEventListener("click", event => castVote(app, event));
+        tile.append(launch, vote);
         const student = app.student || app.students || app.author;
         if (student) {
           const line = document.createElement("span");
@@ -593,8 +602,20 @@
       tileToFocus?.focus();
     }
 
-    function voteCount(slug) {
-      const count = Number(votes[slug]);
+    // Games keep their plain slug as the vote key (so existing votes still count);
+    // web apps are stored as "webapp:<slug>" so a shared slug can never collide.
+    const voteKey = item => (item.base === "webapps/" ? "webapp:" + item.slug : item.slug);
+    const newVisitorId = () => Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+
+    // A "visit" is one person's turn at the kiosk. The hub drops into attract
+    // mode when nobody has touched it for a while, so the next touch is a new
+    // visit: a visitor may like each game / web app once per visit.
+    let visitorId = newVisitorId();
+    const likedThisVisit = new Set();
+    function startNewVisit() { visitorId = newVisitorId(); likedThisVisit.clear(); }
+
+    function voteCount(key) {
+      const count = Number(votes[key]);
       return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
     }
 
@@ -701,6 +722,15 @@
       return games.find(game => game.slug === tiles[Number(current)]?.dataset.slug) || null;
     }
 
+    // The game or web app under the keyboard / gamepad cursor, for the like shortcut.
+    function selectedVotable() {
+      if (view === "hub") return selectedGame();
+      if (view !== "webapps") return null;
+      const current = document.activeElement?.dataset?.index;
+      if (current === undefined) return null;
+      return webapps.find(app => app.slug === webappTiles[Number(current)]?.dataset.slug) || null;
+    }
+
     function render(selectedSlug = null) {
       const orderedGames = sortedGames();
       empty.hidden = orderedGames.length !== 0;
@@ -728,7 +758,8 @@
         vote.className = "vote-button";
         vote.type = "button";
         vote.tabIndex = -1;
-        vote.textContent = "👍 " + voteCount(game.slug);
+        vote.textContent = "👍 " + voteCount(voteKey(game));
+        vote.classList.toggle("voted", likedThisVisit.has(voteKey(game)));
         vote.setAttribute("aria-label", "Like " + game.title);
         vote.addEventListener("click", event => castVote(game, event));
         tile.append(launch, vote);
@@ -739,27 +770,37 @@
       tileToFocus?.focus();
     }
 
-    function castVote(game, event) {
+    function rerenderVotable(item) {
+      if (item.base === "webapps/") renderWebapps(item.slug);
+      else render(item.slug);
+    }
+
+    function castVote(item, event) {
       event?.stopPropagation();
-      const slug = game.slug;
-      votes[slug] = voteCount(slug) + 1;
-      pendingVotes.set(slug, (pendingVotes.get(slug) || 0) + 1);
-      render(slug);
-      const previousRequest = voteQueues.get(slug) || Promise.resolve();
+      const key = voteKey(item);
+      if (likedThisVisit.has(key)) return;   // one like per game per visit
+      likedThisVisit.add(key);
+      votes[key] = voteCount(key) + 1;
+      pendingVotes.set(key, (pendingVotes.get(key) || 0) + 1);
+      rerenderVotable(item);
+      const previousRequest = voteQueues.get(key) || Promise.resolve();
       const request = previousRequest.then(async () => {
-        const response = await fetch("/api/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug }) });
+        const kind = item.base === "webapps/" ? "webapp" : "game";
+        const response = await fetch("/api/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: item.slug, kind, visitor: visitorId }) });
         if (!response.ok) throw new Error("vote request failed");
         const result = await response.json();
-        const pending = (pendingVotes.get(slug) || 1) - 1;
-        pendingVotes.set(slug, pending);
-        votes[slug] = result.count + pending;
-        render(slug);
+        const pending = (pendingVotes.get(key) || 1) - 1;
+        pendingVotes.set(key, pending);
+        votes[key] = result.count + pending;
+        rerenderVotable(item);
       }).catch(() => {
-        pendingVotes.set(slug, Math.max(0, (pendingVotes.get(slug) || 1) - 1));
-        votes[slug] = Math.max(0, voteCount(slug) - 1);
-        render(slug);
+        // Refused (too fast, or a server problem): take the optimistic like back.
+        likedThisVisit.delete(key);
+        pendingVotes.set(key, Math.max(0, (pendingVotes.get(key) || 1) - 1));
+        votes[key] = Math.max(0, voteCount(key) - 1);
+        rerenderVotable(item);
       });
-      voteQueues.set(slug, request);
+      voteQueues.set(key, request);
     }
 
     const attract = document.getElementById("attract");
@@ -816,6 +857,7 @@
       const list = attractList();
       if (!list.length) return;
       attractOpen = true;
+      startNewVisit();
       attractIndex = 0;
       attract.classList.add("open");
       attract.setAttribute("aria-hidden", "false");
@@ -932,9 +974,9 @@
         showLanding();
         return;
       }
-      if (event.key.toLowerCase() === "v" && view === "hub" && !player.classList.contains("open")) {
-        const game = selectedGame();
-        if (game) { event.preventDefault(); castVote(game); }
+      if (event.key.toLowerCase() === "v" && (view === "hub" || view === "webapps") && !player.classList.contains("open")) {
+        const item = selectedVotable();
+        if (item) { event.preventDefault(); castVote(item); }
         return;
       }
       const direction = { ArrowRight: "right", ArrowLeft: "left", ArrowDown: "down", ArrowUp: "up" }[event.key];
@@ -987,9 +1029,9 @@
           if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
           else if (view === "python" || view === "databases" || view === "webapps" || view === "landing") document.activeElement?.click();
         }
-        if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
-          const game = selectedGame();
-          if (game) castVote(game);
+        if (buttonJustPressed(3) && (view === "hub" || view === "webapps") && !player.classList.contains("open")) {
+          const item = selectedVotable();
+          if (item) castVote(item);
         }
         if (buttonJustPressed(1)) {
           if (player.classList.contains("open")) closePlayer();
