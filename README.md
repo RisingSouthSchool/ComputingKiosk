@@ -86,6 +86,17 @@ duplicate.
 To turn this off while debugging or reset it, run `remove_autostart.command`
 from the same Student Station account. This unloads and deletes the LaunchAgent.
 
+## Updating from GitHub
+
+The landing screen shows the version (commit count, short hash and date) in the
+bottom-right corner next to a **Check for updates** button. The button pulls the
+latest `main` from GitHub, rebuilds the game, project and web app lists, and
+reloads the page (restarting the server first if its code changed). With no
+internet it says so instead of failing silently. The page also reloads itself
+when the served version changes, for example after the background auto-sync
+(`setup_autosync.command`) has pulled an update. Votes (`votes.json`) are always
+kept. The button needs the hub folder to be a git clone.
+
 ## Skipped games
 
 The scanner prints a `Skipped ...` warning when an archive cannot be used. The

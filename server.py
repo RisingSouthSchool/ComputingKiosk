@@ -107,6 +107,46 @@ def write_votes(votes):
             temporary_path.unlink(missing_ok=True)
 
 
+SYNC_SCRIPT = ROOT / "sync_from_repo.sh"
+UPDATE_LOCK = threading.Lock()
+
+
+def run_update():
+    """Run sync_from_repo.sh and turn its RESULT line into a small dict:
+    status is current | updated | updated-restart | offline | busy | error."""
+    if not UPDATE_LOCK.acquire(blocking=False):
+        return {"status": "busy"}
+    try:
+        if not SYNC_SCRIPT.is_file():
+            return {"status": "error", "detail": "sync_from_repo.sh is missing from this folder."}
+        env = dict(os.environ, KIOSK_NO_RESTART="1", PYTHON=sys.executable)
+        try:
+            done = subprocess.run(["bash", str(SYNC_SCRIPT)], cwd=str(ROOT), env=env,
+                                  capture_output=True, text=True, timeout=600)
+        except subprocess.TimeoutExpired:
+            return {"status": "error", "detail": "The update took too long."}
+        except OSError as error:
+            return {"status": "error", "detail": str(error)}
+        status, detail = "error", (done.stderr.strip().splitlines() or ["No result from the update script."])[-1]
+        for line in done.stdout.splitlines():
+            if line.startswith("RESULT:"):
+                status, _, detail = line[len("RESULT:"):].strip().partition(":")
+                status, detail = status.strip(), detail.strip()
+        print(f"[update] {status} {detail}".rstrip(), file=sys.stderr)
+        _VERSION_CACHE["at"] = 0.0
+        return {"status": status, "detail": detail, "version": read_version()}
+    finally:
+        UPDATE_LOCK.release()
+
+
+def restart_server():
+    """Replace this process with a fresh one so new server code takes effect.
+    The PID stays the same, so launch_kiosk.command keeps waiting on it."""
+    sys.stderr.flush()
+    sys.stdout.flush()
+    os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]])
+
+
 class HubRequestHandler(SimpleHTTPRequestHandler):
     def send_json(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
@@ -131,8 +171,23 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
             return
         super().do_GET()
 
+    def local_origin(self):
+        """True for same-machine requests: no Origin header (curl) or a localhost one."""
+        origin = self.headers.get("Origin")
+        return not origin or urlsplit(origin).hostname in ("127.0.0.1", "localhost")
+
     def do_POST(self):
-        if urlsplit(self.path).path != "/api/vote":
+        path = urlsplit(self.path).path
+        if path == "/api/update":
+            if not self.local_origin():
+                self.send_json({"status": "error", "detail": "Forbidden"}, 403)
+                return
+            outcome = run_update()
+            self.send_json(outcome)
+            if outcome.get("status") == "updated-restart":
+                threading.Timer(1.0, restart_server).start()
+            return
+        if path != "/api/vote":
             self.send_error(404)
             return
         try:

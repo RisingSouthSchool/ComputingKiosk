@@ -23,7 +23,14 @@
     .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
     .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
-    #repo-version { position: fixed; right: 14px; bottom: 8px; margin: 0; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.04em; color: #fff; opacity: 0.9; text-shadow: 0 1px 3px #000a; pointer-events: none; user-select: none; }
+    #version-bar { position: fixed; right: 14px; bottom: 8px; display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: #10151cf2; border: 1px solid #ffffff26; border-radius: 10px; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.04em; color: #fff; z-index: 5; }
+    #repo-version { opacity: 0.9; user-select: none; }
+    #update-button { font: inherit; letter-spacing: inherit; color: #fff; background: #10151ccc; border: 1px solid #ffffff66; border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+    #update-button:hover, #update-button:focus-visible { border-color: var(--focus); outline: none; }
+    #update-button:disabled { opacity: 0.6; cursor: progress; }
+    #update-status { max-width: 46vw; text-align: right; }
+    #update-status.ok { color: var(--accent); }
+    #update-status.warn { color: var(--focus); }
     #landing-view, #hub-view { display: none; }
     #landing-view.open, #hub-view.open { display: block; }
     #webapps-view { display: none; }
@@ -120,7 +127,11 @@
       </div>
       <div id="categories" aria-live="polite"></div>
     </main>
-    <p id="repo-version" aria-hidden="true" hidden></p>
+    <div id="version-bar" hidden>
+      <span id="update-status" role="status" aria-live="polite" hidden></span>
+      <span id="repo-version"></span>
+      <button id="update-button" type="button">Check for updates</button>
+    </div>
   </section>
   <section id="hub-view" aria-label="Game selection">
     <header><button id="hub-back" type="button">&larr; Categories</button><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
@@ -934,19 +945,91 @@
       .catch(() => { pythonProjects = []; pythonError.hidden = false; });
   
 
-    // Subtle build marker on the landing screen: commit count, short hash and
-    // commit date of the checkout being served, so it is easy to see whether an
-    // auto-sync has landed. Hidden when the folder isn't a git clone.
-    fetch("/api/version", { cache: "no-store" })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => {
-        const v = data && data.version;
-        const label = document.getElementById("repo-version");
-        if (!v || !label) return;
-        label.textContent = (v.count ? "v" + v.count + " · " : "") + v.hash + " · " + v.date;
-        label.hidden = false;
-      })
-      .catch(() => {});
+    // Version marker + update button on the landing screen.
+    //  - Shows commit count, short hash and commit date of the checkout being served.
+    //  - "Check for updates" asks the server to pull from GitHub (POST /api/update).
+    //  - The page also watches /api/version and reloads itself once the served
+    //    version changes (e.g. after the background auto-sync), when nobody is mid-game.
+    // Hidden entirely when the folder isn't a git clone.
+    (function setupVersionBar() {
+      const bar = document.getElementById("version-bar");
+      const label = document.getElementById("repo-version");
+      const button = document.getElementById("update-button");
+      const status = document.getElementById("update-status");
+      if (!bar || !label || !button || !status) return;
+      let loadedHash = null;
+      let busy = false;
+      let statusTimer = null;
+
+      function setStatus(text, tone, seconds) {
+        clearTimeout(statusTimer);
+        status.textContent = text;
+        status.className = tone || "";
+        status.hidden = !text;
+        if (text && seconds) statusTimer = setTimeout(() => { status.hidden = true; }, seconds * 1000);
+      }
+      function fetchVersion() {
+        return fetch("/api/version", { cache: "no-store" })
+          .then(response => response.ok ? response.json() : null)
+          .then(data => (data && data.version) || null)
+          .catch(() => null);
+      }
+      function render(v) {
+        label.textContent = (v.count ? "v" + v.count + " \u00b7 " : "") + v.hash + " \u00b7 " + v.date;
+        bar.hidden = false;
+      }
+      function reloadWhenServerBack(tries) {
+        fetchVersion().then(v => {
+          if (v) { location.reload(); return; }
+          if (tries > 0) setTimeout(() => reloadWhenServerBack(tries - 1), 1500);
+          else setStatus("The kiosk is taking a while to restart. Try refreshing the page.", "warn");
+        });
+      }
+
+      button.addEventListener("click", () => {
+        if (busy) return;
+        busy = true;
+        button.disabled = true;
+        setStatus("Checking for updates\u2026", "");
+        fetch("/api/update", { method: "POST", cache: "no-store" })
+          .then(response => response.json())
+          .then(data => {
+            switch (data.status) {
+              case "current":
+                setStatus("Already up to date.", "ok", 6);
+                break;
+              case "updated":
+                setStatus("Updated. Reloading\u2026", "ok");
+                setTimeout(() => location.reload(), 800);
+                break;
+              case "updated-restart":
+                setStatus("Updated. Restarting the kiosk\u2026", "ok");
+                setTimeout(() => reloadWhenServerBack(40), 3000);
+                break;
+              case "offline":
+                setStatus("No internet connection. Connect to Wi-Fi, then try again.", "warn", 15);
+                break;
+              case "busy":
+                setStatus("An update is already running.", "warn", 8);
+                break;
+              default:
+                setStatus("Update failed" + (data.detail ? ": " + data.detail : "."), "warn", 15);
+            }
+          })
+          .catch(() => setStatus("Couldn't reach the kiosk server.", "warn", 10))
+          .finally(() => { busy = false; button.disabled = false; });
+      });
+
+      fetchVersion().then(v => {
+        if (!v) return;
+        loadedHash = v.hash;
+        render(v);
+      });
+      setInterval(() => {
+        if (busy || !loadedHash || view !== "landing") return;
+        fetchVersion().then(v => { if (v && v.hash !== loadedHash) location.reload(); });
+      }, 30000);
+    })();
   </script>
 </body>
 </html>
