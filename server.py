@@ -9,6 +9,7 @@ import os
 import pty
 import re
 import shutil
+import sqlite3
 import signal
 import struct
 import subprocess
@@ -57,6 +58,54 @@ VOTE_GLOBAL_WINDOW_SECONDS = 60  # ...in this many seconds
 VOTE_MEMORY_LIMIT = 5000        # (visitor, game) pairs remembered
 VOTE_STATE = {"last_for_key": {}, "recent": [], "seen": {}}  # guarded by VOTES_LOCK
 VOTE_KINDS = {"game": ("games", ""), "webapp": ("webapps", "webapp:")}  # kind -> (folder, vote-key prefix)
+
+# Usage log: one row per time someone has a game, web app, program or video
+# open. It records only what was used, when and for how long -- never who. The
+# file is git-ignored, so it stays on the kiosk and survives every update.
+USAGE_DB = ROOT / "usage.db"
+USAGE_LOCK = threading.Lock()
+USAGE_KINDS = {"game", "webapp", "python", "db", "video"}
+USAGE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{8,40}$")
+USAGE_START_LIMIT = 60          # max new sessions accepted per minute (stops a runaway script)
+USAGE_STARTS = []               # monotonic times of recent starts, guarded by USAGE_LOCK
+_USAGE_CONN = None
+
+
+def usage_connection():
+    """Open (creating on first use) the usage database. Call with USAGE_LOCK held."""
+    global _USAGE_CONN
+    if _USAGE_CONN is None:
+        conn = sqlite3.connect(USAGE_DB, check_same_thread=False, timeout=5)
+        conn.execute("""CREATE TABLE IF NOT EXISTS sessions (
+            id TEXT PRIMARY KEY,
+            started REAL NOT NULL,      -- unix seconds (UTC)
+            last_seen REAL NOT NULL,    -- updated by a heartbeat, so a session cut off by a reload still has a length
+            ended REAL,                 -- NULL if the page went away without saying
+            kind TEXT NOT NULL,         -- game | webapp | python | db | video
+            slug TEXT NOT NULL,
+            visitor TEXT,               -- one person's turn at the kiosk (random, not tied to anyone)
+            reason TEXT                 -- back | idle | exit | crash | timeout | unload ...
+        )""")
+        conn.execute("CREATE INDEX IF NOT EXISTS sessions_started ON sessions (started)")
+        conn.commit()
+        _USAGE_CONN = conn
+    return _USAGE_CONN
+
+
+def usage_target_exists(kind, slug):
+    """Only things that really exist on this kiosk can be logged."""
+    if kind == "game":
+        return (ROOT / "games" / slug / "index.html").is_file()
+    if kind == "webapp":
+        return (ROOT / "webapps" / slug / "index.html").is_file()
+    if kind == "python":
+        return (PYTHON_PROJECTS_DIR / slug).is_dir()
+    if kind == "db":
+        return (DB_PROJECTS_DIR / slug).is_dir()
+    if kind == "video":
+        file = (ESCAPE_ROOMS_DIR / slug).resolve()
+        return file.parent == ESCAPE_ROOMS_DIR.resolve() and file.suffix.lower() in VIDEO_TYPES and file.is_file()
+    return False
 
 PYTHON_PROJECTS_DIR = ROOT / "python_projects"
 PYTHON_MANIFEST = ROOT / "pythonProjects.json"
@@ -291,6 +340,9 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
             if outcome.get("status") == "updated-restart":
                 threading.Timer(1.0, restart_server).start()
             return
+        if path == "/api/usage":
+            self.handle_usage()
+            return
         if path != "/api/vote":
             self.send_error(404)
             return
@@ -330,6 +382,60 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
             votes[key] = votes.get(key, 0) + 1
             write_votes(votes)
             self.send_json({"slug": slug, "count": votes[key]})
+
+    def handle_usage(self):
+        """POST {action: start|beat|end, id, kind, slug, visitor, reason}."""
+        if not self.local_origin():
+            self.send_json({"error": "forbidden"}, 403)
+            return
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            if not 0 <= content_length <= 1024:
+                raise ValueError("body too large")
+            payload = json.loads(self.rfile.read(content_length))
+            if not isinstance(payload, dict):
+                raise ValueError("payload must be an object")
+        except (ValueError, json.JSONDecodeError):
+            self.send_json({"error": "invalid JSON"}, 400)
+            return
+        action, session_id = payload.get("action"), payload.get("id")
+        if action not in ("start", "beat", "end") or not isinstance(session_id, str) or not USAGE_ID_PATTERN.fullmatch(session_id):
+            self.send_json({"error": "invalid usage event"}, 400)
+            return
+        now = time.time()
+        try:
+            with USAGE_LOCK:
+                conn = usage_connection()
+                if action == "start":
+                    kind, slug = payload.get("kind"), payload.get("slug")
+                    visitor = payload.get("visitor", "")
+                    if kind not in USAGE_KINDS or not isinstance(slug, str) or not 0 < len(slug) <= 150 or "/" in slug or "\\" in slug \
+                            or not isinstance(visitor, str) or (visitor and not VISITOR_PATTERN.fullmatch(visitor)):
+                        self.send_json({"error": "invalid usage event"}, 400)
+                        return
+                    if not usage_target_exists(kind, slug):
+                        self.send_json({"error": "unknown item"}, 404)
+                        return
+                    USAGE_STARTS[:] = [t for t in USAGE_STARTS if time.monotonic() - t < 60]
+                    if len(USAGE_STARTS) >= USAGE_START_LIMIT:
+                        self.send_json({"error": "rate_limited"}, 429)
+                        return
+                    USAGE_STARTS.append(time.monotonic())
+                    conn.execute("INSERT OR IGNORE INTO sessions (id, started, last_seen, kind, slug, visitor) VALUES (?, ?, ?, ?, ?, ?)",
+                                 (session_id, now, now, kind, slug, visitor))
+                elif action == "beat":
+                    conn.execute("UPDATE sessions SET last_seen = ? WHERE id = ? AND ended IS NULL", (now, session_id))
+                else:
+                    reason = payload.get("reason")
+                    reason = reason if isinstance(reason, str) and re.fullmatch(r"[a-z_]{1,20}", reason) else "unknown"
+                    conn.execute("UPDATE sessions SET last_seen = ?, ended = ?, reason = ? WHERE id = ? AND ended IS NULL",
+                                 (now, now, reason, session_id))
+                conn.commit()
+        except sqlite3.Error as error:
+            self.send_json({"error": "usage log unavailable"}, 500)
+            print(f"usage log error: {error}", file=sys.stderr)
+            return
+        self.send_json({"ok": True})
 
     def log_message(self, format, *args):
         super().log_message(format, *args)

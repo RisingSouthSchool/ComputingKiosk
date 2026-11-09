@@ -55,8 +55,34 @@
     const player = document.getElementById("player");
     const error = document.getElementById("error");
     let lastTile = null;
+    let currentFile = null;
+
+    // Usage log: one session per stretch of a video actually playing. Only the
+    // video and how long it ran are sent, never anything about who watched.
+    let usage = null;
+    let usageBeat = null;
+    const randomId = () => Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+    function postUsage(body, keepalive) {
+      try { fetch("/api/usage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: !!keepalive }).catch(() => {}); }
+      catch (error) { /* never get in the way of watching */ }
+    }
+    function startUsage() {
+      if (usage || !currentFile) return;
+      let visitor = "";
+      try { visitor = (parent.kioskVisitor && parent.kioskVisitor()) || ""; } catch (error) { /* standalone page */ }
+      usage = { id: randomId() };
+      postUsage({ action: "start", id: usage.id, kind: "video", slug: currentFile, visitor });
+      usageBeat = setInterval(() => { if (usage) postUsage({ action: "beat", id: usage.id }); }, 30000);
+    }
+    function endUsage(reason, keepalive) {
+      if (!usage) return;
+      clearInterval(usageBeat); usageBeat = null;
+      postUsage({ action: "end", id: usage.id, reason }, keepalive);
+      usage = null;
+    }
 
     function showList() {
+      endUsage("back");
       player.pause();
       player.removeAttribute("src");
       player.load();
@@ -67,6 +93,7 @@
 
     function play(video, tile) {
       lastTile = tile;
+      currentFile = video.file;
       error.hidden = true;
       nowPlaying.textContent = video.title;
       player.src = "/escape-rooms/" + encodeURIComponent(video.file);
@@ -93,6 +120,10 @@
 
     back.addEventListener("click", showList);
     player.addEventListener("error", () => { error.hidden = false; });
+    player.addEventListener("play", startUsage);
+    player.addEventListener("pause", () => endUsage("paused"));
+    player.addEventListener("ended", () => endUsage("ended"));
+    window.addEventListener("pagehide", () => endUsage("unload", true));
     document.addEventListener("keydown", event => {
       if (event.key === "Escape" && viewer.classList.contains("open")) showList();
     });

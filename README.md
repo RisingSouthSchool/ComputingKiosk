@@ -116,6 +116,29 @@ when the served version changes, for example after the background auto-sync
 (`setup_autosync.command`) has pulled an update. Votes (`votes.json`) are always
 kept. The button needs the hub folder to be a git clone.
 
+## Idle behaviour and the usage log
+
+- **No input on a menu for 20 seconds** (`IDLE_MS`): the showcase fades in.
+- **No input in a game, web app or Python/database program for 2 minutes**
+  (`PLAY_IDLE_MS`): it is closed, the hub returns to the home screen and the
+  showcase fades in over it. A video that is playing counts as input. The hub
+  listens for keys, mouse, touch and wheel inside the game frame (games are
+  served from the same origin) and for gamepad input.
+- Either way the showcase always sits on the home screen, and touching the
+  screen starts a fresh visit for the next person.
+
+Every time something is open the hub logs a session to `usage.db` (SQLite, in
+the hub folder, git-ignored so it stays on the kiosk and survives updates):
+`started`, `last_seen` (a heartbeat every 30 s), `ended`, `kind` (`game`,
+`webapp`, `python`, `db` or `video`), `slug`, a random per-visit `visitor` id
+and the end `reason` (`back`, `idle`, `exit`, `crash`, `timeout`, `paused`,
+`ended`, `unload`). It records what was used and for how long, never who. Query
+it with `sqlite3 usage.db`, for example:
+
+```
+select kind, slug, count(*) from sessions where ended - started >= 30 group by 1, 2 order by 3 desc;
+```
+
 ## Likes and spam limits
 
 Games and web apps both have a 👍 button (keyboard `V`, gamepad Y). The kiosk is
