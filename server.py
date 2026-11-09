@@ -20,12 +20,25 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
+def _import_websockets():
+    from websockets.asyncio.server import serve
+    from websockets.exceptions import ConnectionClosed as closed
+    return serve, closed
+
+
 try:
-    from websockets.asyncio.server import serve as ws_serve
-    from websockets.exceptions import ConnectionClosed
+    ws_serve, ConnectionClosed = _import_websockets()
 except ImportError:
-    ws_serve = None
-    ConnectionClosed = Exception
+    # Not installed for this Python (or too old). Fall back to the copy bundled
+    # in vendor/py so the Python console works with no pip install.
+    for _name in [name for name in sys.modules if name == "websockets" or name.startswith("websockets.")]:
+        del sys.modules[_name]
+    sys.path.insert(0, str(Path(__file__).resolve().parent / "vendor" / "py"))
+    try:
+        ws_serve, ConnectionClosed = _import_websockets()
+    except ImportError:
+        ws_serve = None
+        ConnectionClosed = Exception
 
 ROOT = Path(__file__).resolve().parent
 VOTES_FILE = ROOT / "votes.json"

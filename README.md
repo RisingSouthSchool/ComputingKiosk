@@ -18,12 +18,9 @@ open while the hub is being used.
 1. Put the student's `.zip` submission in `py_zips/`.
 2. Double-click `start.command`.
 
-This needs the `websockets` package installed once, since it isn't part of
-stock Python 3:
-
-```
-python3 -m pip install websockets
-```
+This needs the `websockets` package. A copy is bundled in `vendor/py/`, so there
+is nothing to install; if a newer one is installed for your Python it is used
+instead.
 
 `python_scan.py` extracts each new submission into `python_projects/<slug>/`,
 preserving its internal folder structure exactly as zipped (a `Game/` or
