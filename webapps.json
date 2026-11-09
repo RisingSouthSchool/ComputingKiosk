@@ -27,6 +27,24 @@
     "featured": true
   },
   {
+    "slug": "horus-heresy-campaign-forge",
+    "title": "Horus Heresy 3.0 Campaign Forge",
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": true
+  },
+  {
+    "slug": "path-planner",
+    "title": "Path Planner",
+    "hasIcon": true,
+    "iconSource": "custom",
+    "iconFile": "icon192.png",
+    "blurb": "",
+    "featured": true
+  },
+  {
     "slug": "programmed",
     "title": "Programmed",
     "hasIcon": true,

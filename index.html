@@ -399,10 +399,13 @@
       bootTimer = null;
     }
 
+    let launchToken = 0;
     function openSocket(project) {
+      const myToken = launchToken;
       return fetch("/api/pty-port", { cache: "no-store" })
         .then(response => { if (!response.ok) throw new Error("could not reach the hub server"); return response.json(); })
         .then(({ port }) => new Promise((resolve, reject) => {
+          if (myToken !== launchToken) { reject(new Error("cancelled")); return; }
           const protocol = location.protocol === "https:" ? "wss:" : "ws:";
           const socket = new WebSocket(`${protocol}//${location.hostname}:${port}/py/${encodeURIComponent(project.slug)}`);
           socket.binaryType = "arraybuffer";
@@ -455,8 +458,10 @@
       const startedAt = Date.now();
       openSocket(project).then(() => {
         const wait = Math.max(0, minimumBootMs - (Date.now() - startedAt));
-        setTimeout(() => { stopBootAnimation(); showLiveTerminal(); }, wait);
+        const tok = launchToken;
+        setTimeout(() => { if (tok !== launchToken) return; stopBootAnimation(); showLiveTerminal(); }, wait);
       }).catch(error => {
+        if (String(error && error.message) === "cancelled") return;
         stopBootAnimation();
         showSessionEnded({ reason: "spawn_error", detail: String(error && error.message || error) });
       });
@@ -484,6 +489,7 @@
     }
 
     function closeTerminalSession() {
+      launchToken++;
       if (currentSocket) { try { currentSocket.close(); } catch (error) { /* already closing */ } currentSocket = null; }
       if (term) { term.dispose(); term = null; }
       stopBootAnimation();
