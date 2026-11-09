@@ -139,6 +139,25 @@ it with `sqlite3 usage.db`, for example:
 select kind, slug, count(*) from sessions where ended - started >= 30 group by 1, 2 order by 3 desc;
 ```
 
+## Stats dashboard
+
+The home screen shows a "This week at the kiosk" strip (plays since Monday, the
+five most played, a busiest-times grid). **See all stats** opens a dashboard
+with period (this week / this term / all time) and type filters, headline
+numbers, a most-played table, the busiest-times grid and plays by week. Tap a
+row for that item's detail (plays per day, how long people stay, likes, quick
+exits). **Download CSV** gives anonymised sessions (date, time, weekday, kind,
+item, seconds, whether it counted as a play, why it ended) for analysis.
+
+- A **play** is a session of 30 seconds or more, counted once per game per
+  visit (`PLAY_MIN_SECONDS` in `server.py`). Session lengths are capped at 20
+  minutes.
+- "This term" uses `terms.json` (WA public school dates for 2026 and 2027);
+  edit it if your school's dates differ. In the holidays it shows the term
+  that just finished.
+- The numbers come from `/api/stats` and `/api/usage.csv`, which read
+  `usage.db`. With no data yet the screens say so.
+
 ## Likes and spam limits
 
 Games and web apps both have a 👍 button (keyboard `V`, gamepad Y). The kiosk is

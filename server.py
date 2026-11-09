@@ -18,10 +18,11 @@ import tempfile
 import termios
 import threading
 import time
+from datetime import datetime, timedelta
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote, urlsplit
+from urllib.parse import parse_qs, unquote, urlsplit
 
 def _import_websockets():
     from websockets.asyncio.server import serve
@@ -90,6 +91,145 @@ def usage_connection():
         conn.commit()
         _USAGE_CONN = conn
     return _USAGE_CONN
+
+
+# --- Usage statistics ---------------------------------------------------
+# A "play" is a session of at least PLAY_MIN_SECONDS, counted once per visit per
+# item, so tapping a game open and straight shut does not count and nobody can
+# pile up plays on one game within a single turn. Session lengths are capped so a
+# stray unfinished row cannot distort averages.
+PLAY_MIN_SECONDS = 30
+SESSION_CAP_SECONDS = 20 * 60
+TERMS_FILE = ROOT / "terms.json"
+LENGTH_BUCKETS = [("Under 30 s", 30), ("30 s to 2 min", 120), ("2 to 10 min", 600), ("Over 10 min", None)]
+
+
+def read_terms():
+    """School terms from terms.json (edit it if your school's dates differ)."""
+    try:
+        terms = json.loads(TERMS_FILE.read_text(encoding="utf-8"))
+        return [(t["name"], datetime.fromisoformat(t["start"]), datetime.fromisoformat(t["end"]) + timedelta(days=1)) for t in terms]
+    except (OSError, ValueError, KeyError, TypeError):
+        return []
+
+
+def period_bounds(period, now):
+    """(start, end, label) as local naive datetimes for week / term / all."""
+    if period == "week":
+        start = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+        return start, now, "Since Monday"
+    if period == "term":
+        terms = read_terms()
+        current = next((t for t in terms if t[1] <= now < t[2]), None)
+        if current is None:  # in the holidays: show the term that just finished
+            finished = [t for t in terms if t[2] <= now]
+            current = finished[-1] if finished else None
+        if current:
+            return current[1], min(current[2], now), current[0]
+        return now - timedelta(days=90), now, "Last 90 days"
+    return datetime.fromtimestamp(0), now, "All time"
+
+
+def load_sessions(since, kind=None, slug=None):
+    with USAGE_LOCK:
+        conn = usage_connection()
+        sql, args = "SELECT started, last_seen, ended, kind, slug, visitor, id, reason FROM sessions WHERE started >= ?", [since.timestamp()]
+        if kind:
+            sql += " AND kind = ?"; args.append(kind)
+        if slug:
+            sql += " AND slug = ?"; args.append(slug)
+        rows = conn.execute(sql + " ORDER BY started", args).fetchall()
+    sessions = []
+    for started, last_seen, ended, k, sl, visitor, sid, reason in rows:
+        seconds = max(0.0, min((ended if ended is not None else last_seen) - started, SESSION_CAP_SECONDS))
+        sessions.append({"t": datetime.fromtimestamp(started), "seconds": seconds, "kind": k, "slug": sl, "visitor": visitor or sid, "reason": reason})
+    return sessions
+
+
+def mark_plays(sessions):
+    """Flag each session that counts as a play: long enough, first of its visit for that item."""
+    seen = set()
+    for item in sessions:
+        key = (item["visitor"], item["kind"], item["slug"])
+        item["play"] = item["seconds"] >= PLAY_MIN_SECONDS and key not in seen
+        if item["play"]:
+            seen.add(key)
+    return sessions
+
+
+def compute_stats(period, kind=None, slug=None, now=None):
+    now = now or datetime.now()
+    start, end, label = period_bounds(period, now)
+    first = min(start, now - timedelta(days=56))
+    sessions = mark_plays(load_sessions(first, kind, slug))
+    inside = [x for x in sessions if start <= x["t"] <= end]
+    plays = [x for x in inside if x["play"]]
+
+    items = {}
+    for x in plays:
+        entry = items.setdefault((x["kind"], x["slug"]), {"kind": x["kind"], "slug": x["slug"], "plays": 0, "seconds": 0.0})
+        entry["plays"] += 1
+        entry["seconds"] += x["seconds"]
+    ranked = sorted(items.values(), key=lambda e: (-e["plays"], e["slug"]))
+    for e in ranked:
+        e["avg_seconds"] = round(e.pop("seconds") / e["plays"])
+
+    heat = [[0] * 24 for _ in range(7)]
+    for x in plays:
+        heat[x["t"].weekday()][x["t"].hour] += 1
+
+    week0 = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+    weeks = []
+    for i in range(7, -1, -1):
+        w_start = week0 - timedelta(weeks=i)
+        weeks.append({"start": w_start.strftime("%Y-%m-%d"), "plays": sum(1 for x in sessions if x["play"] and w_start <= x["t"] < w_start + timedelta(weeks=1))})
+    day0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    days = []
+    for i in range(27, -1, -1):
+        d = day0 - timedelta(days=i)
+        days.append({"date": d.strftime("%Y-%m-%d"), "plays": sum(1 for x in sessions if x["play"] and d <= x["t"] < d + timedelta(days=1))})
+
+    lengths = [0] * len(LENGTH_BUCKETS)
+    for x in inside:
+        for i, (_, limit) in enumerate(LENGTH_BUCKETS):
+            if limit is None or x["seconds"] < limit:
+                lengths[i] += 1
+                break
+
+    previous = None
+    if period == "week":
+        prev_start = start - timedelta(weeks=1)
+        # Compare like with like: last week up to this same point, not the whole of it.
+        previous = sum(1 for x in sessions if x["play"] and prev_start <= x["t"] < prev_start + (end - start))
+    by_kind = {}
+    for x in plays:
+        by_kind[x["kind"]] = by_kind.get(x["kind"], 0) + 1
+    total = len(plays)
+    return {
+        "period": period, "label": label, "from": start.strftime("%Y-%m-%d"), "to": end.strftime("%Y-%m-%d"),
+        "total_plays": total,
+        "avg_seconds": round(sum(x["seconds"] for x in plays) / total) if total else 0,
+        "sessions": len(inside),
+        "quick_exits": sum(1 for x in inside if x["seconds"] < PLAY_MIN_SECONDS),
+        "previous_plays": previous,
+        "items": ranked, "heatmap": heat, "weeks": weeks, "days": days,
+        "lengths": [{"label": name, "count": lengths[i]} for i, (name, _) in enumerate(LENGTH_BUCKETS)],
+        "by_kind": by_kind,
+    }
+
+
+def usage_csv(period):
+    """Anonymised sessions as CSV: no visit ids, so rows cannot be linked to a person."""
+    start, end, _ = period_bounds(period, datetime.now())
+    sessions = mark_plays(load_sessions(start))
+    lines = ["date,time,weekday,kind,item,seconds,counted_as_play,ended_because"]
+    for x in sessions:
+        if x["t"] > end:
+            continue
+        item = '"' + x["slug"].replace('"', '""') + '"'
+        lines.append(",".join([x["t"].strftime("%Y-%m-%d"), x["t"].strftime("%H:%M"), x["t"].strftime("%a"), x["kind"], item,
+                               str(round(x["seconds"])), "1" if x["play"] else "0", x["reason"] or ""]))
+    return "\n".join(lines) + "\n"
 
 
 def usage_target_exists(kind, slug):
@@ -306,6 +446,9 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path in ("/api/stats", "/api/usage.csv"):
+            self.handle_stats(path)
+            return
         if path == "/api/escape-rooms":
             self.send_json(self.list_escape_rooms())
             return
@@ -382,6 +525,32 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
             votes[key] = votes.get(key, 0) + 1
             write_votes(votes)
             self.send_json({"slug": slug, "count": votes[key]})
+
+    def handle_stats(self, path):
+        query = parse_qs(urlsplit(self.path).query)
+        period = query.get("period", ["week"])[0]
+        kind = query.get("kind", [None])[0]
+        slug = query.get("slug", [None])[0]
+        if period not in ("week", "term", "all") or (kind is not None and kind not in USAGE_KINDS) \
+                or (slug is not None and (not 0 < len(slug) <= 150 or "/" in slug or "\\" in slug)):
+            self.send_json({"error": "invalid query"}, 400)
+            return
+        try:
+            if path == "/api/stats":
+                self.send_json(compute_stats(period, kind, slug))
+                return
+            body = usage_csv(period).encode("utf-8")
+        except sqlite3.Error as error:
+            print(f"usage stats error: {error}", file=sys.stderr)
+            self.send_json({"error": "usage log unavailable"}, 500)
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "text/csv; charset=utf-8")
+        self.send_header("Content-Disposition", f'attachment; filename="kiosk-usage-{datetime.now():%Y-%m-%d}.csv"')
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
 
     def handle_usage(self):
         """POST {action: start|beat|end, id, kind, slug, visitor, reason}."""
