@@ -480,7 +480,7 @@
       terminalEnded.className = "tone-" + meta.tone;
       endedTitle.textContent = meta.title;
       endedDetail.textContent = info.detail || "";
-      setTimeout(() => { closeTerminalSession(); backToPythonList(); }, 2000);
+      setTimeout(() => { closeTerminalSession(); backToPythonList(); }, meta.tone === "error" ? 9000 : 2000);
     }
 
     function closeTerminalSession() {

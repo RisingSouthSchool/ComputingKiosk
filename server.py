@@ -261,6 +261,7 @@ class PtySession:
         self.process = None
         self.finished = asyncio.Event()
         self._finish_once = False
+        self.tail = b""  # last bit of program output, used to explain a crash
 
     async def run(self):
         try:
@@ -321,6 +322,7 @@ class PtySession:
         except OSError:
             data = b""
         if data:
+            self.tail = (self.tail + data)[-4000:]
             asyncio.create_task(self._safe_send_bytes(data))
         else:
             # EOF/EIO: the child closed its end of the pty. The exit-wait
@@ -347,7 +349,16 @@ class PtySession:
         if returncode == 0:
             await self._finish("exit", "program finished")
         else:
-            await self._finish("crash", f"exited with code {returncode}")
+            reason = self._last_output_line()
+            await self._finish("crash", f"exited with code {returncode}" + (f": {reason}" if reason else ""))
+
+    def _last_output_line(self):
+        """Last non-empty line the program printed, minus terminal escape codes.
+        For a crash this is normally the Python error message."""
+        text = self.tail.decode("utf-8", errors="replace")
+        text = re.sub(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[()][0-9A-Za-z]|\x1b[=>]|\x1b\][^\x07]*\x07", "", text)
+        lines = [line.strip() for line in text.replace("\r", "\n").split("\n") if line.strip()]
+        return lines[-1][:160] if lines else ""
 
     async def _pump_input(self):
         try:
