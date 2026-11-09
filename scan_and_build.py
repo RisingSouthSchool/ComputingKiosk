@@ -113,7 +113,13 @@ def validate_game(game_dir):
     if not (game_dir / "index.html").is_file():
         return "no index.html found after extraction"
     if not any(game_dir.rglob("*.js")):
-        return "no .js engine file found after extraction"
+        # A single-file game (e.g. a vibe-coded one) keeps its script inline.
+        try:
+            inline = "<script" in (game_dir / "index.html").read_text(encoding="utf-8", errors="ignore").lower()
+        except OSError:
+            inline = False
+        if not inline:
+            return "no .js engine file or inline <script> found after extraction"
     return None
 
 
