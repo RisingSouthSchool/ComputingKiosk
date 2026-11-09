@@ -291,6 +291,7 @@
     // already reflects that, letting this work the same regardless of
     // whether the game was launched from a hub tile or the featured banner.
     function closePlayer() {
+      endUsage("back");
       player.classList.remove("open");
       frame.src = "about:blank";
       history.replaceState(null, "", location.pathname + location.search);
@@ -337,6 +338,33 @@
       renderWebapps();
     }
 
+    // --- Usage log ---------------------------------------------------------
+    // One session per game / app / program open: start, a heartbeat every 30 s,
+    // and an end with the reason. Only what was used and for how long is sent,
+    // never anything about who. Failures are ignored: it must never get in the
+    // way of playing.
+    const USAGE_BEAT_MS = 30000;
+    let usageSession = null;
+    let usageBeat = null;
+    function postUsage(body, keepalive = false) {
+      try { fetch("/api/usage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive }).catch(() => {}); }
+      catch (error) { /* ignore */ }
+    }
+    function startUsage(kind, slug) {
+      endUsage("back");
+      usageSession = { id: newVisitorId() + Math.random().toString(36).slice(2, 8), kind, slug };
+      postUsage({ action: "start", id: usageSession.id, kind, slug, visitor: visitorId });
+      usageBeat = setInterval(() => { if (usageSession) postUsage({ action: "beat", id: usageSession.id }); }, USAGE_BEAT_MS);
+    }
+    function endUsage(reason, keepalive = false) {
+      if (!usageSession) return;
+      clearInterval(usageBeat); usageBeat = null;
+      postUsage({ action: "end", id: usageSession.id, reason }, keepalive);
+      usageSession = null;
+    }
+    window.addEventListener("pagehide", () => endUsage("unload", true));
+    window.kioskVisitor = () => visitorId;   // lets the escape-room gallery tag its video plays
+
     // The escape-room gallery is a page of its own (escape-rooms/index.html) shown
     // in the same player as games, so Back to Hub returns to the landing screen.
     function enterEscapeRooms() {
@@ -348,6 +376,7 @@
     // Games and web apps share the player; each item carries the folder it
     // lives in ("games/" or "webapps/"), set when the manifests are loaded.
     function openGame(game) {
+      startUsage(game.base === "webapps/" ? "webapp" : "game", game.slug);
       frame.src = (game.base || "games/") + encodeURIComponent(game.slug) + "/index.html";
       player.classList.add("open");
       history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
@@ -499,6 +528,7 @@
 
     function startProgram() {
       const project = currentProject;
+      startUsage(project.kind === "db" ? "db" : "python", project.slug);
       setTerminalSection("boot");
       runBootAnimation(project);
       const minimumBootMs = 1200;
@@ -526,6 +556,7 @@
     }
 
     function showSessionEnded(info) {
+      endUsage(info.reason || "exit");
       sessionEndingHandled = true;
       setTerminalSection("ended");
       const meta = SESSION_END_MESSAGES[info.reason] || SESSION_END_MESSAGES.error;
@@ -536,6 +567,7 @@
     }
 
     function closeTerminalSession() {
+      endUsage("back");
       launchToken++;
       if (currentSocket) { try { currentSocket.close(); } catch (error) { /* already closing */ } currentSocket = null; }
       if (term) { term.dispose(); term = null; }
@@ -805,7 +837,9 @@
 
     const attract = document.getElementById("attract");
     const attractSlides = [...attract.querySelectorAll(".attract-slide")];
-    const IDLE_MS = 20000;
+    const IDLE_MS = 20000;            // no input on a menu: show the showcase
+    const PLAY_IDLE_MS = 120000;      // no input in a game / app / program: close it, go home, show the showcase
+    let lastActivityAt = performance.now();
     const SLIDE_MS = 6000;
     let idleTimer = null;
     let cycleTimer = null;
@@ -848,14 +882,45 @@
       activeSlide = next;
     }
 
+    const isBusy = () => player.classList.contains("open") || terminalView.classList.contains("open");
+
+    // Input inside a game or web app never reaches the hub page, but they are
+    // served from the same origin, so the hub listens inside the frame itself.
+    function attachFrameActivity() {
+      try {
+        const frameWindow = frame.contentWindow;
+        if (!frameWindow || !frameWindow.document || frame.src.endsWith("about:blank")) return;
+        ["keydown", "mousedown", "mousemove", "pointerdown", "touchstart", "wheel"].forEach(type =>
+          frameWindow.addEventListener(type, () => { lastActivityAt = performance.now(); }, { capture: true, passive: true }));
+      } catch (error) { /* a cross-origin page: nothing to listen to */ }
+    }
+    frame.addEventListener("load", attachFrameActivity);
+
+    // A video that is playing counts as someone using the kiosk.
+    function frameVideoPlaying() {
+      try { return [...frame.contentDocument.querySelectorAll("video")].some(video => !video.paused && !video.ended); }
+      catch (error) { return false; }
+    }
+
+    // Back to a clean home screen: whatever was open is closed and logged.
+    function goHome(reason) {
+      if (player.classList.contains("open")) { endUsage(reason); closePlayer(); }
+      if (terminalView.classList.contains("open")) { endUsage(reason); closeTerminalSession(); }
+      if (view !== "landing") showLanding();
+    }
+
     function enterAttract() {
       idleTimer = null;
-      // Never take over while a game is actually being played; keep checking so
-      // the timer resumes on its own once the player closes.
-      if (player.classList.contains("open")) { idleTimer = setTimeout(enterAttract, IDLE_MS); return; }
       if (attractOpen) return;
+      // Menus wait IDLE_MS; anything open waits PLAY_IDLE_MS since its last input
+      // (a playing video counts as input). Not there yet: check again then.
+      const busy = isBusy();
+      if (busy && frameVideoPlaying()) lastActivityAt = performance.now();
+      const remaining = (busy ? PLAY_IDLE_MS : IDLE_MS) - (performance.now() - lastActivityAt);
+      if (remaining > 250) { idleTimer = setTimeout(enterAttract, remaining); return; }
       const list = attractList();
       if (!list.length) return;
+      goHome("idle");
       attractOpen = true;
       startNewVisit();
       attractIndex = 0;
@@ -884,8 +949,9 @@
     function noteActivity() {
       const cancelled = attractOpen;
       if (cancelled) { exitAttract(); wokeAt = performance.now(); }
+      lastActivityAt = performance.now();
       clearTimeout(idleTimer);
-      idleTimer = setTimeout(enterAttract, IDLE_MS);
+      idleTimer = setTimeout(enterAttract, isBusy() ? PLAY_IDLE_MS : IDLE_MS);
       return cancelled;
     }
 

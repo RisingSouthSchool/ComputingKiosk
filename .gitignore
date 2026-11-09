@@ -5,3 +5,7 @@ __pycache__/
 escape-rooms/*
 !escape-rooms/.gitkeep
 !escape-rooms/index.html
+
+# Usage log: stays on the kiosk
+usage.db
+usage.db-*
