@@ -1,0 +1,1887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CHEM-DOS '88: Retro Workstation</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Retro Monospace Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --crt-bg: #030d04;
+      --crt-fg: #00ff66;
+      --crt-fg-dim: #008837;
+      --crt-accent: #ffff00;
+      --crt-panel: #061908;
+      --crt-border: #00aa44;
+      --bezel-main: #dfd6c3;
+      --bezel-dark: #b8ac95;
+      --bezel-shadow: #887b64;
+    }
+
+    /* THEMES */
+    body.theme-amber {
+      --crt-bg: #0d0800;
+      --crt-fg: #ffb000;
+      --crt-fg-dim: #885c00;
+      --crt-accent: #ffffff;
+      --crt-panel: #1a1000;
+      --crt-border: #aa7700;
+    }
+
+    body.theme-win95 {
+      --crt-bg: #000080;
+      --crt-fg: #ffffff;
+      --crt-fg-dim: #a0a0d0;
+      --crt-accent: #ffff00;
+      --crt-panel: #000040;
+      --crt-border: #0080ff;
+    }
+
+    body.theme-synth {
+      --crt-bg: #120024;
+      --crt-fg: #ff007f;
+      --crt-fg-dim: #880044;
+      --crt-accent: #00ffff;
+      --crt-panel: #240048;
+      --crt-border: #aa00aa;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    body {
+      background-color: #0b0c10;
+      font-family: 'Share Tech Mono', monospace;
+      color: var(--crt-fg);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .font-vt323 { font-family: 'VT323', monospace; }
+
+    /* HARDWARE BEZEL FRAME */
+    .retro-hardware {
+      background: linear-gradient(145deg, #eee5d4, var(--bezel-main));
+      border: 10px solid var(--bezel-dark);
+      border-bottom: 20px solid var(--bezel-shadow);
+      border-radius: 24px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.85), inset 0 2px 4px rgba(255,255,255,0.7);
+      width: 100%;
+      max-width: 1360px;
+      position: relative;
+    }
+
+    .hardware-header {
+      background: #c5b8a0;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid var(--bezel-shadow);
+      font-weight: bold;
+      color: #443c2c;
+      font-size: 0.85rem;
+    }
+
+    .power-btn {
+      width: 38px;
+      height: 22px;
+      background: #d32f2f;
+      border: 2px solid #8e0000;
+      border-radius: 3px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.4);
+      transition: all 0.1s;
+    }
+    .power-btn.off {
+      background: #5f1010;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.7);
+    }
+
+    .power-led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #00ff66;
+      box-shadow: 0 0 8px #00ff66;
+    }
+    .power-led.off {
+      background: #004411;
+      box-shadow: none;
+    }
+
+    /* CRT BEZEL & GLASS */
+    .crt-bezel {
+      background: #000;
+      border: 16px solid #1a1814;
+      border-radius: 18px;
+      box-shadow: inset 0 0 35px rgba(0,0,0,0.95);
+      position: relative;
+      overflow: hidden;
+      height: 840px;
+    }
+
+    .crt-screen {
+      background-color: var(--crt-bg);
+      height: 100%;
+      padding: 20px;
+      position: relative;
+      transition: opacity 0.2s ease;
+      animation: crtFlicker 0.15s infinite;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .tab-container-fixed {
+      flex: 1 1 auto;
+      height: 630px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    @keyframes crtFlicker {
+      0% { opacity: 0.991; }
+      25% { opacity: 1; }
+      50% { opacity: 0.984; }
+      75% { opacity: 0.997; }
+      100% { opacity: 0.993; }
+    }
+
+    .crt-screen.powered-off {
+      opacity: 0;
+      pointer-events: none;
+      animation: none;
+    }
+
+    /* GUARANTEE BOOT OVERLAY NEVER BLOCKS CLICKS WHEN HIDDEN */
+    #bootOverlay.hidden {
+      display: none !important;
+      pointer-events: none !important;
+    }
+
+    /* CRT SCANLINES & CATHODE WAVE */
+    .crt-screen::before {
+      content: " ";
+      display: block;
+      position: absolute;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+      z-index: 20;
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    .crt-wave-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(0deg, transparent 0%, var(--crt-fg) 50%, transparent 100%);
+      opacity: 0.03;
+      animation: crtWave 7s linear infinite;
+      pointer-events: none;
+      z-index: 21;
+    }
+
+    @keyframes crtWave {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+
+    /* DOWNWARD CRT BIT-BY-BIT SCAN WIPING */
+    .scan-wipe-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 100%;
+      background: var(--crt-bg);
+      z-index: 30;
+      pointer-events: none;
+      display: none;
+      border-bottom: 3px solid var(--crt-fg);
+      box-shadow: 0 4px 15px var(--crt-fg);
+    }
+
+    .scan-wipe-overlay.active {
+      display: block;
+      animation: scanWipeDown 0.85s steps(22, end) forwards;
+    }
+
+    @keyframes scanWipeDown {
+      0% { top: 0%; height: 100%; }
+      99% { top: 100%; height: 0%; }
+      100% { display: none; }
+    }
+
+    /* RETRO BUTTONS & PANELS */
+    .retro-btn {
+      background: var(--crt-panel);
+      color: var(--crt-fg);
+      border: 1px solid var(--crt-border);
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+      transition: all 0.1s;
+    }
+    .retro-btn:hover, .retro-btn.active {
+      background: var(--crt-fg);
+      color: var(--crt-bg);
+      box-shadow: 0 0 10px var(--crt-fg);
+    }
+
+    .retro-panel {
+      background: var(--crt-panel);
+      border: 1px solid var(--crt-border);
+    }
+
+    .retro-input, .retro-select {
+      background: #000;
+      color: var(--crt-fg);
+      border: 1px solid var(--crt-border);
+      padding: 6px 10px;
+      outline: none;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    .retro-input:focus, .retro-select:focus {
+      border-color: var(--crt-accent);
+      box-shadow: 0 0 6px var(--crt-accent);
+    }
+
+    /* PERIODIC TABLE CELL */
+    .elem-cell {
+      border: 1px solid var(--crt-border);
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3px;
+      cursor: pointer;
+      background: rgba(0,0,0,0.6);
+      transition: all 0.12s;
+    }
+    .elem-cell:hover {
+      border-color: var(--crt-accent);
+      background: var(--crt-fg-dim);
+      box-shadow: 0 0 10px var(--crt-fg);
+      transform: scale(1.12);
+      z-index: 10;
+    }
+
+    /* CANVAS STYLING */
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--crt-bg); border: 1px solid var(--crt-border); }
+    ::-webkit-scrollbar-thumb { background: var(--crt-border); }
+    .crt-screen{position:relative}
+    @keyframes popIn{0%{transform:scale(.7,.02);filter:brightness(3)}55%{transform:scale(1.02,1);filter:brightness(1.6)}100%{transform:none;filter:none}}
+    .pop-in{animation:popIn .45s ease-out}
+    @keyframes dosSweep{0%{top:0;opacity:1}100%{top:100%;opacity:0}}
+    .dossier-sweep{position:absolute;left:0;right:0;height:8px;background:var(--crt-fg);box-shadow:0 0 16px var(--crt-fg);animation:dosSweep .65s linear forwards;z-index:30;pointer-events:none}
+    .elem-cell[class*="cat-"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 18%,#000)}
+    .elem-cell[class*="cat-"] .font-vt323{color:var(--c)!important}
+    .elem-cell[class*="cat-"]:hover{background:color-mix(in srgb,var(--c) 45%,#000)}
+    .retro-btn[class*="cat-"]{border-color:var(--c);color:var(--c)}
+    .retro-btn[class*="cat-"]:hover,.retro-btn[class*="cat-"].active{background:var(--c);color:#000;box-shadow:0 0 10px var(--c)}
+    .sb-el{border:1px solid var(--c);color:var(--c);background:color-mix(in srgb,var(--c) 15%,#000);font:10px 'Share Tech Mono',monospace;text-align:center;padding:5px 0;cursor:pointer}
+    .sb-el:hover{background:var(--c);color:#000}
+    body{align-items:flex-start!important}
+    #scene{width:100%;max-width:1360px;transform-origin:50% 0;transition:transform 1.8s cubic-bezier(.65,0,.25,1);will-change:transform}
+    .pxlogo{width:64px;height:64px;image-rendering:pixelated}
+    .pc-case{margin:-6px auto 0;width:94%;background:linear-gradient(180deg,#e6dcc8,#cbbfa6);border:4px solid var(--bezel-dark);border-top:none;border-radius:0 0 14px 14px;padding:14px 24px;display:flex;align-items:center;gap:20px;box-shadow:0 18px 30px rgba(0,0,0,.6);color:#443c2c;font-family:'VT323',monospace}
+    .fdd{background:#2b2a26;border:3px solid #8d826c;position:relative;flex:none}
+    .fdd:after{content:'';position:absolute;left:8%;right:8%;top:calc(50% - 3px);height:6px;background:#000}
+    .fdd.big{width:190px;height:46px}.fdd.small{width:120px;height:28px}
+    .hled{width:10px;height:10px;border-radius:50%;background:#411;border:1px solid #200;flex:none}
+    .hled.on{background:#f33;box-shadow:0 0 8px #f33}
+    #scene.zoomed .pled{background:#3f6;box-shadow:0 0 8px #3f6;border-color:#063}
+    .vents{flex:1;height:34px;background:repeating-linear-gradient(90deg,#9d927c 0 3px,transparent 3px 9px)}
+    .case-btn{width:44px;height:26px;background:#d8cfb8;border:2px solid #887b64;border-bottom-width:5px;border-radius:3px;cursor:pointer}
+    .case-btn:active{border-bottom-width:2px;transform:translateY(3px)}
+    .kbwrap{display:flex;justify-content:center;align-items:flex-start;gap:36px;margin:26px 0 34px}
+    .kb{width:72%;background:#d3c8b0;border:4px solid var(--bezel-dark);border-radius:10px;padding:12px;box-shadow:0 12px 24px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:4px;align-items:center}
+    .kb-row{display:flex;gap:4px}
+    .key{min-width:34px;height:30px;padding:0 6px;background:#efe7d4;border:1px solid #9d927c;border-bottom:4px solid #8d826c;border-radius:4px;font:11px 'Share Tech Mono',monospace;color:#443c2c;display:flex;align-items:center;justify-content:center}
+    .key.down{transform:translateY(3px);border-bottom-width:1px;background:#d8cfb8}.key.sp{width:300px}
+    .mouse{width:46px;height:70px;margin-top:6px;border-radius:23px 23px 18px 18px;background:linear-gradient(180deg,#e6dcc8,#c9bda4);border:3px solid var(--bezel-dark);position:relative;box-shadow:0 8px 14px rgba(0,0,0,.5)}
+    .mouse:after{content:'';position:absolute;left:50%;top:0;height:26px;border-left:2px solid var(--bezel-shadow)}
+    @keyframes crtOn{0%{transform:scale(1,.004);filter:brightness(5)}45%{transform:scale(1,.012);filter:brightness(3)}100%{transform:none;filter:none}}
+    @keyframes crtOff{0%{transform:none}70%{transform:scale(1,.008);filter:brightness(4)}100%{transform:scale(0,.004);opacity:0}}
+    .crt-screen.crt-on{animation:crtOn .8s ease-out}.crt-screen.crt-off{animation:crtOff .38s ease-in forwards}
+  </style>
+</head>
+<body class="theme-green">
+
+  <!-- AUDIO ASSETS -->
+  <audio id="modemAudio" src="dial-up-modem-01.mp3" preload="auto"></audio>
+
+  <div id="scene">
+  <div class="retro-hardware">
+    <!-- HARDWARE TOP BAR -->
+    <div class="hardware-header">
+      <div class="flex items-center gap-3">
+        <i class="fa-solid fa-microchip"></i>
+        <span>CHEM-DOS '88 WORKSTATION v4.2</span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span class="bg-black text-amber-400 px-2 py-0.5 rounded text-xs font-mono font-bold tracking-widest">640KB RAM</span>
+        <div class="flex items-center gap-2">
+          <span>POWER</span>
+          <button class="power-btn off" id="powerBtn" onclick="togglePower()"></button>
+          <div class="power-led off" id="powerLed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CRT MONITOR -->
+    <div class="crt-bezel">
+      <div class="crt-wave-overlay"></div>
+      <div class="scan-wipe-overlay" id="scanWipe"></div>
+
+      <!-- RETRO CHEMISTRY WINDOWS BOOT SPLASH SCREEN -->
+      <div id="bootOverlay" onclick="skipBoot()" class="absolute inset-0 bg-[var(--crt-bg)] z-40 flex flex-col items-center justify-center p-6 space-y-6 hidden">
+        <canvas class="pxlogo" width="32" height="32" style="width:120px;height:120px;filter:drop-shadow(0 0 8px var(--crt-fg))"></canvas>
+        <div class="text-center space-y-1 max-w-md w-full">
+          <h2 class="font-vt323 text-3xl tracking-widest text-[var(--crt-fg)] drop-shadow-[0_0_8px_var(--crt-fg)]">CHEM-DOS '88 WORKSTATION</h2>
+          <p class="text-xs text-[var(--crt-fg-dim)] font-mono">AWARD MODULAR BIOS v4.51PG | CHEM-CORP (C) 1988</p>
+          <div id="biosLogBox" class="bg-black/80 border border-[var(--crt-border)] p-2 text-[10px] font-mono text-left text-[var(--crt-fg)] h-20 overflow-hidden leading-snug">
+            <div>INITIALIZING SYSTEM HARDWARE...</div>
+          </div>
+        </div>
+        <!-- RETRO LOADING PROGRESS BAR -->
+        <div class="w-80 space-y-1 text-center font-mono">
+          <div class="flex justify-between text-[10px]">
+            <span id="bootStatusText">TESTING RAM: 0 KB...</span>
+            <span id="bootPercentText" class="text-[var(--crt-accent)]">0%</span>
+          </div>
+          <div class="h-3 w-full bg-black border border-[var(--crt-border)] p-0.5">
+            <div id="bootProgressBar" class="h-full bg-[var(--crt-fg)] w-0 transition-all duration-100 shadow-[0_0_8px_var(--crt-fg)]"></div>
+          </div>
+          <div class="text-[9px] text-[var(--crt-fg-dim)] pt-1">[ CLICK TO SKIP BOOT ]</div>
+        </div>
+      </div>
+
+      <div class="crt-screen powered-off flex flex-col justify-between" id="crtScreen">
+
+        <!-- TERMINAL HEADER -->
+        <div class="flex flex-col h-full">
+          <div class="flex flex-wrap justify-between items-center border-b border-[var(--crt-border)] pb-3 mb-4">
+            <div class="flex items-center gap-3"><canvas class="pxlogo" width="32" height="32" style="width:48px;height:48px"></canvas>
+              <h1 class="font-vt323 text-4xl tracking-widest text-[var(--crt-fg)] drop-shadow-[0_0_8px_var(--crt-fg)]">CHEM-DOS '88</h1>
+            </div>
+
+            <!-- THEME SWITCHER -->
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-[var(--crt-fg-dim)]">PALETTE:</span>
+              <select class="retro-select text-xs" onchange="changeTheme(this.value)">
+                <option value="theme-green">DOS PHOSPHOR GREEN</option>
+                <option value="theme-amber">AMBER VT100</option>
+                <option value="theme-win95">TURBO C / WIN95 BLUE</option>
+                <option value="theme-synth">SYNTHWAVE '84</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- TAB NAVIGATION -->
+          <div class="flex flex-wrap gap-2 mb-4 border-b border-[var(--crt-border)] pb-3">
+            <button class="retro-btn active" id="tabBtn1" onclick="switchTab('ptableTab')">[1] PERIODIC TABLE</button>
+            <button class="retro-btn" id="tabBtn2" onclick="switchTab('bohrTab')">[2] 3D BOHR ENGINE</button>
+            <button class="retro-btn" id="tabBtn3" onclick="switchTab('rxnTab')">[3] BOND VISUALIZER</button>
+            <button class="retro-btn" id="tabBtn4" onclick="switchTab('ionTab')">[4] ION DATABASE</button>
+            <button class="retro-btn" id="tabBtn5" onclick="switchTab('sbTab')">[5] SANDBOX</button>
+          </div>
+
+          <!-- FIXED TAB CONTAINER FRAME -->
+          <div class="tab-container-fixed">
+            <!-- TAB 1: PERIODIC TABLE -->
+            <div id="ptableTab" class="tab-content space-y-4">
+              <div class="flex flex-wrap items-center justify-between gap-4 retro-panel p-3">
+                <div class="flex items-center gap-2 flex-grow max-w-md">
+                  <label class="text-xs">SEARCH:</label>
+                  <input type="text" id="elemSearch" class="retro-input w-full text-xs" placeholder="Name, Symbol, or Z..." oninput="handleSearch()">
+                </div>
+                <div class="flex flex-wrap gap-1" id="filterButtonGroup"></div>
+              </div>
+
+              <!-- PERIODIC GRID -->
+              <div class="grid grid-cols-18 gap-1" id="ptableGrid" style="grid-template-columns: repeat(18, minmax(0, 1fr));"></div>
+
+              <!-- LANTHANIDES & ACTINIDES ALIGNED WITH COLUMN 3 -->
+              <div class="mt-4 pt-2 border-t border-dashed border-[var(--crt-border)] space-y-1">
+                <div class="grid grid-cols-18 gap-1" id="lanthanidesGrid" style="grid-template-columns: repeat(18, minmax(0, 1fr));"></div>
+                <div class="grid grid-cols-18 gap-1" id="actinidesGrid" style="grid-template-columns: repeat(18, minmax(0, 1fr));"></div>
+              </div>
+            </div>
+
+            <!-- TAB 2: 3D BOHR ENGINE -->
+            <div id="bohrTab" class="tab-content hidden space-y-4">
+              <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <!-- CONTROLS -->
+                <div class="retro-panel p-4 space-y-4 lg:col-span-1">
+                  <h3 class="font-vt323 text-2xl border-b border-[var(--crt-border)] pb-1">ATOM CONTROLLER</h3>
+
+                  <div class="space-y-1">
+                    <label class="text-xs">SELECT ELEMENT:</label>
+                    <select id="bohrSelect" class="retro-select w-full text-xs" onchange="selectBohrElement(this.value)">
+                    </select>
+                  </div>
+
+                  <div class="space-y-2 text-xs border-y border-[var(--crt-border)] py-3">
+                    <div class="flex justify-between"><span>ATOMIC NO (Z):</span><span id="bohrValZ" class="font-bold text-[var(--crt-accent)]">1</span></div>
+                    <div class="flex justify-between"><span>ATOMIC MASS:</span><span id="bohrValMass" class="font-bold">1.008</span></div>
+                    <div class="flex justify-between"><span>SHELLS:</span><span id="bohrValShells" class="font-bold">1</span></div>
+                    <div class="flex justify-between"><span>ELECTRONS:</span><span id="bohrValElectrons" class="font-bold">1</span></div>
+                    <div class="pt-1"><label class="block text-[10px] mb-1">ION CHARGE: <span id="bohrChargeVal" class="font-bold text-[var(--crt-accent)]">0 (NEUTRAL)</span></label><input type="range" id="bohrChargeSlider" min="-4" max="8" step="1" value="0" class="w-full accent-[var(--crt-fg)]" oninput="updateBohrCharge(this.value)"></div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <button class="retro-btn w-full text-xs" onclick="toggleBohrMotion()">
+                      <i class="fa-solid fa-play mr-1"></i>TOGGLE ORBIT MOTION
+                    </button>
+                    <button class="retro-btn w-full text-xs" onclick="toggleNucleusMode()">
+                      NUCLEUS: <span id="nucModeLabel" class="font-bold text-[var(--crt-accent)]">3D CLUSTER</span>
+                    </button>
+                    <button class="retro-btn w-full text-xs" onclick="resetBohrCamera()">
+                      <i class="fa-solid fa-rotate-left mr-1"></i>RESET CAMERA
+                    </button>
+                  </div>
+
+                  <div class="space-y-2 text-xs pt-2">
+                    <div>
+                      <label class="block text-[10px] mb-1">ORBITAL SPEED (HALVED CALIBRATED):</label>
+                      <input type="range" id="bohrSpeedSlider" min="0.1" max="2.0" step="0.1" value="1.0" class="w-full accent-[var(--crt-fg)]" oninput="updateBohrSpeed(this.value)">
+                    </div>
+                    <div>
+                      <label class="block text-[10px] mb-1">3D TILT ANGLE:</label>
+                      <input type="range" id="bohrTiltSlider" min="0" max="1.57" step="0.05" value="0.6" class="w-full accent-[var(--crt-fg)]" oninput="updateBohrTilt(this.value)">
+                    </div>
+                  </div>
+
+                  <div class="text-[10px] text-[var(--crt-fg-dim)] border-t border-[var(--crt-border)] pt-2 space-y-1">
+                    <div>* Mouse drag on canvas to rotate 3D view</div>
+                    <div>* Trackpad / Wheel scroll to zoom (0.3x - 3.0x)</div>
+                  </div>
+                </div>
+
+                <!-- CANVAS DISPLAY -->
+                <div class="lg:col-span-3 retro-panel relative flex flex-col justify-between" style="min-height: 480px;">
+                  <div class="absolute top-3 left-3 z-10 bg-black/80 px-3 py-1 border border-[var(--crt-border)] text-xs">
+                    <span>3D VECTOR CANVAS</span> | <span id="bohrCanvasTitle" class="text-[var(--crt-accent)] font-bold">HYDROGEN (H)</span>
+                  </div>
+                  <div class="w-full h-full min-h-[460px]" id="bohrCanvasContainer">
+                    <canvas id="bohrCanvas"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 3: BOND VISUALIZER & BALANCER -->
+            <div id="rxnTab" class="tab-content hidden space-y-4">
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <!-- CONTROLS & BALANCER -->
+                <div class="retro-panel p-4 space-y-4 lg:col-span-1">
+                  <h3 class="font-vt323 text-2xl border-b border-[var(--crt-border)] pb-1">REACTION BALANCER</h3>
+
+                  <div class="space-y-1">
+                    <label class="text-xs">PRESET REACTION:</label>
+                    <select id="reactionPresetSelect" class="retro-select w-full text-xs" onchange="onSelectReactionPreset(this.value)">
+                    </select>
+                  </div>
+
+                  <!-- DEDICATED EXECUTE BALANCER BUTTON -->
+                  <button class="retro-btn w-full py-2 font-bold text-sm bg-[var(--crt-fg)] text-[var(--crt-bg)] shadow-[0_0_10px_var(--crt-fg)]" onclick="executeFormulaBalancing()">
+                    <i class="fa-solid fa-calculator mr-2"></i>[EXECUTE BALANCER]
+                  </button>
+
+                  <div class="border-t border-b border-[var(--crt-border)] py-3 space-y-2">
+                    <div class="text-xs font-bold text-[var(--crt-accent)]" id="reactionCategoryText">SYNTHESIS</div>
+                    <div class="text-xs" id="reactionPhaseLabel">PHASE: REACTANTS (BREAKING BONDS)</div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <label class="text-xs block">TRANSITION PROGRESS:</label>
+                    <input type="range" id="reactionScrubSlider" min="0" max="1" step="0.01" value="0" class="w-full accent-[var(--crt-fg)]" oninput="updateReactionProgress(this.value)">
+                    <button class="retro-btn w-full text-xs" id="reactionAnimBtn" onclick="toggleReactionAnim()">
+                      <i class="fa-solid fa-play mr-1"></i>ANIMATE BONDS
+                    </button>
+                  </div>
+
+                  <div class="space-y-2 border-t border-[var(--crt-border)] pt-2">
+                    <div class="text-xs font-bold">BALANCED ATOM TALLY:</div>
+                    <div id="atomTallyRows" class="space-y-1"></div>
+                  </div>
+                </div>
+
+                <!-- MOLECULAR BOND CANVAS -->
+                <div class="lg:col-span-2 retro-panel p-4 flex flex-col justify-between" style="min-height: 480px;">
+                  <div class="flex justify-between items-center border-b border-[var(--crt-border)] pb-2 mb-2">
+                    <span class="text-xs font-bold">MOLECULAR BOND ENGINE</span>
+                    <span class="text-sm font-vt323 text-[var(--crt-accent)]" id="reactionFormulaText">2H₂ + O₂ → 2H₂O</span>
+                  </div>
+                  <div class="flex-grow relative min-h-[400px]">
+                    <canvas id="reactionCanvas"></canvas>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB 5: SANDBOX -->
+            <div id="sbTab" class="tab-content hidden space-y-3">
+              <div class="retro-panel p-2 flex flex-wrap items-center gap-2">
+                <button id="sbModeC" class="retro-btn text-xs active" onclick="sbMode('c')">COMPOUND LAB</button>
+                <button id="sbModeI" class="retro-btn text-xs" onclick="sbMode('i')">ION FORGE</button>
+                <span id="sbHint" class="text-[10px] text-[var(--crt-fg-dim)]"></span>
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-5 gap-3">
+                <div class="lg:col-span-3 retro-panel p-2 space-y-2">
+                  <div id="sbMini" class="grid gap-[2px]" style="grid-template-columns:repeat(18,minmax(0,1fr))"></div>
+                  <div id="sbPolyBox" class="flex items-center gap-2 text-xs border-t border-[var(--crt-border)] pt-2">
+                    <span>POLYATOMIC ION:</span><select id="sbPoly" class="retro-select text-xs flex-grow"></select>
+                    <button class="retro-btn text-xs" onclick="sbAddPoly()">+ ADD</button>
+                  </div>
+                </div>
+                <div class="lg:col-span-2 space-y-2" id="sbSide"></div>
+              </div>
+              <div class="retro-panel p-2" style="height:270px"><canvas id="sbCanvas"></canvas></div>
+            </div>
+
+            <!-- TAB 4: ION DATABASE -->
+            <div id="ionTab" class="tab-content hidden space-y-4">
+              <div class="retro-panel p-3 flex flex-wrap justify-between items-center gap-4">
+                <div class="flex items-center gap-2 max-w-md w-full">
+                  <label class="text-xs">SEARCH IONS:</label>
+                  <input type="text" id="ionSearchInput" class="retro-input text-xs w-full" placeholder="Exact symbol e.g. Na+, SO4-2..." oninput="filterIonCards(this.value)">
+                </div>
+                <div class="text-xs text-[var(--crt-fg-dim)]">
+                  STRICT MATCHING ACTIVE
+                </div>
+              </div>
+
+              <!-- ION CARDS GRID -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="ionGridContainer"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER BAR -->
+        <div class="border-t border-[var(--crt-border)] pt-2 mt-2 flex justify-between items-center text-[11px] text-[var(--crt-fg-dim)]">
+          <div>STATUS: <span id="statusText">READY</span> | DISK: 3.5" FLOPPY | BAUD: 28800</div>
+          <div>CHEM-DOS (C) 1988 CHEM-CORP</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- DESKTOP CASE + KEYBOARD + MOUSE -->
+  <div class="pc-case">
+    <canvas class="pxlogo" width="32" height="32" style="width:56px;height:56px"></canvas>
+    <div class="text-3xl leading-none">CHEM-CORP <b>386</b> TURBO<div class="text-sm opacity-70">640K · 20MB HDD · 3.5" + 5.25" FDD</div></div>
+    <div class="fdd big" title="5.25 inch floppy"></div>
+    <div class="fdd small" title="3.5 inch floppy"></div>
+    <div class="flex items-center gap-2"><span class="text-sm">PWR</span><i class="hled pled"></i><span class="text-sm">HDD</span><i class="hled" id="hddLed"></i></div>
+    <div class="vents"></div>
+    <button class="case-btn" title="Power" onclick="togglePower()"></button>
+  </div>
+  <div class="kbwrap"><div class="kb" id="kb"></div><div class="mouse"></div></div>
+  </div>
+
+  <!-- ELEMENT DETAIL MODAL -->
+  <div id="elemModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalBox" class="retro-hardware w-full max-w-2xl">
+      <div class="hardware-header">
+        <span id="modalTitle">ELEMENT DOSSIER</span>
+        <button class="retro-btn text-xs py-0 px-2" onclick="closeModal()">[X] CLOSE</button>
+      </div>
+      <div class="crt-bezel" style="min-height:auto;">
+        <div class="crt-screen p-6 space-y-4"><div id="modalSweep"></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2 space-y-3">
+              <div class="flex items-baseline gap-3">
+                <span class="font-vt323 text-5xl text-[var(--crt-accent)]" id="modalSym">H</span>
+                <div>
+                  <h2 class="text-xl font-bold" id="modalName">Hydrogen</h2>
+                  <div class="text-xs text-[var(--crt-fg-dim)]" id="modalCat">NONMETAL</div>
+                </div>
+              </div>
+              <p class="text-xs border-y border-[var(--crt-border)] py-2" id="modalDesc">Lightest element, highly flammable gas forming water upon combustion.</p>
+              <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>ATOMIC NO: <span class="font-bold text-[var(--crt-fg)]" id="modalZ">1</span></div>
+                <div>ATOMIC MASS: <span class="font-bold" id="modalMass">1.008</span></div>
+                <div>STATE (STP): <span class="font-bold text-[var(--crt-accent)]" id="modalPhase">GAS</span></div>
+                <div>ELECTRON CONFIG: <span class="font-bold text-[var(--crt-accent)]" id="modalConfig">1s¹</span></div>
+              </div>
+            </div>
+            <div class="retro-panel p-2 flex flex-col justify-between items-center h-48">
+              <span class="text-[10px] text-[var(--crt-fg-dim)]">ORBITAL PREVIEW</span>
+              <canvas id="modalBohrCanvas" class="w-full h-36"></canvas>
+            </div>
+          </div>
+          <div class="flex justify-end gap-2 pt-2 border-t border-[var(--crt-border)]">
+            <button class="retro-btn text-xs" onclick="openFullBohrTab()">VIEW IN 3D ENGINE</button>
+            <button class="retro-btn text-xs" onclick="closeModal()">CLOSE</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN SCRIPT -->
+  <script>
+    // COMPLETE 118 ELEMENT DATABASE WITH ACCURATE DESCRIPTIONS (NO Z= NUMBERS)
+    const ELEMENTS = [
+      { z: 1, sym: "H", name: "Hydrogen", mass: 1.008, cat: "nonmetal", phase: "gas", row: 1, col: 1, shells: [1], config: "1s¹", desc: "Lightest chemical element, highly flammable diatomic gas forming water upon oxidation." },
+      { z: 2, sym: "He", name: "Helium", mass: 4.0026, cat: "noble", phase: "gas", row: 1, col: 18, shells: [2], config: "1s²", desc: "Colorless, odorless noble gas with the lowest boiling point; widely used in cryogenics." },
+      { z: 3, sym: "Li", name: "Lithium", mass: 6.94, cat: "alkali", phase: "solid", row: 2, col: 1, shells: [2, 1], config: "[He] 2s¹", desc: "Soft, highly reactive alkali metal essential for high-energy rechargeable battery anodes." },
+      { z: 4, sym: "Be", name: "Beryllium", mass: 9.0122, cat: "alkaline", phase: "solid", row: 2, col: 2, shells: [2, 2], config: "[He] 2s²", desc: "Rigid, lightweight metal prized for structural stability in aerospace and X-ray optics." },
+      { z: 5, sym: "B", name: "Boron", mass: 10.81, cat: "metalloid", phase: "solid", row: 2, col: 13, shells: [2, 3], config: "[He] 2s² 2p¹", desc: "High-hardness metalloid utilized in borosilicate heat-resistant glass and semiconductors." },
+      { z: 6, sym: "C", name: "Carbon", mass: 12.011, cat: "nonmetal", phase: "solid", row: 2, col: 14, shells: [2, 4], config: "[He] 2s² 2p²", desc: "Universal element of organic chemistry forming diamond, graphite, and fullerenes." },
+      { z: 7, sym: "N", name: "Nitrogen", mass: 14.007, cat: "nonmetal", phase: "gas", row: 2, col: 15, shells: [2, 5], config: "[He] 2s² 2p³", desc: "Abundant atmospheric gas essential for protein structure, nucleic acids, and fertilizers." },
+      { z: 8, sym: "O", name: "Oxygen", mass: 15.999, cat: "nonmetal", phase: "gas", row: 2, col: 16, shells: [2, 6], config: "[He] 2s² 2p⁴", desc: "Highly reactive oxidizing nonmetal driving aerobic respiration and planet combustion." },
+      { z: 9, sym: "F", name: "Fluorine", mass: 18.998, cat: "halogen", phase: "gas", row: 2, col: 17, shells: [2, 7], config: "[He] 2s² 2p⁵", desc: "Most electronegative element; reacts aggressively with almost all organic and inorganic substances." },
+      { z: 10, sym: "Ne", name: "Neon", mass: 20.180, cat: "noble", phase: "gas", row: 2, col: 18, shells: [2, 8], config: "[He] 2s² 2p⁶", desc: "Inert noble gas producing an intense reddish-orange luminescence under high-voltage discharge." },
+      { z: 11, sym: "Na", name: "Sodium", mass: 22.990, cat: "alkali", phase: "solid", row: 3, col: 1, shells: [2, 8, 1], config: "[Ne] 3s¹", desc: "Soft alkali metal storing high chemical potential; fundamental for cellular ionic balance." },
+      { z: 12, sym: "Mg", name: "Magnesium", mass: 24.305, cat: "alkaline", phase: "solid", row: 3, col: 2, shells: [2, 8, 2], config: "[Ne] 3s²", desc: "Lightweight structural metal key to plant chlorophyll complexing and high-strength alloys." },
+      { z: 13, sym: "Al", name: "Aluminium", mass: 26.982, cat: "metal", phase: "solid", row: 3, col: 13, shells: [2, 8, 3], config: "[Ne] 3s² 3p¹", desc: "Abundant, low-density post-transition metal with exceptional atmospheric corrosion resistance." },
+      { z: 14, sym: "Si", name: "Silicon", mass: 28.085, cat: "metalloid", phase: "solid", row: 3, col: 14, shells: [2, 8, 4], config: "[Ne] 3s² 3p²", desc: "Foundational semiconductor material powering global microprocessors and photovoltaic technology." },
+      { z: 15, sym: "P", name: "Phosphorus", mass: 30.974, cat: "nonmetal", phase: "solid", row: 3, col: 15, shells: [2, 8, 5], config: "[Ne] 3s² 3p³", desc: "Reactive nonmetal critical for DNA backbones, cellular ATP energy exchange, and safety matches." },
+      { z: 16, sym: "S", name: "Sulfur", mass: 32.06, cat: "nonmetal", phase: "solid", row: 3, col: 16, shells: [2, 8, 6], config: "[Ne] 3s² 3p⁴", desc: "Bright yellow crystalline nonmetal essential for industrial sulfuric acid and rubber vulcanization." },
+      { z: 17, sym: "Cl", name: "Chlorine", mass: 35.45, cat: "halogen", phase: "gas", row: 3, col: 17, shells: [2, 8, 7], config: "[Ne] 3s² 3p⁵", desc: "Pungent halogen gas widely used in municipal water purification and organochlorine synthesis." },
+      { z: 18, sym: "Ar", name: "Argon", mass: 39.948, cat: "noble", phase: "gas", row: 3, col: 18, shells: [2, 8, 8], config: "[Ne] 3s² 3p⁶", desc: "Third-most abundant atmospheric gas providing protective inert shielding for arc welding." },
+      { z: 19, sym: "K", name: "Potassium", mass: 39.098, cat: "alkali", phase: "solid", row: 4, col: 1, shells: [2, 8, 8, 1], config: "[Ar] 4s¹", desc: "Reactive alkali metal providing critical electrolyte potential across biological cell membranes." },
+      { z: 20, sym: "Ca", name: "Calcium", mass: 40.078, cat: "alkaline", phase: "solid", row: 4, col: 2, shells: [2, 8, 8, 2], config: "[Ar] 4s²", desc: "Essential structural mineral component in biological skeletal tissue and industrial cement." }
+    ];
+
+    // DETAILED DESCRIPTIONS FOR ALL REMAINING ELEMENTS (NO Z= NUMBERS)
+    (function fillRemainingElements() {
+      const symbols = ["Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr","Rf","Db","Sg","Bh","Hs","Mt","Ds","Rg","Cn","Nh","Fl","Mc","Lv","Ts","Og"];
+      const names = [
+        "Scandium","Titanium","Vanadium","Chromium","Manganese","Iron","Cobalt","Nickel","Copper","Zinc",
+        "Gallium","Germanium","Arsenic","Selenium","Bromine","Krypton","Rubidium","Strontium","Yttrium","Zirconium",
+        "Niobium","Molybdenum","Technetium","Ruthenium","Rhodium","Palladium","Silver","Cadmium","Indium","Tin",
+        "Antimony","Tellurium","Iodine","Xenon","Cesium","Barium","Lanthanum","Cerium","Praseodymium","Neodymium",
+        "Promethium","Samarium","Europium","Gadolinium","Terbium","Dysprosium","Holmium","Erbium","Thulium","Ytterbium",
+        "Lutetium","Hafnium","Tantalum","Tungsten","Rhenium","Osmium","Iridium","Platinum","Gold","Mercury",
+        "Thallium","Lead","Bismuth","Polonium","Astatine","Radon","Francium","Radium","Actinium","Thorium",
+        "Protactinium","Uranium","Neptunium","Plutonium","Americium","Curium","Berkelium","Californium","Einsteinium","Fermium",
+        "Mendelevium","Nobelium","Lawrencium","Rutherfordium","Dubnium","Seaborgium","Bohrium","Hassium","Meitnerium","Darmstadtium",
+        "Roentgenium","Copernicium","Nihonium","Flerovium","Moscovium","Livermorium","Tennessine","Oganesson"
+      ];
+
+      for (let i = 21; i <= 118; i++) {
+        let sym = symbols[i - 21] || `E${i}`;
+        let name = names[i - 21] || `Element ${i}`;
+        let cat = "transition";
+        if (i >= 57 && i <= 71) cat = "lanthanide";
+        else if (i >= 89 && i <= 103) cat = "actinide";
+        else if (i === 34) cat = "nonmetal";
+        else if ([31, 32, 49, 50, 81, 82, 83].includes(i)) cat = "metal";
+        else if ([33, 51, 52, 84].includes(i)) cat = "metalloid";
+        else if ([35, 53, 85].includes(i)) cat = "halogen";
+        else if ([36, 54, 86].includes(i)) cat = "noble";
+        else if ([37, 55, 87].includes(i)) cat = "alkali";
+        else if ([38, 56, 88].includes(i)) cat = "alkaline";
+        else if (i >= 104 && i <= 118) cat = "transactinide";
+
+        let phase = "solid";
+        if (i === 35 || i === 80) phase = "liquid";
+        else if ([36, 54, 86].includes(i)) phase = "gas";
+        else if (i >= 95) phase = "synthetic";
+
+        // ACCURATE PERIOD & GROUP CALCULATIONS FOR ELEMENTS Z=21 TO Z=118
+        let r = 4, c = 3;
+        if (i >= 21 && i <= 36) { r = 4; c = i - 18; }
+        else if (i >= 37 && i <= 54) { r = 5; c = i - 36; }
+        else if (i >= 55 && i <= 56) { r = 6; c = i - 54; }
+        else if (i >= 57 && i <= 71) { r = 6; c = 3; }
+        else if (i >= 72 && i <= 86) { r = 6; c = i - 68; }
+        else if (i >= 87 && i <= 88) { r = 7; c = i - 86; }
+        else if (i >= 89 && i <= 103) { r = 7; c = 3; }
+        else if (i >= 104 && i <= 118) { r = 7; c = i - 100; }
+
+        ELEMENTS.push({
+          z: i,
+          sym: sym,
+          name: name,
+          mass: +(i * 2.314).toFixed(3),
+          cat: cat,
+          phase: phase,
+          row: r,
+          col: Math.max(1, Math.min(18, c)),
+          shells: [2, 8, Math.min(18, i - 10), Math.max(1, i % 8)],
+          config: `[Core Z=${i}]`,
+          desc: `${name} is a ${cat} element with standard atomic mass ${+(i * 2.314).toFixed(2)} u.`
+        });
+      }
+    })();
+
+    // ===== ACCURATE ELEMENT DATA (masses, configs, shells, categories, descriptions) =====
+    const MASSES=[1.008,4.0026,6.94,9.0122,10.81,12.011,14.007,15.999,18.998,20.180,22.990,24.305,26.982,28.085,30.974,32.06,35.45,39.948,39.098,40.078,44.956,47.867,50.942,51.996,54.938,55.845,58.933,58.693,63.546,65.38,69.723,72.630,74.922,78.971,79.904,83.798,85.468,87.62,88.906,91.224,92.906,95.95,98,101.07,102.91,106.42,107.87,112.41,114.82,118.71,121.76,127.60,126.90,131.29,132.91,137.33,138.91,140.12,140.91,144.24,145,150.36,151.96,157.25,158.93,162.50,164.93,167.26,168.93,173.05,174.97,178.49,180.95,183.84,186.21,190.23,192.22,195.08,196.97,200.59,204.38,207.2,208.98,209,210,222,223,226,227,232.04,231.04,238.03,237,244,243,247,247,251,252,257,258,259,266,267,268,269,270,277,278,281,282,285,286,289,290,293,294,294];
+    const DESCS=("Light transition metal alloyed with aluminium for sports gear|Strong, light, corrosion-proof metal for aircraft and implants|Hard metal that toughens steel for tools and springs|Shiny, hard metal behind stainless steel and chrome plating|Metal essential to steelmaking and dry-cell batteries|Core of steel and of haemoglobin; the most-used metal on Earth|Magnetic metal for batteries, alloys and blue pigments|Corrosion-resistant metal for coins, steel and batteries|Excellent conductor used in wiring, pipes and coins|Galvanises steel against rust; a vital trace nutrient|Melts in your hand; key to LEDs and semiconductors|Metalloid semiconductor used in fibre optics and lenses|Toxic metalloid used in semiconductors and wood treatment|Nonmetal for photocells and glassmaking; a trace nutrient|Only liquid nonmetal; red-brown, used in flame retardants|Inert noble gas used in lighting and lasers|Soft alkali metal that ignites in air; used in atomic clocks|Burns bright red in fireworks and flares|Metal used in LEDs, lasers and superconductors|Resists corrosion and neutrons; lines nuclear fuel rods|Superconducting metal for MRI magnets and jet alloys|High-melting metal that strengthens steel and refines oil|First artificially made element; used in medical imaging|Hard platinum-group metal for electronics and catalysts|Rare, reflective metal in catalytic converters|Absorbs hydrogen; catalyst in exhausts and electronics|Best electrical and thermal conductor; jewellery and mirrors|Toxic soft metal for rechargeable batteries and pigments|Soft metal in touchscreen coatings (ITO)|Soft, corrosion-resistant metal for solder, cans and bronze|Brittle metalloid used in flame retardants and alloys|Metalloid in solar panels and thermoelectric devices|Purple-black halogen needed for thyroid hormones and antiseptics|Heavy noble gas for lamps, anaesthesia and ion thrusters|Softest, most reactive stable metal; defines the second|Dense alkaline earth; barium sulfate outlines the gut in X-rays|Soft rare-earth metal for camera lenses and hydrogen storage|Most abundant rare earth; used in lighter flints and catalysts|Tints glass green; used in strong magnets|Powers the strongest magnets in motors and headphones|Radioactive lanthanide used in luminous paint and batteries|Used in samarium-cobalt magnets and cancer treatment|Makes red phosphors in screens and banknote inks|Highly magnetic; an MRI contrast agent|Makes green phosphors for displays and lighting|Keeps magnets strong when hot in wind turbines and EVs|Strongest magnetic moment of any element; used in lasers|Amplifies signals in optical fibre and tints glass pink|Rarest stable lanthanide; used in portable X-ray sources|Used in atomic clocks, lasers and stress gauges|Densest lanthanide; used in PET scanner detectors|Absorbs neutrons in reactor control rods and microchips|Corrosion-proof metal for capacitors and surgical implants|Highest melting point of any metal; lamp filaments|Heat-resistant metal for jet-engine superalloys|Densest natural element; hardens pen tips and contacts|Corrosion-proof metal for spark plugs; enriched in dinosaur-extinction clay|Precious catalyst for converters, fuel cells and jewellery|Inert, malleable precious metal for jewellery and electronics|Liquid metal at room temperature; toxic, used in lamps and switches|Highly toxic soft metal used in electronics and optics|Dense, toxic metal for batteries and radiation shielding|Heavy but nearly non-toxic metal in medicines and alloys|Intensely radioactive element discovered by Marie Curie|Rarest natural element; a radioactive halogen studied for cancer therapy|Radioactive noble gas that seeps from rock into basements|Extremely rare, unstable alkali metal|Radioactive metal once used in glow-in-the-dark paint|Radioactive metal that glows blue; used in targeted therapy|Weakly radioactive metal and possible nuclear fuel|Rare, toxic radioactive metal found in uranium ore|Dense radioactive metal that fuels nuclear reactors|First transuranium element; made in nuclear reactors|Fissile synthetic metal for reactors and spacecraft power|Synthetic element inside household smoke detectors|Synthetic, radioactive; has powered space probes|Synthetic element used to build heavier elements|Strong neutron emitter for reactor start-up and detectors|Synthetic element first found in hydrogen-bomb debris|Synthetic element made by neutron bombardment|Synthetic element made a few atoms at a time|Synthetic, short-lived actinide|Heaviest actinide; made only in tiny quantities|Synthetic, short-lived transactinide named for Rutherford|Synthetic transactinide named for Dubna, Russia; lasts seconds|Synthetic transactinide named for Glenn Seaborg|Synthetic transactinide named for Niels Bohr|Synthetic transactinide named for Hesse, Germany|Synthetic transactinide named for Lise Meitner|Synthetic transactinide named for Darmstadt, Germany|Synthetic transactinide named for Wilhelm Röntgen|Synthetic transactinide named for Copernicus; may be a liquid|Synthetic, named for Japan; lasts only seconds|Synthetic, named for the Flerov laboratory in Dubna|Synthetic, named for Moscow; lasts under a second|Synthetic, named for Livermore, California|Synthetic halogen-group element named for Tennessee|Heaviest known element; named for Yuri Oganessian").split('|');
+    const NOBLES={2:'He',10:'Ne',18:'Ar',36:'Kr',54:'Xe',86:'Rn'};
+    const ORDER=['1s','2s','2p','3s','3p','4s','3d','4p','5s','4d','5p','6s','4f','5d','6p','7s','5f','6d','7p'];
+    const CAP={s:2,p:6,d:10,f:14};
+    const MOVES={24:['4s','3d',1],29:['4s','3d',1],41:['5s','4d',1],42:['5s','4d',1],44:['5s','4d',1],45:['5s','4d',1],46:['5s','4d',2],47:['5s','4d',1],57:['4f','5d',1],58:['4f','5d',1],64:['4f','5d',1],78:['6s','5d',1],79:['6s','5d',1],89:['5f','6d',1],90:['5f','6d',2],91:['5f','6d',1],92:['5f','6d',1],93:['5f','6d',1],96:['5f','6d',1],103:['6d','7p',1]};
+    const SUP='⁰¹²³⁴⁵⁶⁷⁸⁹', SUB='₀₁₂₃₄₅₆₇₈₉';
+    const toSup=n=>[...String(n)].map(c=>SUP[c]).join(''), toSub=n=>[...String(n)].map(c=>SUB[c]).join('');
+    const sub=s=>s.replace(/(?<=[A-Za-z\)])\d+/g,d=>toSub(d));
+    function occ(z){const o={};let r=z;for(const k of ORDER){const n=Math.min(r,CAP[k[1]]);if(n<=0)break;o[k]=n;r-=n;}const m=MOVES[z];if(m){o[m[0]]-=m[2];o[m[1]]=(o[m[1]]||0)+m[2];}return o;}
+    function catOf(z){
+      if(z>=104)return'transactinide';
+      if([2,10,18,36,54,86,118].includes(z))return'noble';
+      if([3,11,19,37,55,87].includes(z))return'alkali';
+      if([4,12,20,38,56,88].includes(z))return'alkaline';
+      if([9,17,35,53,85,117].includes(z))return'halogen';
+      if([5,14,32,33,51,52].includes(z))return'metalloid';
+      if([1,6,7,8,15,16,34].includes(z))return'nonmetal';
+      if([13,31,49,50,81,82,83,84,113,114,115,116].includes(z))return'post';
+      if(z>=57&&z<=71)return'lanthanide';
+      if(z>=89&&z<=103)return'actinide';
+      if(z>=104&&z<=112)return'transactinide';
+      return'transition';
+    }
+    ELEMENTS.forEach(e=>{
+      const z=e.z,o=occ(z),sh=[];
+      Object.keys(o).forEach(k=>{sh[k[0]-1]=(sh[k[0]-1]||0)+o[k];});
+      e.shells=sh.map(x=>x||0);
+      let core=0;for(const n of [2,10,18,36,54,86])if(n<z)core=n;
+      const cs=core?Object.keys(occ(core)):[];
+      const rest=Object.keys(o).filter(k=>!cs.includes(k)&&o[k]>0).sort((a,b)=>a[0]-b[0]||'spdf'.indexOf(a[1])-'spdf'.indexOf(b[1]));
+      e.config=(core?`[${NOBLES[core]}] `:'')+rest.map(k=>k+toSup(o[k])).join(' ');
+      e.mass=MASSES[z-1];
+      if(z>20)e.desc=DESCS[z-21];
+      e.cat=catOf(z);
+      e.syn=z===43||z===61||z>=93;
+      e.phase=[35,80].includes(z)?'liquid':[1,2,7,8,9,10,17,18,36,54,86].includes(z)?'gas':z>=104?'unknown':'solid';
+    });
+    const CAT_COL={alkali:'#ff6b6b',alkaline:'#ffa94d',transition:'#ffe066',post:'#a9e34b',metalloid:'#38d9a9',nonmetal:'#4dabf7',halogen:'#15aabf',noble:'#b197fc',lanthanide:'#f783ac',actinide:'#e64980',transactinide:'#adb5bd'};
+    const CAT_NAME={alkali:'ALKALI METAL',alkaline:'ALKALINE EARTH METAL',transition:'TRANSITION METAL',post:'POST-TRANSITION METAL',metalloid:'METALLOID',nonmetal:'REACTIVE NONMETAL',halogen:'HALOGEN',noble:'NOBLE GAS',lanthanide:'LANTHANIDE',actinide:'ACTINIDE',transactinide:'TRANSACTINIDE'};
+    const METALCATS=['alkali','alkaline','transition','post','lanthanide','actinide','transactinide'];
+    const FILTERS=[['ALL','ALL'],['solid','SOLID'],['liquid','LIQUID'],['gas','GAS'],['synthetic','SYNTHETIC'],['metal','ALL METALS'],['anynonmetal','ALL NONMETALS'],['alkali','ALKALI'],['alkaline','ALKALINE EARTH'],['transition','TRANSITION'],['post','POST-TRANSITION'],['metalloid','METALLOIDS'],['nonmetal','OTHER NONMETALS'],['halogen','HALOGENS'],['noble','NOBLE GASES'],['lanthanide','LANTHANIDES'],['actinide','ACTINIDES'],['transactinide','TRANSACTINIDES']];
+
+    // ===== MOLECULE LIBRARY: atoms [el,x,y,charge], bonds [i,j,order,ionic] =====
+    const M={
+      H2:[[['H',-.5,0],['H',.5,0]],[[0,1,1]]], O2:[[['O',-.55,0],['O',.55,0]],[[0,1,2]]], N2:[[['N',-.55,0],['N',.55,0]],[[0,1,3]]],
+      Cl2:[[['Cl',-.7,0],['Cl',.7,0]],[[0,1,1]]], Br2:[[['Br',-.8,0],['Br',.8,0]],[[0,1,1]]],
+      H2O:[[['O',0,0],['H',-.8,.65],['H',.8,.65]],[[0,1,1],[0,2,1]]],
+      H2O2:[[['H',-1.4,.5],['O',-.6,0],['O',.6,0],['H',1.4,.5]],[[0,1,1],[1,2,1],[2,3,1]]],
+      CH4:[[['C',0,0],['H',0,-1],['H',-1,0],['H',1,0],['H',0,1]],[[0,1,1],[0,2,1],[0,3,1],[0,4,1]]],
+      CO2:[[['O',-1.2,0],['C',0,0],['O',1.2,0]],[[0,1,2],[1,2,2]]], CO:[[['C',-.6,0],['O',.6,0]],[[0,1,3]]],
+      NH3:[[['N',0,0],['H',-.87,.5],['H',.87,.5],['H',0,-1]],[[0,1,1],[0,2,1],[0,3,1]]],
+      HCl:[[['H',-.7,0],['Cl',.7,0]],[[0,1,1]]],
+      NaCl:[[['Na',-.8,0,1],['Cl',.8,0,-1]],[[0,1,1,1]]], NaF:[[['Na',-.8,0,1],['F',.8,0,-1]],[[0,1,1,1]]], NaBr:[[['Na',-.8,0,1],['Br',.8,0,-1]],[[0,1,1,1]]],
+      MgO:[[['Mg',-.8,0,2],['O',.8,0,-2]],[[0,1,2,1]]],
+      NaOH:[[['Na',-1.3,0,1],['O',0,0,-1],['H',.85,0]],[[0,1,1,1],[1,2,1]]],
+      ZnCl2:[[['Cl',-1.5,0,-1],['Zn',0,0,2],['Cl',1.5,0,-1]],[[0,1,1,1],[1,2,1,1]]],
+      CaCl2:[[['Cl',-1.5,0,-1],['Ca',0,0,2],['Cl',1.5,0,-1]],[[0,1,1,1],[1,2,1,1]]],
+      CaF2:[[['F',-1.5,0,-1],['Ca',0,0,2],['F',1.5,0,-1]],[[0,1,1,1],[1,2,1,1]]]
+    };
+    const molDef=k=>M[k]||[[[k,0,0]],[]];
+    const CPK={H:'#ffffff',C:'#909090',N:'#4d8dff',O:'#ff4040',Na:'#ab5cf2',Cl:'#1ff01f',Mg:'#8aff00',Zn:'#7d80b0',Ca:'#3dff00',F:'#90e050',Br:'#a62929',S:'#ffff30',Fe:'#e06633',P:'#ff8000'};
+    const atomColor=e=>CPK[e]||'#ff9ff3';
+    const RXN_INFO={
+      'Synthesis':['Two or more substances combine into one product (A + B → AB).','#4dabf7'],
+      'Decomposition':['One compound breaks down into simpler substances (AB → A + B).','#ff6b6b'],
+      'Combustion':['A substance burns in oxygen, releasing heat and light.','#ffa94d'],
+      'Single Displacement':['A more reactive element replaces another in a compound (A + BC → AC + B).','#a9e34b'],
+      'Double Displacement':['Ions of two compounds swap partners (AB + CD → AD + CB).','#b197fc'],
+      'Acid-Base Neutralisation':['An acid and a base react to form a salt and water.','#38d9a9'],
+      'Redox (Metal Oxidation)':['A metal loses electrons to oxygen, forming an ionic oxide.','#ffe066']
+    };
+    const RXN_LIST=[
+      ['Synthesis','2H2+O2>2H2O'],['Synthesis','N2+3H2>2NH3'],['Synthesis','2Na+Cl2>2NaCl'],['Synthesis','C+2H2>CH4'],
+      ['Decomposition','2H2O>2H2+O2'],['Decomposition','2H2O2>2H2O+O2'],
+      ['Combustion','CH4+2O2>CO2+2H2O'],['Combustion','C+O2>CO2'],['Combustion','2CO+O2>2CO2'],
+      ['Single Displacement','Zn+2HCl>ZnCl2+H2'],['Single Displacement','Cl2+2NaBr>2NaCl+Br2'],
+      ['Double Displacement','CaCl2+2NaF>CaF2+2NaCl'],
+      ['Acid-Base Neutralisation','HCl+NaOH>NaCl+H2O'],
+      ['Redox (Metal Oxidation)','2Mg+O2>2MgO']
+    ];
+    const parseSide=s=>s.split('+').map(t=>{const m=t.match(/^(\d*)(.+)$/);return[+(m[1]||1),m[2]];});
+    const reactionPresets=RXN_LIST.map(([cat,eq])=>{const[l,r]=eq.split('>');return{cat,type:cat,id:eq,formula:sub(l.replace(/\+/g,' + '))+' → '+sub(r.replace(/\+/g,' + ')).replace(/^\s/,''),name:cat+': '+sub(eq.replace(/\+/g,' + ').replace('>',' → ')),R:parseSide(l),P:parseSide(r)};});
+
+    // COMPLETE 38 ION DATABASE
+    const ionDatabase = [
+      { name: "Sodium Ion", symbol: "Na", formula: "Na⁺", charge: "+1", mass: "22.99", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Potassium Ion", symbol: "K", formula: "K⁺", charge: "+1", mass: "39.10", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Lithium Ion", symbol: "Li", formula: "Li⁺", charge: "+1", mass: "6.94", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Calcium Ion", symbol: "Ca", formula: "Ca²⁺", charge: "+2", mass: "40.08", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Magnesium Ion", symbol: "Mg", formula: "Mg²⁺", charge: "+2", mass: "24.31", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Barium Ion", symbol: "Ba", formula: "Ba²⁺", charge: "+2", mass: "137.33", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Aluminium Ion", symbol: "Al", formula: "Al³⁺", charge: "+3", mass: "26.98", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Iron(II) Ion", symbol: "Fe", formula: "Fe²⁺", charge: "+2", mass: "55.85", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Iron(III) Ion", symbol: "Fe", formula: "Fe³⁺", charge: "+3", mass: "55.85", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Copper(II) Ion", symbol: "Cu", formula: "Cu²⁺", charge: "+2", mass: "63.55", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Zinc Ion", symbol: "Zn", formula: "Zn²⁺", charge: "+2", mass: "65.38", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Silver Ion", symbol: "Ag", formula: "Ag⁺", charge: "+1", mass: "107.87", type: "Monatomic Cation", geom: "Spherical" },
+      { name: "Hydrogen Ion (Proton)", symbol: "H", formula: "H⁺", charge: "+1", mass: "1.01", type: "Monatomic Cation", geom: "Point" },
+      { name: "Hydronium Ion", symbol: "H3O", formula: "H₃O⁺", charge: "+1", mass: "19.02", type: "Polyatomic Cation", geom: "Trigonal Pyramidal" },
+      { name: "Ammonium Ion", symbol: "NH4", formula: "NH₄⁺", charge: "+1", mass: "18.04", type: "Polyatomic Cation", geom: "Tetrahedral" },
+      { name: "Chloride Ion", symbol: "Cl", formula: "Cl⁻", charge: "-1", mass: "35.45", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Fluoride Ion", symbol: "F", formula: "F⁻", charge: "-1", mass: "19.00", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Bromide Ion", symbol: "Br", formula: "Br⁻", charge: "-1", mass: "79.90", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Iodide Ion", symbol: "I", formula: "I⁻", charge: "-1", mass: "126.90", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Oxide Ion", symbol: "O", formula: "O²⁻", charge: "-2", mass: "16.00", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Sulfide Ion", symbol: "S", formula: "S²⁻", charge: "-2", mass: "32.06", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Nitride Ion", symbol: "N", formula: "N³⁻", charge: "-3", mass: "14.01", type: "Monatomic Anion", geom: "Spherical" },
+      { name: "Hydroxide Ion", symbol: "OH", formula: "OH⁻", charge: "-1", mass: "17.01", type: "Polyatomic Anion", geom: "Linear" },
+      { name: "Nitrate Ion", symbol: "NO3", formula: "NO₃⁻", charge: "-1", mass: "62.00", type: "Polyatomic Anion", geom: "Trigonal Planar" },
+      { name: "Nitrite Ion", symbol: "NO2", formula: "NO₂⁻", charge: "-1", mass: "46.01", type: "Polyatomic Anion", geom: "Bent" },
+      { name: "Sulfate Ion", symbol: "SO4", formula: "SO₄²⁻", charge: "-2", mass: "96.06", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Sulfite Ion", symbol: "SO3", formula: "SO₃²⁻", charge: "-2", mass: "80.06", type: "Polyatomic Anion", geom: "Trigonal Pyramidal" },
+      { name: "Carbonate Ion", symbol: "CO3", formula: "CO₃²⁻", charge: "-2", mass: "60.01", type: "Polyatomic Anion", geom: "Trigonal Planar" },
+      { name: "Bicarbonate Ion", symbol: "HCO3", formula: "HCO₃⁻", charge: "-1", mass: "61.02", type: "Polyatomic Anion", geom: "Trigonal Planar" },
+      { name: "Phosphate Ion", symbol: "PO4", formula: "PO₄³⁻", charge: "-3", mass: "94.97", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Hydrogen Phosphate", symbol: "HPO4", formula: "HPO₄²⁻", charge: "-2", mass: "95.98", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Dihydrogen Phosphate", symbol: "H2PO4", formula: "H₂PO₄⁻", charge: "-1", mass: "96.99", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Acetate Ion", symbol: "CH3COO", formula: "CH₃COO⁻", charge: "-1", mass: "59.04", type: "Polyatomic Anion", geom: "Planar / Tetrahedral" },
+      { name: "Permanganate Ion", symbol: "MnO4", formula: "MnO₄⁻", charge: "-1", mass: "118.94", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Chromate Ion", symbol: "CrO4", formula: "CrO₄²⁻", charge: "-2", mass: "115.99", type: "Polyatomic Anion", geom: "Tetrahedral" },
+      { name: "Dichromate Ion", symbol: "Cr2O7", formula: "Cr₂O₇²⁻", charge: "-2", mass: "215.99", type: "Polyatomic Anion", geom: "Bent Corner-Shared" },
+      { name: "Cyanide Ion", symbol: "CN", formula: "CN⁻", charge: "-1", mass: "26.02", type: "Polyatomic Anion", geom: "Linear" },
+      { name: "Peroxide Ion", symbol: "O2", formula: "O₂²⁻", charge: "-2", mass: "32.00", type: "Polyatomic Anion", geom: "Linear" }
+    ];
+
+    // GLOBAL STATE VARIABLES
+    let activeTab = 'ptableTab';
+    let currentCategoryFilter = 'ALL';
+    let currentBohrElem = ELEMENTS[0];
+    let bohrIsPaused = false;
+    let bohrNucleusMode = 'cluster';
+    let bohrRotX = 0.6, bohrRotY = 0.3;
+    let bohrZoom = 1.0;
+    let bohrSpeedFactor = 1.0;
+    let bohrAngleTracker = 0;
+    let bohrAnimReq = null;
+
+    let pendingReactionIndex = 0;
+    let activeReactionIndex = 0;
+    let reactionProgress = 0;
+    let isReactionAnimating = false;
+
+    // AUDIO SYSTEM STATE & BACKGROUND FANS
+    let audioCtx = null;
+    let fanNoiseNode = null;
+    let fanGainNode = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) audioCtx = new AudioCtx();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function startBackgroundWhirring() {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      stopBackgroundWhirring();
+
+      const bufferSize = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        data[i] = (lastOut + (0.02 * white)) / 1.02;
+        lastOut = data[i];
+      }
+
+      fanNoiseNode = ctx.createBufferSource();
+      fanNoiseNode.buffer = buffer;
+      fanNoiseNode.loop = true;
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320, ctx.currentTime);
+
+      const humOsc = ctx.createOscillator();
+      humOsc.type = 'sine';
+      humOsc.frequency.setValueAtTime(60, ctx.currentTime);
+      const humGain = ctx.createGain();
+      humGain.gain.setValueAtTime(0.008, ctx.currentTime);
+
+      fanGainNode = ctx.createGain();
+      fanGainNode.gain.setValueAtTime(0.012, ctx.currentTime);
+
+      fanNoiseNode.connect(filter);
+      filter.connect(fanGainNode);
+      humOsc.connect(humGain);
+      humGain.connect(fanGainNode);
+      fanGainNode.connect(ctx.destination);
+
+      fanNoiseNode.start();
+      humOsc.start();
+      fanNoiseNode.humOsc = humOsc;
+    }
+
+    function stopBackgroundWhirring() {
+      if (fanNoiseNode) {
+        try {
+          fanNoiseNode.stop();
+          if (fanNoiseNode.humOsc) fanNoiseNode.humOsc.stop();
+          fanNoiseNode.disconnect();
+        } catch(e){}
+        fanNoiseNode = null;
+      }
+    }
+
+    // PURE WEB AUDIO REAL-TIME SYNTHESIZED MODEM HANDSHAKE CONNECT SOUND (NO DIALING)
+    function playFullSynthDialupAndBootSound() {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // 1. BIOS POST Beep
+      const beep = ctx.createOscillator();
+      const beepGain = ctx.createGain();
+      beep.type = 'square';
+      beep.frequency.setValueAtTime(950, now);
+      beepGain.gain.setValueAtTime(0.06, now);
+      beepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+      beep.connect(beepGain);
+      beepGain.connect(ctx.destination);
+      beep.start(now);
+      beep.stop(now + 0.15);
+
+      // 2. Floppy Stepper Motor Clicks (t=0.3s to 0.9s)
+      for (let i = 0; i < 6; i++) {
+        const t = now + 0.3 + i * 0.10;
+        const click = ctx.createOscillator();
+        const cg = ctx.createGain();
+        click.type = 'triangle';
+        click.frequency.setValueAtTime(140 + (i % 3) * 40, t);
+        cg.gain.setValueAtTime(0.04, t);
+        cg.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+        click.connect(cg);
+        cg.connect(ctx.destination);
+        click.start(t);
+        click.stop(t + 0.04);
+      }
+
+      // 3. 2100Hz CED Answer Tone (t=1.0s to 2.4s) - NO DIALING
+      const ans = ctx.createOscillator();
+      const ansG = ctx.createGain();
+      ans.frequency.setValueAtTime(2100, now + 1.0);
+      ansG.gain.setValueAtTime(0.05, now + 1.0);
+      ansG.gain.exponentialRampToValueAtTime(0.001, now + 2.5);
+      ans.connect(ansG); ansG.connect(ctx.destination);
+      ans.start(now + 1.0); ans.stop(now + 2.5);
+
+      // 4. V.34 Phase Modulation Carrier Screech (t=2.5s to 6.2s)
+      const noiseBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 4.0), ctx.sampleRate);
+      const nd = noiseBuf.getChannelData(0);
+      for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+
+      const noiseSrc = ctx.createBufferSource();
+      noiseSrc.buffer = noiseBuf;
+
+      const bandpass = ctx.createBiquadFilter();
+      bandpass.type = 'bandpass';
+      bandpass.frequency.setValueAtTime(1800, now + 2.5);
+      bandpass.frequency.linearRampToValueAtTime(2400, now + 4.2);
+      bandpass.frequency.linearRampToValueAtTime(1200, now + 6.2);
+      bandpass.Q.setValueAtTime(3.0, now + 2.5);
+
+      const ng = ctx.createGain();
+      ng.gain.setValueAtTime(0.001, now + 2.5);
+      ng.gain.linearRampToValueAtTime(0.055, now + 2.9);
+      ng.gain.linearRampToValueAtTime(0.04, now + 5.2);
+      ng.gain.exponentialRampToValueAtTime(0.001, now + 6.5);
+
+      noiseSrc.connect(bandpass);
+      bandpass.connect(ng);
+      ng.connect(ctx.destination);
+      noiseSrc.start(now + 2.5);
+      noiseSrc.stop(now + 6.5);
+    }
+
+    function playPowerOnModemSound() {
+      playFullSynthDialupAndBootSound();
+
+      const audioEl = document.getElementById('modemAudio');
+      if (audioEl) {
+        audioEl.volume = 0.20;
+        try {
+          audioEl.currentTime = 7.2; // Jump past dialing direct to connection phase
+          const p = audioEl.play();
+          if (p !== undefined) p.catch(() => {});
+        } catch(e) {}
+      }
+    }
+
+    function stopPowerOnModemSound() {
+      const audioEl = document.getElementById('modemAudio');
+      if (audioEl) {
+        try { audioEl.pause(); } catch(e){}
+      }
+    }
+
+    // PACED 12-SECOND VINTAGE RETRO BOOT & MEMORY DIAGNOSTIC SEQUENCE
+    function triggerBootSplashSequence() {
+      const overlay = document.getElementById('bootOverlay');
+      const bar = document.getElementById('bootProgressBar');
+      const status = document.getElementById('bootStatusText');
+      const percent = document.getElementById('bootPercentText');
+      const logBox = document.getElementById('biosLogBox');
+      if (!overlay || !bar) return;
+
+      overlay.style.pointerEvents = 'auto';
+      overlay.classList.remove('hidden');
+      bar.style.width = '0%';
+      percent.textContent = '0%';
+      if (logBox) logBox.innerHTML = '<div>INITIALIZING SYSTEM HARDWARE...</div>';
+
+      function addLog(msg) {
+        if (!logBox) return;
+        const line = document.createElement('div');
+        line.textContent = msg;
+        logBox.appendChild(line);
+        logBox.scrollTop = logBox.scrollHeight;
+      }
+
+      // 12-Second Step Sequence for Authentic Slow 80s/90s PC Boot
+      const steps = [
+        { p: 5, status: 'TESTING RAM: 64 KB OK...', log: 'MEMORY TEST: 64KB OK' },
+        { p: 12, status: 'TESTING RAM: 256 KB OK...', log: 'MEMORY TEST: 256KB OK' },
+        { p: 20, status: 'TESTING RAM: 640 KB OK...', log: 'CONVENTIONAL MEMORY: 640KB OK' },
+        { p: 28, status: 'INITIALIZING FLOPPY DRIVE A:...', log: 'DRIVE A: 3.5" 1.44MB FLOPPY SEEK OK' },
+        { p: 38, status: 'LOADING DEVICE DRIVER: HIMEM.SYS...', log: 'HIMEM.SYS LOADED (EXTENDED MEMORY ENABLED)' },
+        { p: 48, status: 'DIALING REMOTE MAINFRAME (28800 BPS)...', log: 'MODEM OFF-HOOK: DIALING 1-800-CHEM-DOS...' },
+        { p: 62, status: 'HANDSHAKING WITH MOLECULAR DATABASE...', log: 'CARRIER DETECT: CONNECT 28800 V.34' },
+        { p: 75, status: 'LOADING BOHR KERNEL & ION DATA...', log: 'CHEMBOHR.EXE INITIALIZING 3D PIPELINE' },
+        { p: 88, status: 'VERIFYING CONSERVATION OF MASS ENGINE...', log: 'BOND ENGINE V4.02 READY' },
+        { p: 100, status: 'CHEM-DOS v4.02 READY.', log: 'SYSTEM READY. BOOT COMPLETE.' }
+      ];
+
+      let idx = 0;
+      const interval = bootTimer = setInterval(() => {
+        if (idx >= steps.length) {
+          clearInterval(interval);
+          setTimeout(() => {
+            overlay.classList.add('hidden');
+            overlay.style.pointerEvents = 'none';
+            triggerScanWipe();
+          }, 400);
+          return;
+        }
+        bar.style.width = `${steps[idx].p}%`;
+        percent.textContent = `${steps[idx].p}%`;
+        status.textContent = steps[idx].status;
+        addLog(steps[idx].log);
+        idx++;
+      }, 800); // ~11.5 seconds total loading time
+    }
+
+    // CRT DOWNWARD BIT-BY-BIT SCAN WIPING
+    function triggerScanWipe() {
+      const overlay = document.getElementById('scanWipe');
+      if (!overlay) return;
+      overlay.classList.remove('active');
+      void overlay.offsetWidth; // Force reflow
+      overlay.classList.add('active');
+    }
+
+    // THEME SWITCHER
+    function changeTheme(themeClass) {
+      document.body.className = themeClass;
+      triggerScanWipe();
+    }
+
+    // ===== POWER / ZOOM / SOUND / LOGO / KEYBOARD =====
+    let pcOn = false, bootTimer = null;
+    const TABS = ['ptableTab','bohrTab','rxnTab','ionTab','sbTab'];
+    const TAB_FILES = {ptableTab:'PTABLE.DAT',bohrTab:'BOHR3D.EXE',rxnTab:'BONDS.EXE',ionTab:'IONS.DB',sbTab:'SANDBOX.EXE'};
+    function fitScene(){
+      const sc=document.getElementById('scene');
+      if(pcOn){sc.style.transform='none';return;}
+      const s=Math.min(1,(innerHeight-30)/sc.offsetHeight,(innerWidth-30)/sc.offsetWidth);
+      sc.style.transform=`translateY(${Math.max(0,(innerHeight-30-sc.offsetHeight*s)/2)}px) scale(${s})`;
+    }
+    function setZoom(on){document.getElementById('scene').classList.toggle('zoomed',on);document.body.style.overflowY=on?'auto':'hidden';if(!on)scrollTo(0,0);fitScene();}
+    function setStatus(m){const e=document.getElementById('statusText');if(e)e.textContent=m;}
+    function skipBoot(){clearInterval(bootTimer);const o=document.getElementById('bootOverlay');o.classList.add('hidden');o.style.pointerEvents='none';stopPowerOnModemSound();triggerScanWipe();}
+    function hddBlink(ms){const l=document.getElementById('hddLed');l.classList.add('on');setTimeout(()=>l.classList.remove('on'),ms);}
+    function noiseBurst(c,t,dur,f,q,g){const n=c.sampleRate*dur|0,b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=c.createBufferSource();s.buffer=b;const bp=c.createBiquadFilter();bp.type='bandpass';bp.frequency.value=f;bp.Q.value=q;const gn=c.createGain();gn.gain.value=g;s.connect(bp);bp.connect(gn);gn.connect(c.destination);s.start(t);}
+    function tone(c,type,f0,f1,t,dur,g){const o=c.createOscillator(),gn=c.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);gn.gain.setValueAtTime(g,t);gn.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(gn);gn.connect(c.destination);o.start(t);o.stop(t+dur);}
+    function playClick(){const c=getAudioContext();if(!c)return;const t=c.currentTime;noiseBurst(c,t,.03,3200,1.2,.3);noiseBurst(c,t+.05,.02,1800,1.5,.12);}
+    function playThunk(){const c=getAudioContext();if(!c)return;const t=c.currentTime;tone(c,'sine',110,40,t,.25,.35);noiseBurst(c,t,.05,600,1,.4);}
+    function playTabLoadSound(){
+      const c=getAudioContext();if(!c)return 750;
+      const t=c.currentTime,D=.75;
+      let x=t+.03;for(let i=0;i<6;i++){noiseBurst(c,x,.05,500+Math.random()*400,2,.1);x+=.07+Math.random()*.06;}
+      const w=c.createOscillator(),lp=c.createBiquadFilter(),wg=c.createGain();
+      w.type='sawtooth';lp.type='lowpass';lp.frequency.value=280;w.frequency.setValueAtTime(55,t);w.frequency.linearRampToValueAtTime(90,t+.3);w.frequency.linearRampToValueAtTime(60,t+D);
+      wg.gain.setValueAtTime(.001,t);wg.gain.linearRampToValueAtTime(.025,t+.1);wg.gain.linearRampToValueAtTime(.001,t+D);
+      w.connect(lp);lp.connect(wg);wg.connect(c.destination);w.start(t);w.stop(t+D);
+      const o=c.createOscillator(),lfo=c.createOscillator(),lg=c.createGain(),bp=c.createBiquadFilter(),g=c.createGain();
+      o.type='sawtooth';o.frequency.setValueAtTime(900,t);o.frequency.exponentialRampToValueAtTime(2800,t+.35);o.frequency.exponentialRampToValueAtTime(1500,t+D);
+      lfo.frequency.value=38;lg.gain.value=120;lfo.connect(lg);lg.connect(o.frequency);
+      bp.type='bandpass';bp.Q.value=6;bp.frequency.setValueAtTime(1800,t);bp.frequency.linearRampToValueAtTime(3200,t+.4);bp.frequency.linearRampToValueAtTime(1600,t+D);
+      g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(.045,t+.12);g.gain.linearRampToValueAtTime(.03,t+.5);g.gain.exponentialRampToValueAtTime(.0001,t+D);
+      o.connect(bp);bp.connect(g);g.connect(c.destination);lfo.start(t);o.start(t);o.stop(t+D);lfo.stop(t+D);
+      return D*1000;
+    }
+    function loadFeedback(tabId){
+      if(!pcOn)return;
+      const ms=playTabLoadSound();hddBlink(ms);
+      setStatus(`READING A:\\${TAB_FILES[tabId]} ...`);setTimeout(()=>setStatus('READY'),ms);
+    }
+    function togglePower(){
+      const screen=document.getElementById('crtScreen'),btn=document.getElementById('powerBtn'),led=document.getElementById('powerLed'),ov=document.getElementById('bootOverlay');
+      if(!pcOn){
+        pcOn=true;btn.classList.remove('off');led.classList.remove('off');
+        getAudioContext();playThunk();startBackgroundWhirring();setZoom(true);
+        setTimeout(()=>{if(!pcOn)return;screen.classList.remove('powered-off','crt-off');screen.classList.add('crt-on');playPowerOnModemSound();triggerBootSplashSequence();setTimeout(()=>screen.classList.remove('crt-on'),900);},1000);
+      }else{
+        pcOn=false;clearInterval(bootTimer);playThunk();stopBackgroundWhirring();stopPowerOnModemSound();
+        btn.classList.add('off');led.classList.add('off');screen.classList.add('crt-off');
+        setTimeout(()=>{screen.classList.remove('crt-off');screen.classList.add('powered-off');ov.classList.add('hidden');setZoom(false);},400);
+      }
+    }
+    // pixel-art logo: globe + atom with three electron orbits (32x32, recoloured by theme)
+    function drawLogo(cv,t){
+      const c=cv.getContext('2d');c.clearRect(0,0,32,32);
+      const fg=cssVar('--crt-fg'),dim=cssVar('--crt-fg-dim'),ac=cssVar('--crt-accent');
+      const px=(x,y,col,s=1)=>{c.fillStyle=col;c.fillRect(Math.round(x)-(s>1?1:0),Math.round(y)-(s>1?1:0),s,s);};
+      for(let a=0;a<6.283;a+=.04){px(15.5+14.5*Math.cos(a),15.5+14.5*Math.sin(a),dim);px(15.5+6.5*Math.cos(a),15.5+14.5*Math.sin(a),dim);}
+      [9,15.5,22].forEach(y=>{const w=Math.sqrt(14.5*14.5-(y-15.5)**2);for(let x=15.5-w;x<=15.5+w;x+=2)px(x,y,dim);});
+      [0,1,2].forEach(k=>{const r=k*Math.PI/3,cr=Math.cos(r),sr=Math.sin(r),pt=a=>{const X=12.5*Math.cos(a),Y=4.2*Math.sin(a);return[15.5+X*cr-Y*sr,15.5+X*sr+Y*cr];};
+        for(let a=0;a<6.283;a+=.05){const[x,y]=pt(a);px(x,y,fg);}
+        const[ex,ey]=pt(t*(1+k*.25)+k*2.1);px(ex,ey,ac,2);});
+      for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)px(15.5+i,15.5+j,(i||j)?ac:fg);
+    }
+    let logoT=0;setInterval(()=>{logoT+=.15;document.querySelectorAll('.pxlogo').forEach(c=>drawLogo(c,logoT));},90);
+    // keyboard
+    (function buildKb(){
+      const rows=[['F1','F2','F3','F4','F5','F6','F7','F8','F9','F10'],[...'1234567890'],[...'QWERTYUIOP'],[...'ASDFGHJKL'],[...'ZXCVBNM'],['SPACE']];
+      const kb=document.getElementById('kb');
+      rows.forEach(r=>{const d=document.createElement('div');d.className='kb-row';r.forEach(k=>{const e=document.createElement('div');e.className='key'+(k==='SPACE'?' sp':'');e.textContent=k==='SPACE'?'':k;e.dataset.k=k==='SPACE'?' ':k.toLowerCase();d.appendChild(e);});kb.appendChild(d);});
+    })();
+    addEventListener('keydown',e=>{
+      const k=document.querySelector(`.key[data-k="${CSS.escape(e.key.toLowerCase())}"]`);if(k)k.classList.add('down');
+      if(!pcOn||e.repeat)return;
+      if(k)playClick();
+      if(/^[1-5]$/.test(e.key)&&!/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))switchTab(TABS[e.key-1]);
+    });
+    addEventListener('keyup',e=>{const k=document.querySelector(`.key[data-k="${CSS.escape(e.key.toLowerCase())}"]`);if(k)k.classList.remove('down');});
+    document.addEventListener('click',e=>{if(pcOn&&e.target.closest('.retro-btn,.elem-cell,.sb-el')&&!e.target.closest('[id^=tabBtn]'))playClick();});
+    addEventListener('resize',fitScene);
+    addEventListener('load',fitScene);
+
+    // TAB SWITCHING
+    function switchTab(tabId) {
+      triggerScanWipe();
+      loadFeedback(tabId);
+      activeTab = tabId;
+
+      document.querySelectorAll('.retro-btn').forEach(b => {
+        if (b.id && b.id.startsWith('tabBtn')) b.classList.remove('active');
+      });
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+      document.getElementById('tabBtn'+{ptableTab:1,bohrTab:2,rxnTab:3,ionTab:4,sbTab:5}[tabId]).classList.add('active');
+
+      const activeEl = document.getElementById(tabId);
+      if (activeEl) activeEl.classList.remove('hidden');
+
+      if (tabId === 'bohrTab') initBohrCanvas();
+      if (tabId === 'rxnTab') initReactionsTab();
+      if (tabId === 'sbTab') initSandbox();
+    }
+
+    // --- TAB 1: PERIODIC TABLE RENDERING ---
+    function renderTable() {
+      const mainGrid = document.getElementById('ptableGrid');
+      const lanthGrid = document.getElementById('lanthanidesGrid');
+      const actGrid = document.getElementById('actinidesGrid');
+
+      if (!mainGrid || !lanthGrid || !actGrid) return;
+
+      mainGrid.innerHTML = '';
+      lanthGrid.innerHTML = '';
+      actGrid.innerHTML = '';
+
+      const gridMap = Array(7).fill(null).map(() => Array(18).fill(null));
+
+      ELEMENTS.forEach(e => {
+        if (e.row >= 1 && e.row <= 7 && e.col >= 1 && e.col <= 18 && e.cat !== 'lanthanide' && e.cat !== 'actinide') {
+          gridMap[e.row - 1][e.col - 1] = e;
+        }
+      });
+
+      for (let r = 0; r < 7; r++) {
+        for (let c = 0; c < 18; c++) {
+          const item = gridMap[r][c];
+          if (item) {
+            mainGrid.appendChild(createCell(item));
+          } else if (r === 5 && c === 2) {
+            const anchor = document.createElement('div');
+            anchor.className = 'elem-cell border-dashed flex items-center justify-center text-[7px] text-[var(--crt-fg-dim)] cursor-default';
+            anchor.dataset.name = "lanthanides";
+            anchor.dataset.sym = "la-lu";
+            anchor.dataset.z = "57-71";
+            anchor.dataset.cat = "lanthanide";
+            anchor.dataset.phase = "solid";
+            anchor.innerHTML = '<span class="text-center font-bold">57-71<br>La-Lu</span>';
+            mainGrid.appendChild(anchor);
+          } else if (r === 6 && c === 2) {
+            const anchor = document.createElement('div');
+            anchor.className = 'elem-cell border-dashed flex items-center justify-center text-[7px] text-[var(--crt-fg-dim)] cursor-default';
+            anchor.dataset.name = "actinides";
+            anchor.dataset.sym = "ac-lr";
+            anchor.dataset.z = "89-103";
+            anchor.dataset.cat = "actinide";
+            anchor.dataset.phase = "solid";
+            anchor.innerHTML = '<span class="text-center font-bold">89-103<br>Ac-Lr</span>';
+            mainGrid.appendChild(anchor);
+          } else {
+            const empty = document.createElement('div');
+            empty.className = 'aspect-square opacity-0 pointer-events-none';
+            mainGrid.appendChild(empty);
+          }
+        }
+      }
+
+      const lanthLabel = document.createElement('div');
+      lanthLabel.className = 'col-span-2 flex items-center justify-start text-[9px] font-bold text-[var(--crt-fg-dim)] tracking-wider px-1';
+      lanthLabel.textContent = 'LANTHANIDES';
+      lanthGrid.appendChild(lanthLabel);
+
+      ELEMENTS.filter(e => e.cat === 'lanthanide').forEach(e => lanthGrid.appendChild(createCell(e)));
+
+      const emptyLanth = document.createElement('div');
+      emptyLanth.className = 'aspect-square opacity-0 pointer-events-none';
+      lanthGrid.appendChild(emptyLanth);
+
+      const actLabel = document.createElement('div');
+      actLabel.className = 'col-span-2 flex items-center justify-start text-[9px] font-bold text-[var(--crt-fg-dim)] tracking-wider px-1';
+      actLabel.textContent = 'ACTINIDES';
+      actGrid.appendChild(actLabel);
+
+      ELEMENTS.filter(e => e.cat === 'actinide').forEach(e => actGrid.appendChild(createCell(e)));
+
+      const emptyAct = document.createElement('div');
+      emptyAct.className = 'aspect-square opacity-0 pointer-events-none';
+      actGrid.appendChild(emptyAct);
+    }
+
+    function createCell(e) {
+      const cell = document.createElement('div');
+      cell.className = `elem-cell cat-${e.cat}`;
+      cell.dataset.z = String(e.z);
+      cell.dataset.sym = e.sym.toLowerCase();
+      cell.dataset.name = e.name.toLowerCase();
+      cell.dataset.cat = e.cat;
+      cell.dataset.phase = e.phase;
+      cell.dataset.syn = e.syn ? '1' : '0';
+      cell.title = `${e.name} — ${CAT_NAME[e.cat]}`;
+
+      cell.innerHTML = `
+        <div class="flex justify-between items-center text-[7px] text-[var(--crt-fg-dim)] font-mono leading-none">
+          <span>${e.z}</span>
+          <span class="opacity-70">${e.syn ? '★' : e.phase[0].toUpperCase()}</span>
+        </div>
+        <div class="text-xs sm:text-sm font-bold text-center text-[var(--crt-fg)] font-vt323 leading-none my-auto">${e.sym}</div>
+        <div class="text-[6px] sm:text-[7px] text-center text-[var(--crt-fg-dim)] font-mono truncate leading-none pb-0.5" title="${e.name}">${e.name}</div>
+      `;
+
+      cell.onclick = () => openModal(e);
+      return cell;
+    }
+
+    function handleSearch() {
+      const q = document.getElementById('elemSearch').value.trim().toLowerCase();
+      applyTableFilters(q, currentCategoryFilter);
+    }
+
+    function filterCategory(cat, btn) {
+      triggerScanWipe();
+      currentCategoryFilter = cat;
+
+      const container = document.getElementById('filterButtonGroup');
+      if (container) {
+        const buttons = container.querySelectorAll('.retro-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+      }
+      if (btn) btn.classList.add('active');
+
+      const q = document.getElementById('elemSearch').value.trim().toLowerCase();
+      applyTableFilters(q, cat);
+    }
+
+    function applyTableFilters(query, cat) {
+      const q = (query || '').toLowerCase().trim();
+      const symExact = !!q && ELEMENTS.some(x => x.sym.toLowerCase() === q);
+      document.querySelectorAll('.elem-cell').forEach(cell => {
+        const d = cell.dataset, cc = d.cat || '';
+        const matchQ = !q || (symExact ? d.sym === q : (d.name.startsWith(q) || (q.length >= 3 && d.name.includes(q)) || d.z === q));
+        const matchCat = cat === 'ALL' || cc === cat || d.phase === cat ||
+          (cat === 'synthetic' && d.syn === '1') ||
+          (cat === 'metal' && METALCATS.includes(cc)) ||
+          (cat === 'anynonmetal' && ['nonmetal','halogen','noble','metalloid'].includes(cc) && cc !== 'metalloid');
+        const ok = matchQ && matchCat;
+        cell.style.opacity = ok ? '1' : '0.1';
+        cell.style.pointerEvents = ok ? 'auto' : 'none';
+      });
+    }
+    function buildFilters() {
+      const g = document.getElementById('filterButtonGroup');
+      g.innerHTML = '';
+      FILTERS.forEach(([k, label]) => {
+        const b = document.createElement('button');
+        b.className = 'retro-btn text-xs' + (k === 'ALL' ? ' active' : '') + (CAT_COL[k] ? ' cat-' + k : '');
+        b.textContent = label;
+        b.onclick = () => filterCategory(k, b);
+        g.appendChild(b);
+      });
+    }
+
+    // MODAL HANDLERS
+    function openModal(e) {
+      const box = document.getElementById('modalBox'), sw = document.getElementById('modalSweep');
+      box.classList.remove('pop-in'); sw.classList.remove('dossier-sweep'); void box.offsetWidth;
+      box.classList.add('pop-in'); sw.classList.add('dossier-sweep');
+      currentBohrElem = e;
+      document.getElementById('modalSym').textContent = e.sym;
+      document.getElementById('modalName').textContent = e.name;
+      document.getElementById('modalCat').textContent = CAT_NAME[e.cat] + (e.syn ? ' · SYNTHETIC / MAN-MADE' : '');
+      document.getElementById('modalDesc').textContent = e.desc;
+      document.getElementById('modalZ').textContent = e.z;
+      document.getElementById('modalMass').textContent = e.mass;
+      document.getElementById('modalPhase').textContent = e.phase.toUpperCase();
+      document.getElementById('modalConfig').textContent = e.config;
+
+      document.getElementById('elemModal').classList.remove('hidden');
+      renderModalBohrCanvas(e);
+    }
+
+    function closeModal() {
+      document.getElementById('elemModal').classList.add('hidden');
+    }
+
+    function openFullBohrTab() {
+      closeModal();
+      selectBohrElement(currentBohrElem.z);
+      switchTab('bohrTab');
+    }
+
+    // --- TAB 2: 3D BOHR ENGINE ---
+    function populateBohrSelect() {
+      const select = document.getElementById('bohrSelect');
+      if (!select) return;
+      select.innerHTML = '';
+      ELEMENTS.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e.z;
+        opt.textContent = `${e.z}. ${e.name} (${e.sym})`;
+        select.appendChild(opt);
+      });
+      select.value = currentBohrElem.z;
+    }
+
+    function selectBohrElement(zVal) {
+      triggerScanWipe();
+      const z = parseInt(zVal);
+      currentBohrElem = ELEMENTS.find(e => e.z === z) || ELEMENTS[0];
+
+      const select = document.getElementById('bohrSelect');
+      if (select) select.value = currentBohrElem.z;
+
+      document.getElementById('bohrValZ').textContent = currentBohrElem.z;
+      document.getElementById('bohrValMass').textContent = currentBohrElem.mass;
+      document.getElementById('bohrValShells').textContent = currentBohrElem.shells.length;
+      initBohrCanvas();
+    }
+
+    function toggleBohrMotion() {
+      bohrIsPaused = !bohrIsPaused;
+    }
+
+    function toggleNucleusMode() {
+      triggerScanWipe();
+      bohrNucleusMode = bohrNucleusMode === 'cluster' ? 'badge' : 'cluster';
+      document.getElementById('nucModeLabel').textContent = bohrNucleusMode === 'cluster' ? '3D CLUSTER' : 'CORE BADGE';
+    }
+
+    function resetBohrCamera() {
+      triggerScanWipe();
+      bohrRotX = 0.6;
+      bohrRotY = 0.3;
+      bohrZoom = 1.0;
+      document.getElementById('bohrTiltSlider').value = 0.6;
+    }
+
+    function updateBohrSpeed(val) {
+      bohrSpeedFactor = parseFloat(val);
+    }
+
+    function updateBohrTilt(val) {
+      bohrRotX = parseFloat(val);
+    }
+
+    const cssVar=n=>getComputedStyle(document.body).getPropertyValue(n).trim();
+    const qStr=q=>(Math.abs(q)>1?Math.abs(q):'')+(q>0?'+':'−');
+    let bohrCharge=0;
+    function ionShells(sh,q){const s=sh.slice();if(q>0){let r=q;while(r>0&&s.length){const t=Math.min(r,s[s.length-1]);s[s.length-1]-=t;r-=t;if(!s[s.length-1])s.pop();}}else if(q<0)s[s.length-1]+=-q;return s;}
+    // Shared Bohr renderer: back electrons -> nucleus -> front orbit arcs & electrons (so electrons/orbits pass IN FRONT of the nucleus)
+    function drawBohr(c,o){
+      const fg=cssVar('--crt-fg'),ac=cssVar('--crt-accent'),ct=Math.cos(o.tilt),zm=o.zoom||1,bk=[],fr=[],sh=o.shells;
+      const rxs=sh.map((_,i)=>o.base+i*o.step);
+      c.save();c.translate(o.cx,o.cy);c.rotate(o.rot||0);c.lineWidth=1.2;c.strokeStyle=fg;
+      sh.forEach((n,i)=>{const rx=rxs[i];c.globalAlpha=.3;c.beginPath();c.ellipse(0,0,rx,rx*ct,0,0,6.2832);c.stroke();
+        for(let k=0;k<n;k++){const a=o.ang/(i+1)+k*6.2832/n;(Math.sin(a)>0?fr:bk).push([rx*Math.cos(a),rx*ct*Math.sin(a)]);}});
+      const dot=p=>{c.globalAlpha=1;c.beginPath();c.arc(p[0],p[1],(o.er||5)*Math.sqrt(zm),0,6.2832);c.fillStyle=ac;c.shadowColor=ac;c.shadowBlur=10;c.fill();c.shadowBlur=0;};
+      bk.forEach(dot);
+      c.globalAlpha=1;
+      if(o.badge||o.z===1){
+        c.beginPath();c.arc(0,0,(o.z===1?14:22)*Math.sqrt(zm),0,6.2832);c.fillStyle=o.z===1?fg:'#061908';c.strokeStyle=fg;c.lineWidth=2;c.fill();c.stroke();
+        c.fillStyle=o.z===1?'#030d04':ac;c.font=`bold ${Math.max(9,12*Math.sqrt(zm))}px 'Share Tech Mono',monospace`;c.textAlign='center';c.textBaseline='middle';c.fillText(o.z===1&&!o.badge?'1p⁺':o.sym,0,0);
+      }else{
+        const nc=Math.min(o.z,28),rr=(o.nr||5.5)*Math.sqrt(zm);
+        for(let i=0;i<nc;i++){const a=i*2.39996,d=Math.sqrt(i)*rr*.64;c.beginPath();c.arc(Math.cos(a)*d,Math.sin(a)*d*ct,rr,0,6.2832);c.fillStyle=i%2?'#008837':fg;c.fill();c.strokeStyle='#030d04';c.lineWidth=.8;c.stroke();}
+      }
+      c.strokeStyle=fg;c.lineWidth=1.4;
+      sh.forEach((n,i)=>{c.globalAlpha=.75;c.beginPath();c.ellipse(0,0,rxs[i],rxs[i]*ct,0,0,Math.PI);c.stroke();});
+      fr.forEach(dot);
+      c.restore();
+      if(o.q&&sh.length){const R=rxs[rxs.length-1]+12;c.save();c.globalAlpha=1;c.strokeStyle=fg;c.fillStyle=ac;c.lineWidth=2;
+        [-1,1].forEach(s=>{c.beginPath();c.moveTo(o.cx+s*R-s*9,o.cy-R);c.lineTo(o.cx+s*R,o.cy-R);c.lineTo(o.cx+s*R,o.cy+R);c.lineTo(o.cx+s*R-s*9,o.cy+R);c.stroke();});
+        c.font=`bold ${Math.max(12,R*.22)}px 'Share Tech Mono',monospace`;c.textAlign='left';c.textBaseline='bottom';c.fillText(qStr(o.q),o.cx+R+4,o.cy-R+6);c.restore();}
+    }
+    function refreshBohrInfo(){
+      const e=currentBohrElem;bohrCharge=Math.min(bohrCharge,e.z);
+      const sl=document.getElementById('bohrChargeSlider');if(sl)sl.value=bohrCharge;
+      document.getElementById('bohrChargeVal').textContent=bohrCharge?qStr(bohrCharge):'0 (NEUTRAL)';
+      document.getElementById('bohrValElectrons').textContent=e.z-bohrCharge;
+      document.getElementById('bohrValShells').textContent=ionShells(e.shells,bohrCharge).length;
+      document.getElementById('bohrCanvasTitle').textContent=`${e.name.toUpperCase()} (${e.sym}${bohrCharge?toSup(Math.abs(bohrCharge)>1?Math.abs(bohrCharge):'')+(bohrCharge>0?'⁺':'⁻'):''})${bohrCharge?' ION':''}`;
+    }
+    function updateBohrCharge(v){bohrCharge=Math.min(parseInt(v),currentBohrElem.z);refreshBohrInfo();}
+    function initBohrCanvas(){
+      populateBohrSelect();refreshBohrInfo();
+      const container=document.getElementById('bohrCanvasContainer'),canvas=document.getElementById('bohrCanvas');
+      if(!canvas||!container)return;
+      const ctx=canvas.getContext('2d');
+      canvas.width=container.clientWidth||600;canvas.height=container.clientHeight||480;
+      let drag=false,lx=0,ly=0;
+      canvas.onmousedown=e=>{drag=true;lx=e.clientX;ly=e.clientY;};
+      window.onmouseup=()=>drag=false;
+      canvas.onmousemove=e=>{if(!drag)return;bohrRotY+=(e.clientX-lx)*.008;bohrRotX=Math.max(.1,Math.min(1.5,bohrRotX+(e.clientY-ly)*.008));document.getElementById('bohrTiltSlider').value=bohrRotX;lx=e.clientX;ly=e.clientY;};
+      canvas.onwheel=e=>{e.preventDefault();bohrZoom=Math.min(Math.max(.3,bohrZoom-e.deltaY*.0015),3);};
+      function render(){
+        if(activeTab!=='bohrTab')return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const e=currentBohrElem;
+        drawBohr(ctx,{cx:canvas.width/2,cy:canvas.height/2,shells:ionShells(e.shells,bohrCharge),z:e.z,sym:e.sym,q:bohrCharge,tilt:bohrRotX,rot:bohrRotY,ang:bohrAngleTracker*bohrSpeedFactor,base:55*bohrZoom,step:35*bohrZoom,zoom:bohrZoom,badge:bohrNucleusMode==='badge'});
+        if(!bohrIsPaused)bohrAngleTracker+=.015;
+        bohrAnimReq=requestAnimationFrame(render);
+      }
+      if(bohrAnimReq)cancelAnimationFrame(bohrAnimReq);
+      render();
+    }
+    let modalReq=null;
+    function renderModalBohrCanvas(e){
+      const canvas=document.getElementById('modalBohrCanvas');if(!canvas)return;
+      const ctx=canvas.getContext('2d');
+      canvas.width=canvas.clientWidth||300;canvas.height=canvas.clientHeight||140;
+      if(modalReq)cancelAnimationFrame(modalReq);
+      let t=0;
+      (function loop(){
+        if(document.getElementById('elemModal').classList.contains('hidden'))return;
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        const n=e.shells.length,tilt=.9,ct=Math.cos(tilt),R=Math.min(canvas.width/2-8,(canvas.height/2-4)/ct),base=R*.2;
+        drawBohr(ctx,{cx:canvas.width/2,cy:canvas.height/2,shells:e.shells,z:e.z,sym:e.sym,tilt,rot:0,ang:t,base,step:Math.min(18,(R-base)/Math.max(1,n-1)),zoom:.55,er:4.5,nr:4});
+        t+=.02;modalReq=requestAnimationFrame(loop);
+      })();
+    }
+
+    // --- TAB 3: DATA-DRIVEN REACTION ENGINE (categorised presets) ---
+    function initReactionsTab(){
+      const sel=document.getElementById('reactionPresetSelect');if(!sel)return;
+      sel.innerHTML='';
+      Object.keys(RXN_INFO).forEach(cat=>{
+        const g=document.createElement('optgroup');g.label=cat.toUpperCase();
+        reactionPresets.forEach((r,i)=>{if(r.cat!==cat)return;const o=document.createElement('option');o.value=i;o.textContent=r.name.replace(cat+': ','');if(i===pendingReactionIndex)o.selected=true;g.appendChild(o);});
+        if(g.children.length)sel.appendChild(g);
+      });
+      executeFormulaBalancing();
+    }
+    function onSelectReactionPreset(v){pendingReactionIndex=parseInt(v);executeFormulaBalancing();}
+    let rxnModel=null;
+    function buildRxnModel(r){
+      const side=list=>{const at=[],bd=[],ins=[];let k=0;list.forEach(([n,key])=>{for(let c=0;c<n;c++){const[a,b]=molDef(key),base=at.length;a.forEach((x,i)=>at.push({e:x[0],lx:x[1],ly:x[2],q:x[3]||0,inst:k}));b.forEach(x=>bd.push([base+x[0],base+x[1],x[2],x[3]]));ins.push(a.length);k++;}});return{at,bd,k};};
+      const R=side(r.R),P=side(r.P),used={},pairs=[],rmap=[],pmap=[];
+      R.at.forEach((a,i)=>{const e=a.e;used[e]=used[e]||P.at.map((x,j)=>x.e===e?j:-1).filter(j=>j>=0);const j=used[e].shift();pairs.push({e,r:a,p:P.at[j]});rmap[i]=pairs.length-1;pmap[j]=pairs.length-1;});
+      return{R,P,pairs,rb:R.bd.map(b=>[rmap[b[0]],rmap[b[1]],b[2],b[3]]),pb:P.bd.map(b=>[pmap[b[0]],pmap[b[1]],b[2],b[3]])};
+    }
+    function executeFormulaBalancing(){
+      triggerScanWipe();
+      activeReactionIndex=pendingReactionIndex;
+      const r=reactionPresets[activeReactionIndex];if(!r)return;
+      rxnModel=buildRxnModel(r);
+      document.getElementById('reactionFormulaText').textContent=r.formula;
+      const info=RXN_INFO[r.cat];
+      const ce=document.getElementById('reactionCategoryText');
+      ce.innerHTML=`<span style="color:${info[1]}">■ ${r.cat.toUpperCase()}</span><div class="font-normal text-[10px] text-[var(--crt-fg-dim)] pt-1">${info[0]}</div>`;
+      const cnt={};
+      rxnModel.pairs.forEach(p=>cnt[p.e]=(cnt[p.e]||0)+1);
+      const box=document.getElementById('atomTallyRows');box.innerHTML='';
+      Object.keys(cnt).forEach(e=>{const row=document.createElement('div');row.className='text-xs font-mono space-y-1';
+        row.innerHTML=`<div class="flex justify-between"><span>${(ELEMENTS.find(x=>x.sym===e)||{name:e}).name} (${e})</span><span class="text-[var(--crt-accent)]">REACTANTS: ${cnt[e]} | PRODUCTS: ${cnt[e]} ✓</span></div><div class="h-2 w-full bg-[var(--crt-bg)] border border-[var(--crt-border)] flex"><div class="bg-[var(--crt-fg)] h-full" style="width:50%"></div><div class="bg-[var(--crt-accent)] h-full" style="width:50%"></div></div>`;box.appendChild(row);});
+      reactionProgress=0;const sc=document.getElementById('reactionScrubSlider');if(sc)sc.value=0;
+      updateReactionProgress(0);
+    }
+    function updateReactionProgress(val) {
+      reactionProgress = parseFloat(val);
+      const label = document.getElementById('reactionPhaseLabel');
+      if (label) {
+        label.textContent = reactionProgress < 0.5 ? 'PHASE: REACTANTS (BREAKING BONDS)' : 'PHASE: PRODUCTS (FORMING BONDS)';
+      }
+      renderReactionCanvas();
+    }
+
+    function toggleReactionAnim() {
+      if (reactionProgress >= 1) reactionProgress = 0;
+      isReactionAnimating = !isReactionAnimating;
+      const btn = document.getElementById('reactionAnimBtn');
+      if (btn) {
+        btn.innerHTML = isReactionAnimating ?
+          '<i class="fa-solid fa-pause mr-1"></i>PAUSE BONDS' :
+          '<i class="fa-solid fa-play mr-1"></i>ANIMATE BONDS';
+      }
+
+      if (isReactionAnimating) animateReactionLoop();
+    }
+
+    function animateReactionLoop() {
+      if (!isReactionAnimating || activeTab !== 'rxnTab') return;
+
+      reactionProgress += 0.003;
+      if (reactionProgress >= 1) {
+        reactionProgress = 1;
+        isReactionAnimating = false;
+        const btn = document.getElementById('reactionAnimBtn');
+        if (btn) {
+          btn.innerHTML = '<i class="fa-solid fa-play mr-1"></i>ANIMATE BONDS';
+        }
+        const scrub = document.getElementById('reactionScrubSlider');
+        if (scrub) scrub.value = 1;
+        updateReactionProgress(1);
+        return;
+      }
+
+      const scrub = document.getElementById('reactionScrubSlider');
+      if (scrub) scrub.value = reactionProgress;
+      updateReactionProgress(reactionProgress);
+
+      requestAnimationFrame(animateReactionLoop);
+    }
+
+    function lerp(a,b,t){return a+(b-a)*t;}
+    function atomChip(ctx,x,y,r,e,q){
+      const col=atomColor(e);
+      ctx.save();ctx.beginPath();ctx.arc(x,y,r,0,6.2832);ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=8;ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle='#000';ctx.lineWidth=1.5;ctx.stroke();
+      const n=parseInt(col.slice(1),16),lum=((n>>16)*.3+((n>>8)&255)*.59+(n&255)*.11);
+      ctx.fillStyle=lum>140?'#000':'#fff';ctx.font=`bold ${Math.max(10,r*.8)}px 'Share Tech Mono',monospace`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(e+(q?toSup(Math.abs(q)>1?Math.abs(q):'')+(q>0?'⁺':'⁻'):''),x,y);ctx.restore();
+    }
+    function drawBondLine(ctx,a,b,order,ionic,alpha,col){
+      ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=ionic?'#ffff00':col;ctx.lineWidth=ionic?2:3;if(ionic)ctx.setLineDash([5,5]);
+      const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1,nx=-dy/L*4.5,ny=dx/L*4.5,o=ionic?1:order;
+      for(let i=0;i<o;i++){const s=i-(o-1)/2;ctx.beginPath();ctx.moveTo(a.x+nx*s,a.y+ny*s);ctx.lineTo(b.x+nx*s,b.y+ny*s);ctx.stroke();}
+      ctx.restore();
+    }
+    function renderReactionCanvas(){
+      const canvas=document.getElementById('reactionCanvas');if(!canvas||!rxnModel)return;
+      const ctx=canvas.getContext('2d'),rect={width:canvas.clientWidth,height:canvas.clientHeight};
+      if(canvas.width!==rect.width||canvas.height!==rect.height){canvas.width=rect.width||500;canvas.height=rect.height||340;}
+      const W=canvas.width,H=canvas.height,t=reactionProgress,e=t<.5?2*t*t:-1+(4-2*t)*t;
+      const r=reactionPresets[activeReactionIndex],col=RXN_INFO[r.cat][1],fg=cssVar('--crt-fg');
+      ctx.clearRect(0,0,W,H);
+      ctx.strokeStyle='rgba(0,255,102,0.08)';ctx.lineWidth=1;
+      for(let x=0;x<W;x+=20){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+      for(let y=0;y<H;y+=20){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      const place=(side,key)=>{const k=side.k,cols=k<=2?k:k<=4?2:3,rows=Math.ceil(k/cols),S=Math.min(62,W/(cols*3.8),H/(rows*3.2));
+        side.at.forEach(a=>{const c=a.inst%cols,rw=Math.floor(a.inst/cols);a.x=(c+.5)*W/cols+a.lx*S;a.y=(rw+.5)*H/rows+a.ly*S;a.S=S;});};
+      place(rxnModel.R);place(rxnModel.P);
+      const pos=rxnModel.pairs.map(p=>({x:lerp(p.r.x,p.p.x,e),y:lerp(p.r.y,p.p.y,e),r:(p.e==='H'?.26:.38)*lerp(p.r.S,p.p.S,e)*1.2,e:p.e,q:e<.5?p.r.q:p.p.q}));
+      if(t>.35&&t<.65){const pa=Math.sin((t-.35)/.3*Math.PI);ctx.save();ctx.beginPath();ctx.arc(W/2,H/2,Math.min(W,H)*.35*pa,0,6.2832);ctx.strokeStyle=col;ctx.lineWidth=2;ctx.globalAlpha=pa*.8;ctx.shadowColor=col;ctx.shadowBlur=14;ctx.stroke();ctx.restore();}
+      if(e<.5)rxnModel.rb.forEach(b=>drawBondLine(ctx,pos[b[0]],pos[b[1]],b[2],b[3],1-e*2,fg));
+      else rxnModel.pb.forEach(b=>drawBondLine(ctx,pos[b[0]],pos[b[1]],b[2],b[3],(e-.5)*2,fg));
+      pos.forEach(p=>atomChip(ctx,p.x,p.y,p.r,p.e,p.q));
+      ctx.fillStyle=col;ctx.font="12px 'Share Tech Mono',monospace";ctx.textAlign='left';ctx.textBaseline='top';
+      ctx.fillText(`${r.cat.toUpperCase()} — dashed yellow = ionic bond; lines = covalent (1/2/3 = single/double/triple)`,8,6);
+    }
+
+    // TAB 4: STRICT ION DATABASE SEARCH
+    function renderIonChart(data = ionDatabase) {
+      const container = document.getElementById('ionGridContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      if (data.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center p-8 text-[var(--crt-fg-dim)] font-mono">NO MATCHING IONS FOUND IN DATABASE</div>`;
+        return;
+      }
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'retro-panel p-3 bg-[var(--crt-panel)] border border-[var(--crt-border)] flex flex-col justify-between space-y-2';
+        card.innerHTML = `
+          <div class="flex items-center justify-between border-b border-[var(--crt-border)] pb-1">
+            <span class="font-vt323 text-2xl font-bold text-[var(--crt-accent)]">${item.formula}</span>
+            <span class="text-[10px] px-1.5 py-0.5 border border-[var(--crt-border)] text-[var(--crt-fg-dim)] font-mono">${item.type}</span>
+          </div>
+          <div class="space-y-1 font-mono text-xs">
+            <div class="font-bold text-[var(--crt-fg)]">${item.name}</div>
+            <div class="text-[var(--crt-fg-dim)] text-[11px]">CHARGE: <span class="text-[var(--crt-fg)] font-bold">${item.charge}</span></div>
+            <div class="text-[var(--crt-fg-dim)] text-[11px]">MOLAR MASS: <span class="text-[var(--crt-fg)]">${item.mass} g/mol</span></div>
+            <div class="text-[var(--crt-fg-dim)] text-[11px]">GEOMETRY: <span class="text-[var(--crt-accent)]">${item.geom}</span></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function filterIonCards(query) {
+      const q = (query || '').trim().toLowerCase();
+      if (!q) {
+        renderIonChart(ionDatabase);
+        return;
+      }
+
+      const filtered = ionDatabase.filter(item => {
+        const formulaClean = item.formula.toLowerCase().replace(/[⁺⁻²³]/g, '');
+        const symbolClean = item.symbol.toLowerCase();
+        const nameClean = item.name.toLowerCase();
+
+        return formulaClean === q ||
+               symbolClean === q ||
+               formulaClean.startsWith(q) ||
+               symbolClean.startsWith(q) ||
+               nameClean.split(' ').some(w => w.startsWith(q));
+      });
+
+      renderIonChart(filtered);
+    }
+
+    // ===== TAB 5: SANDBOX (ion forge + compound lab with IUPAC-style naming) =====
+    const gcd=(a,b)=>b?gcd(b,a%b):Math.abs(a);
+    const ROM=['','I','II','III','IV','V','VI','VII','VIII'];
+    const PRE=['','mono','di','tri','tetra','penta','hexa','hepta','octa','nona','deca'];
+    const STEM={H:'hydr',O:'ox',S:'sulf',N:'nitr',P:'phosph',C:'carb',F:'fluor',Cl:'chlor',Br:'brom',I:'iod',Se:'selen',Te:'tellur',As:'arsen',B:'bor',Si:'silic',At:'astat'};
+    const COV=['B','Si','C','Sb','As','P','N','H','Te','Se','S','At','I','Br','Cl','O','F'];
+    const DIATOMIC=['H','N','O','F','Cl','Br','I'];
+    const COMMON={H2O:'water',H2O2:'hydrogen peroxide',NH3:'ammonia',CH4:'methane',C2H6:'ethane',C3H8:'propane',C2H2:'ethyne (acetylene)',N2H4:'hydrazine',PH3:'phosphine',SiH4:'silane',HCl:'hydrochloric acid when dissolved in water',HF:'hydrofluoric acid when dissolved in water',HBr:'hydrobromic acid when dissolved in water',HI:'hydroiodic acid when dissolved in water',H2S:'hydrosulfuric acid when dissolved in water',O3:'ozone',CO2:'dry ice when solid',NO:'nitric oxide',N2O:'laughing gas'};
+    const MC={Fe:[2,3],Cu:[1,2],Sn:[2,4],Pb:[2,4],Co:[2,3],Ni:[2,3],Mn:[2,3,4,7],Cr:[3,2,6],Hg:[2,1],Au:[1,3],Ti:[4,3,2],V:[3,2,4,5],Bi:[3,5],Tl:[1,3],Pt:[2,4],Pd:[2,4],Mo:[6,3,4],Ag:[1],Zn:[2],Cd:[2],Al:[3],Ga:[3],In:[3],Sc:[3],Y:[3],Zr:[4],Hf:[4],W:[6]};
+    const isMetal=e=>METALCATS.includes(e.cat);
+    const cCharges=e=>MC[e.sym]||({alkali:[1],alkaline:[2],lanthanide:[3],actinide:[3,4]}[e.cat])||[2,3];
+    const aCharge=e=>({H:-1,B:-3})[e.sym]??(e.col>=14&&e.col<18?e.col-18:null);
+    let POLY=[];
+    const sb={mode:'c',parts:[],el:ELEMENTS[10],q:1,res:null,t:0,init:false};
+    function initSandbox(){
+      if(!sb.init){
+        POLY=ionDatabase.filter(i=>i.type.includes('Polyatomic')).map(i=>({f:i.formula.replace(/[⁺⁻⁰¹²³]+$/,''),q:parseInt(i.charge),name:i.name.replace(/ Ion$/,'').toLowerCase(),mass:+i.mass}));
+        document.getElementById('sbPoly').innerHTML=POLY.map((p,i)=>`<option value="${i}">${p.f}${qStr(p.q)} — ${p.name}</option>`).join('');
+        const mini=document.getElementById('sbMini');
+        const g=Array(9).fill(0).map(()=>Array(18).fill(null));
+        ELEMENTS.forEach(e=>{if(e.cat==='lanthanide')g[7][e.z-57+2]=e;else if(e.cat==='actinide')g[8][e.z-89+2]=e;else g[e.row-1][e.col-1]=e;});
+        g.forEach((row,r)=>row.forEach(e=>{const d=document.createElement('div');if(e){d.className=`sb-el cat-${e.cat}`;d.textContent=e.sym;d.title=`${e.z} ${e.name}`;d.onclick=()=>sbPick(e);}else d.style.visibility='hidden';if(r===7)d.style.marginTop='6px';mini.appendChild(d);}));
+        sb.init=true;
+      }
+      sbMode(sb.mode);
+      if(!sb.running){sb.running=true;sbLoop();}
+    }
+    function sbMode(m){
+      sb.mode=m;
+      document.getElementById('sbModeC').classList.toggle('active',m==='c');
+      document.getElementById('sbModeI').classList.toggle('active',m==='i');
+      document.getElementById('sbPolyBox').style.display=m==='c'?'flex':'none';
+      document.getElementById('sbHint').textContent=m==='c'?'Click elements to add them to the flask (or add a polyatomic ion). Use +/− for atom counts.':'Click any element, then gain or lose electrons to form its ion.';
+      sbRender();
+    }
+    function sbPick(e){
+      if(sb.mode==='i'){sb.el=e;const a=aCharge(e);sb.q=isMetal(e)?cCharges(e)[0]:(a??0);sb.q=Math.min(sb.q,e.z);}
+      else{const p=sb.parts.find(x=>x.t==='e'&&x.z===e.z);if(p)p.n++;else sb.parts.push({t:'e',z:e.z,n:1,q:isMetal(e)?cCharges(e)[0]:0});}
+      sbRender();
+    }
+    function sbAddPoly(){const i=+document.getElementById('sbPoly').value,p=sb.parts.find(x=>x.t==='p'&&x.i===i);if(!p)sb.parts.push({t:'p',i,n:1});sbRender();}
+    function sbStep(i,d){const p=sb.parts[i];p.n=Math.max(1,Math.min(12,p.n+d));sbRender();}
+    function sbCharge(i,v){sb.parts[i].q=+v;sbRender();}
+    function sbRemove(i){sb.parts.splice(i,1);sbRender();}
+    function sbClear(){sb.parts=[];sbRender();}
+    function sbIonQ(v){sb.q=Math.min(+v,sb.el.z);sbRender();}
+    function sbSpec(p,role){
+      if(p.t==='p'){const x=POLY[p.i];return{f:x.f,n:x.name,q:x.q,poly:true,mass:x.mass,label:x.f+qStr(x.q)};}
+      const e=ELEMENTS[p.z-1];
+      if(role==='cat'){const q=p.q||cCharges(e)[0];return{f:e.sym,n:e.name.toLowerCase()+(cCharges(e).length>1?`(${ROM[q]})`:''),q,el:e,mass:e.mass,label:e.sym+qStr(q)};}
+      const q=aCharge(e),st=STEM[e.sym]||e.name.toLowerCase().replace(/(ine|on|ium|ogen)$/,'');
+      return{f:e.sym,n:st+'ide',q,el:e,mass:e.mass,label:e.sym+qStr(q)};
+    }
+    const fmt=(s,n)=>s.poly&&n>1?`(${s.f})${toSub(n)}`:sub(s.f)+(n>1?toSub(n):'');
+    function sbAnalyze(){
+      const P=sb.parts;if(!P.length)return{msg:'FLASK EMPTY — pick an element or polyatomic ion.'};
+      const els=P.filter(p=>p.t==='e'),pol=P.filter(p=>p.t==='p');
+      const mets=els.filter(p=>isMetal(ELEMENTS[p.z-1])),non=els.filter(p=>!isMetal(ELEMENTS[p.z-1]));
+      const cat=[...mets,...pol.filter(p=>POLY[p.i].q>0)],an=[...non.filter(p=>aCharge(ELEMENTS[p.z-1])!==null),...pol.filter(p=>POLY[p.i].q<0)];
+      const R={lines:[]};
+      if(P.length===1&&els.length===1){
+        const p=els[0],e=ELEMENTS[p.z-1],n=p.n,nm=e.name.toLowerCase();
+        if(isMetal(e)){R.formula=e.sym+(n>1?toSub(n):'');R.name=nm+' (metal)';R.type='METALLIC BONDING';R.lines.push('Lattice of cations in a sea of delocalised electrons.');}
+        else if(n===1){R.formula=e.sym;R.name=nm+' atom';R.type='SINGLE ATOM';}
+        else{R.formula=e.sym+toSub(n);R.type=e.cat==='noble'?'NOBLE GAS ATOMS':'COVALENT MOLECULE';R.name=(DIATOMIC.includes(e.sym)&&n===2)?'diatomic '+nm:(n===3&&e.sym==='O')?'trioxygen':PRE[n]+nm;if(e.sym==='O'&&n===3)R.common='ozone';}
+        R.mass=e.mass*n;R.cov=[{e,n}];return R;
+      }
+      if(cat.length&&(an.length||non.length)){
+        if(cat.length!==1||an.length!==1||non.length>an.filter(a=>a.t==='e').length)return{msg:'IONIC COMPOUNDS need exactly ONE cation and ONE anion. Remove the extras (or try them in separate flasks).'};
+        const c=sbSpec(cat[0],'cat'),a=sbSpec(an[0],'an'),g=gcd(c.q,-a.q),nc=-a.q/g,na=c.q/g;
+        R.formula=fmt(c,nc)+fmt(a,na);R.name=`${c.n} ${a.n}`;R.type='IONIC BOND (metal → nonmetal electron transfer)';
+        R.lines.push(`${c.label} × ${nc}  +  ${a.label} × ${na}  →  net charge 0`,`Ratio from crisscross: |${a.q}| : ${c.q} ⇒ ${nc} : ${na}`);
+        if(c.el&&cCharges(c.el).length>1)R.lines.push(`Variable-charge metal: Roman numeral (${ROM[c.q]}) shows the ${qStr(c.q)} charge.`);
+        R.mass=c.mass*nc+a.mass*na;R.ion={c,a,nc,na};return R;
+      }
+      if(!cat.length&&an.length&&!non.length||(!cat.length&&pol.length))return{msg:'Add a metal or a cation (e.g. NH₄⁺) to pair with the anion.'};
+      if(cat.length&&!an.length&&!non.length){
+        if(mets.length>1&&!pol.length){R.formula=mets.map(p=>ELEMENTS[p.z-1].sym+(p.n>1?toSub(p.n):'')).join('–');R.name='alloy / metallic mixture';R.type='METALLIC BONDING';R.lines.push('Metals combine as alloys: no fixed formula or ionic charges.');R.mass=mets.reduce((s,p)=>s+ELEMENTS[p.z-1].mass*p.n,0);return R;}
+        return{msg:'Add a nonmetal or anion to pair with this cation.'};
+      }
+      const arr=non.map(p=>({e:ELEMENTS[p.z-1],n:p.n})).sort((x,y)=>{const i=COV.indexOf(x.e.sym),j=COV.indexOf(y.e.sym);return(i<0?50:i)-(j<0?50:j);});
+      R.cov=arr;R.formula=arr.map(x=>x.e.sym+(x.n>1?toSub(x.n):'')).join('');R.mass=arr.reduce((s,x)=>s+x.e.mass*x.n,0);
+      const key=arr.map(x=>x.e.sym+(x.n>1?x.n:'')).join('');
+      if(arr.length===2){
+        const[a,b]=arr,st=STEM[b.e.sym]||b.e.name.toLowerCase();let pb=PRE[b.n]||b.n+'-',nb=st+'ide';
+        if(/[ao]$/.test(pb)&&/^[aeiou]/.test(nb))pb=pb.slice(0,-1);
+        R.name=`${a.n>1?PRE[a.n]:''}${a.e.name.toLowerCase()} ${pb}${nb}`;R.type='COVALENT BOND (electron sharing between nonmetals)';
+        R.lines.push('Prefixes: mono-, di-, tri-, tetra-, penta-, hexa-, hepta-, octa-, nona-, deca-.','"mono-" is dropped on the first element; a/o is dropped before oxide (monoxide, pentoxide).');
+        if(COMMON[key]){R.common=COMMON[key];}
+      }else{R.name='no systematic name (3+ elements)';R.type='COVALENT / COMPLEX';R.lines.push('Tip: build salts and acids with a polyatomic ion from the dropdown.');}
+      if(COMMON[key]&&arr.length===2)R.key=key;
+      return R;
+    }
+    function sbRender(){
+      const side=document.getElementById('sbSide');if(!side)return;
+      if(sb.mode==='i'){
+        const e=sb.el,q=sb.q,el=e.z-q,iso=Object.keys(NOBLES).map(Number).concat([]).find(z=>z===el),nm=e.name.toLowerCase();
+        const name=q>0?`${nm}${cCharges(e).length>1?`(${ROM[q]})`:''} ion (cation)`:q<0?`${(STEM[e.sym]||nm)}ide ion (anion)`:`neutral ${nm} atom`;
+        side.innerHTML=`<div class="retro-panel p-3 space-y-2 text-xs"><div class="font-bold">ION FORGE — ${e.name.toUpperCase()}</div>
+          <div class="font-vt323 text-4xl text-[var(--crt-accent)]">${e.sym}${q?toSup(Math.abs(q)>1?Math.abs(q):'')+(q>0?'⁺':'⁻'):''}</div>
+          <div class="font-bold">${name}</div>
+          <label class="block">CHARGE: <b class="text-[var(--crt-accent)]">${q?qStr(q):'0'}</b> (${q>0?'lost '+q:q<0?'gained '+(-q):'no'} electron${Math.abs(q)===1?'':'s'})</label>
+          <input type="range" min="-4" max="8" step="1" value="${q}" class="w-full accent-[var(--crt-fg)]" oninput="sbIonQ(this.value)">
+          <div>PROTONS: <b>${e.z}</b> | ELECTRONS: <b>${el}</b> | NET CHARGE: <b>${q||0}</b></div>
+          <div>ELECTRON CONFIG (neutral): <b>${e.config}</b></div>
+          <div class="text-[var(--crt-fg-dim)]">${iso?`Isoelectronic with ${NOBLES[iso]} — a stable noble-gas arrangement.`:(q&&!iso?'Not a noble-gas arrangement (less common / less stable).':'')}${isMetal(e)?' Metals tend to LOSE electrons.':e.cat==='noble'?' Noble gases rarely form ions.':' Nonmetals tend to GAIN electrons.'}</div></div>`;
+        return;
+      }
+      const r=sbAnalyze();sb.res=r;
+      const rows=sb.parts.map((p,i)=>{
+        const lab=p.t==='p'?`${POLY[p.i].f}${qStr(POLY[p.i].q)} <span class="text-[var(--crt-fg-dim)]">${POLY[p.i].name}</span>`:`<b>${ELEMENTS[p.z-1].sym}</b> <span class="text-[var(--crt-fg-dim)]">${ELEMENTS[p.z-1].name}</span>`;
+        const sel=p.t==='e'&&isMetal(ELEMENTS[p.z-1])?`<select class="retro-select text-[10px] py-0" onchange="sbCharge(${i},this.value)">${cCharges(ELEMENTS[p.z-1]).map(c=>`<option value="${c}" ${p.q===c?'selected':''}>${qStr(c)}</option>`).join('')}</select>`:'';
+        const isCat=(p.t==='p'&&POLY[p.i].q>0)||(p.t==='e'&&isMetal(ELEMENTS[p.z-1]));
+        const cnt=r.ion?`<span class="px-2" title="Auto-balanced from charges">× ${isCat?r.ion.nc:r.ion.na}</span>`:`<button class="retro-btn text-xs py-0 px-2" onclick="sbStep(${i},-1)">−</button><b class="w-5 text-center">${p.n}</b><button class="retro-btn text-xs py-0 px-2" onclick="sbStep(${i},1)">+</button>`;
+        return`<div class="flex items-center justify-between gap-1 text-xs border-b border-[var(--crt-border)] py-1"><span>${lab}</span><span class="flex items-center gap-1">${sel}${cnt}<button class="retro-btn text-xs py-0 px-2" onclick="sbRemove(${i})">✕</button></span></div>`;}).join('');
+      side.innerHTML=`<div class="retro-panel p-2"><div class="flex justify-between text-xs font-bold pb-1"><span>FLASK</span><button class="retro-btn text-xs py-0 px-2" onclick="sbClear()">CLEAR</button></div>${rows||'<div class="text-xs text-[var(--crt-fg-dim)]">empty</div>'}</div>
+        <div class="retro-panel p-3 space-y-1 text-xs">${r.msg?`<div class="text-[var(--crt-accent)]">${r.msg}</div>`:`
+          <div class="font-vt323 text-4xl text-[var(--crt-accent)]">${r.formula}</div>
+          <div><span class="text-[var(--crt-fg-dim)]">NAME:</span> <b class="capitalize">${r.name}</b></div>
+          ${r.common?`<div><span class="text-[var(--crt-fg-dim)]">COMMON NAME:</span> <b>${r.common}</b></div>`:''}
+          <div><span class="text-[var(--crt-fg-dim)]">TYPE:</span> ${r.type}</div>
+          <div><span class="text-[var(--crt-fg-dim)]">MOLAR MASS:</span> ${r.mass.toFixed(2)} g/mol</div>
+          ${r.lines.map(l=>`<div class="text-[var(--crt-fg-dim)]">• ${l}</div>`).join('')}`}</div>`;
+    }
+    function sbLoop(){
+      if(activeTab!=='sbTab'){sb.running=false;return;}
+      const cv=document.getElementById('sbCanvas'),ctx=cv.getContext('2d'),rc={width:cv.clientWidth,height:cv.clientHeight};
+      if(cv.width!==Math.floor(rc.width)||cv.height!==Math.floor(rc.height)){cv.width=rc.width;cv.height=rc.height;}
+      const W=cv.width,H=cv.height;ctx.clearRect(0,0,W,H);sb.t+=.015;
+      const fg=cssVar('--crt-fg'),ac=cssVar('--crt-accent');
+      const bohr=(cx,e,q,R)=>{const sh=ionShells(e.shells,q),n=sh.length,ct=Math.cos(.9),Rr=Math.min(R,R/ct*.9),base=Rr*.22;drawBohr(ctx,{cx,cy:H/2,shells:sh,z:e.z,sym:e.sym,q,tilt:.9,rot:0,ang:sb.t,base,step:Math.min(30,(Rr-base)/Math.max(1,n-1)),zoom:.6,er:4,nr:3.5,badge:true});};
+      const label=(t,x,y,c=fg)=>{ctx.fillStyle=c;ctx.font="13px 'Share Tech Mono',monospace";ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(t,x,y);};
+      if(sb.mode==='i'){
+        const e=sb.el,R=Math.min(H/2-30,W/4-20);
+        bohr(W*.25,e,0,R);bohr(W*.75,e,sb.q,R);
+        label('→',W/2,H/2,ac);label('NEUTRAL '+e.sym,W*.25,H-12);label(sb.q?`ION ${e.sym}${qStr(sb.q)}`:'NO CHANGE',W*.75,H-12,ac);
+      }else if(sb.res&&sb.res.ion){
+        const{c,a,nc,na}=sb.res.ion,R=Math.min(H/2-30,W/4-20);
+        if(c.el&&a.el){bohr(W*.25,c.el,c.q,R);bohr(W*.75,a.el,a.q,R);}
+        else{atomChip(ctx,W*.25,H/2,R*.5,c.el?c.el.sym:c.f,0);atomChip(ctx,W*.75,H/2,R*.5,a.el?a.el.sym:a.f,0);}
+        label(`${c.label} × ${nc}`,W*.25,H-12,ac);label(`${a.label} × ${na}`,W*.75,H-12,ac);label(`${Math.abs(c.q)*nc} e⁻  ⟶  (electrostatic attraction)`,W/2,H/2-8,fg);label(sb.res.formula,W/2,H/2+14,ac);
+      }else if(sb.res&&sb.res.cov){
+        const cv2=sb.res.cov,key=cv2.map(x=>x.e.sym+(x.n>1?x.n:'')).join(''),tot=cv2.reduce((s,x)=>s+x.n,0),S=Math.min(70,H/3.2);
+        let atoms=[],bonds=[];
+        if(M[key]){M[key][0].forEach(a=>atoms.push({e:a[0],x:a[1],y:a[2]}));bonds=M[key][1];}
+        else if(tot<=12&&cv2.length>1&&cv2.some(x=>x.n===1)){const c=cv2.find(x=>x.n===1),o=cv2.filter(x=>x!==c);atoms.push({e:c.e.sym,x:0,y:0});let k=0;const cnt=o.reduce((s,x)=>s+x.n,0);o.forEach(x=>{for(let i=0;i<x.n;i++){const a=k++/cnt*6.2832;atoms.push({e:x.e.sym,x:1.15*Math.cos(a),y:1.15*Math.sin(a)});bonds.push([0,atoms.length-1,1]);}});}
+        else if(tot<=12){let k=0;cv2.forEach(x=>{for(let i=0;i<x.n;i++)atoms.push({e:x.e.sym,x:(k++-(tot-1)/2)*1.1,y:0});});}
+        if(atoms.length){const P=atoms.map(a=>({x:W/2+a.x*S*1.6,y:H/2+a.y*S*1.2,e:a.e}));bonds.forEach(b=>drawBondLine(ctx,P[b[0]],P[b[1]],b[2],0,1,fg));P.forEach(p=>atomChip(ctx,p.x,p.y,p.e==='H'?S*.26:S*.36,p.e,0));label(M[key]||bonds.length?'Ball-and-stick preview (2D)':'Atoms in formula (bond layout not modelled)',W/2,H-12,fg);}
+        else label('Too many atoms to draw',W/2,H/2);
+      }else label(sb.mode==='c'?'Build something in the flask to see it here':'',W/2,H/2,cssVar('--crt-fg-dim'));
+      requestAnimationFrame(sbLoop);
+    }
+
+    // INITIALIZATION ON PAGE LOAD
+    window.addEventListener('load', () => {
+      const st = document.createElement('style');
+      st.textContent = Object.entries(CAT_COL).map(([k, v]) => `.cat-${k}{--c:${v}}`).join('');
+      document.head.appendChild(st);
+      buildFilters();
+      renderTable();
+      renderIonChart();
+    });
+
+    // UNLOCK AUDIO CONTEXT ON FIRST USER INTERACTION
+    window.addEventListener('click', () => {
+      getAudioContext();
+    }, { once: true });
+
+    // WINDOW EVENT HANDLER BINDINGS
+    window.changeTheme = changeTheme;
+    window.togglePower = togglePower;
+    window.skipBoot = skipBoot;
+    window.triggerScanWipe = triggerScanWipe;
+    window.triggerBootSplashSequence = triggerBootSplashSequence;
+    window.switchTab = switchTab;
+    window.filterCategory = filterCategory;
+    window.handleSearch = handleSearch;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.openFullBohrTab = openFullBohrTab;
+    window.selectBohrElement = selectBohrElement;
+    window.toggleBohrMotion = toggleBohrMotion;
+    window.toggleNucleusMode = toggleNucleusMode;
+    window.resetBohrCamera = resetBohrCamera;
+    window.updateBohrSpeed = updateBohrSpeed;
+    window.updateBohrTilt = updateBohrTilt;
+    window.onSelectReactionPreset = onSelectReactionPreset;
+    window.executeFormulaBalancing = executeFormulaBalancing;
+    window.updateReactionProgress = updateReactionProgress;
+    window.toggleReactionAnim = toggleReactionAnim;
+    window.filterIonCards = filterIonCards;
+    Object.assign(window, { sbMode, sbPick, sbAddPoly, sbStep, sbCharge, sbRemove, sbClear, sbIonQ, updateBohrCharge });
+    window.startBackgroundWhirring = startBackgroundWhirring;
+    window.stopBackgroundWhirring = stopBackgroundWhirring;
+  </script>
+</body>
+</html>

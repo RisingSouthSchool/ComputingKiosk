@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abyss SMP Wiki</title>
+    <!-- Tailwind CSS for utility layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* MediaWiki / Miraheze Custom Vector Skin Styling */
+        :root {
+            --mw-bg: #f6f6f6;
+            --mw-content-bg: #ffffff;
+            --mw-border: #a2a9b1;
+            --mw-border-light: #eaecf0;
+            --mw-header-bg: #f8f9fa;
+            --mw-text: #202122;
+            --mw-link: #36c;
+            --mw-link-hover: #0b0080;
+            --mw-title-font: 'Linux Libertine', 'Georgia', 'Times', serif;
+        }
+
+        .dark-mode {
+            --mw-bg: #101418;
+            --mw-content-bg: #1a1f24;
+            --mw-border: #363d44;
+            --mw-border-light: #282e34;
+            --mw-header-bg: #15191d;
+            --mw-text: #eaecf0;
+            --mw-link: #6d8fb3;
+            --mw-link-hover: #8daed5;
+        }
+
+        body {
+            background-color: var(--mw-bg);
+            color: var(--mw-text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Lato, Helvetica, Arial, sans-serif;
+        }
+
+        .wiki-title {
+            font-family: var(--mw-title-font);
+        }
+
+        .mw-link {
+            color: var(--mw-link);
+            cursor: pointer;
+        }
+        .mw-link:hover {
+            color: var(--mw-link-hover);
+            text-decoration: underline;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            border-right: 1px solid var(--mw-border-light);
+        }
+
+        /* Wiki Main Content Area */
+        .main-content-card {
+            background-color: var(--mw-content-bg);
+            border: 1px solid var(--mw-border);
+        }
+
+        /* Section Headings */
+        .mw-heading-2 {
+            font-family: var(--mw-title-font);
+            border-bottom: 1px solid var(--mw-border);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.25rem;
+        }
+
+        /* Infobox Style */
+        .mw-infobox {
+            background-color: var(--mw-bg);
+            border: 1px solid var(--mw-border);
+            width: 100%;
+            max-width: 300px;
+            float: right;
+            margin-left: 1.25rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .mw-infobox {
+                float: none;
+                max-width: 100%;
+                margin-left: 0;
+            }
+        }
+
+        /* Skin/Weapon Card Hover Effect */
+        .item-card {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid var(--mw-border);
+            background-color: var(--mw-content-bg);
+        }
+
+        .item-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+            border-color: var(--mw-link);
+        }
+
+        /* Article Tabs */
+        .mw-tab {
+            border: 1px solid transparent;
+            border-bottom: none;
+            background-color: rgba(0,0,0,0.03);
+        }
+        .mw-tab.active {
+            background-color: var(--mw-content-bg);
+            border-color: var(--mw-border);
+            border-bottom: 2px solid var(--mw-content-bg);
+            font-weight: 600;
+        }
+
+        /* Minecraft Pixelated Rendering */
+        .pixelated {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-[var(--mw-border-light)] bg-[var(--mw-header-bg)] px-4 py-2 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <!-- Left: Logo & Search -->
+            <div class="flex items-center gap-6">
+                <button id="sidebar-toggle" class="md:hidden text-lg p-1 text-[var(--mw-text)] hover:opacity-75">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <a href="#/home" onclick="showPage('home')" class="flex items-center gap-3 text-decoration-none group">
+                    <!-- Abyss SMP Custom Glowing Logo -->
+                    <div class="px-3 py-1 bg-black rounded border border-purple-900/50 flex items-center justify-center shadow-[0_0_12px_rgba(168,85,247,0.4)]">
+                        <span class="font-black text-xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-400 font-mono drop-shadow-[0_0_8px_rgba(236,72,153,0.8)] pixelated">
+                            ABYSS
+                        </span>
+                    </div>
+                    <span class="wiki-title text-xl font-serif text-[var(--mw-text)] hidden sm:inline border-l border-[var(--mw-border-light)] pl-3">Wiki</span>
+                </a>
+
+                <!-- MediaWiki Search Input -->
+                <div class="relative w-48 sm:w-64">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </div>
+                    <input type="text" id="search-input" placeholder="Search Abyss SMP Wiki..."
+                        class="w-full pl-8 pr-3 py-1 text-sm rounded-sm border border-[var(--mw-border)] bg-[var(--mw-content-bg)] text-[var(--mw-text)] focus:outline-none focus:ring-1 focus:ring-blue-500">
+                    <!-- Dropdown Search Results -->
+                    <div id="search-results" class="hidden absolute left-0 right-0 top-full mt-1 bg-[var(--mw-content-bg)] border border-[var(--mw-border)] shadow-lg rounded-sm max-h-60 overflow-y-auto z-50"></div>
+                </div>
+            </div>
+
+            <!-- Right: Actions & Theme Toggle -->
+            <div class="flex items-center gap-3 text-sm">
+                <button id="theme-toggle" title="Toggle Theme" class="p-2 rounded border border-[var(--mw-border)] hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+                <button onclick="openEditModal()" class="hidden sm:flex items-center gap-1 text-xs border border-[var(--mw-border)] px-2.5 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+                    <i class="fa-solid fa-pen-to-square"></i> Edit
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <div class="flex-1 max-w-7xl w-full mx-auto flex flex-col md:flex-row">
+
+        <!-- MediaWiki Left Sidebar -->
+        <aside id="sidebar" class="sidebar w-full md:w-56 p-4 flex-shrink-0 hidden md:block">
+            <div class="space-y-6 text-xs">
+                <!-- Navigation -->
+                <div>
+                    <h3 class="font-bold text-[var(--mw-text)] opacity-60 uppercase mb-2 tracking-wider">Navigation</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#/home" onclick="showPage('home')" class="mw-link block py-0.5"><i class="fa-solid fa-house w-4"></i> Main Page</a></li>
+                        <li><a href="#/videos" onclick="showPage('videos')" class="mw-link block py-0.5"><i class="fa-solid fa-video w-4"></i> All Episodes Log</a></li>
+                        <li><a href="#/weapons-hub" onclick="showPage('weapons-hub')" class="mw-link block py-0.5"><i class="fa-solid fa-wand-magic-sparkles w-4"></i> Custom Weapons</a></li>
+                        <li><button onclick="navigateToRandom()" class="mw-link block py-0.5 text-left w-full"><i class="fa-solid fa-shuffle w-4"></i> Random page</button></li>
+                    </ul>
+                </div>
+
+                <!-- Protagonists Links -->
+                <div>
+                    <h3 class="font-bold text-[var(--mw-text)] opacity-60 uppercase mb-2 tracking-wider">Protagonists</h3>
+                    <ul class="space-y-1.5">
+                        <li><a href="#/player-iamstormz" onclick="showPage('player-iamstormz')" class="mw-link block py-0.5"><i class="fa-solid fa-user w-4"></i> IamStormz</a></li>
+                        <li><a href="#/player-dumbisdumb" onclick="showPage('player-dumbisdumb')" class="mw-link block py-0.5"><i class="fa-solid fa-user w-4"></i> DumbIsDumb</a></li>
+                        <li><a href="#/player-gopg" onclick="showPage('player-gopg')" class="mw-link block py-0.5"><i class="fa-solid fa-user w-4"></i> gopg</a></li>
+                        <li><a href="#/player-allaspen" onclick="showPage('player-allaspen')" class="mw-link block py-0.5"><i class="fa-solid fa-user w-4"></i> AllAspen</a></li>
+                    </ul>
+                </div>
+
+                <!-- Custom Weapons Quick List -->
+                <div>
+                    <h3 class="font-bold text-[var(--mw-text)] opacity-60 uppercase mb-2 tracking-wider">Custom Items</h3>
+                    <ul class="space-y-1 text-[11px]">
+                        <li><a href="#/weapon-puzzle" onclick="showPage('weapon-puzzle')" class="mw-link block py-0.5">Puzzle</a></li>
+                        <li><a href="#/weapon-wingsofdaedalus" onclick="showPage('weapon-wingsofdaedalus')" class="mw-link block py-0.5">Wings of Daedalus</a></li>
+                        <li><a href="#/weapon-redline" onclick="showPage('weapon-redline')" class="mw-link block py-0.5">Redline</a></li>
+                        <li><a href="#/weapon-mazeheart" onclick="showPage('weapon-mazeheart')" class="mw-link block py-0.5">Mazeheart</a></li>
+                        <li><a href="#/weapon-envy" onclick="showPage('weapon-envy')" class="mw-link block py-0.5">Envy</a></li>
+                        <li><a href="#/weapon-scarletvow" onclick="showPage('weapon-scarletvow')" class="mw-link block py-0.5">Scarlet Vow</a></li>
+                        <li><a href="#/weapon-aurora" onclick="showPage('weapon-aurora')" class="mw-link block py-0.5">Aurora</a></li>
+                        <li><a href="#/weapon-reaperscythe" onclick="showPage('weapon-reaperscythe')" class="mw-link block py-0.5">Reaper Scythe</a></li>
+                        <li><a href="#/weapon-romperstompers" onclick="showPage('weapon-romperstompers')" class="mw-link block py-0.5">Romper Stompers</a></li>
+                        <li><a href="#/weapon-windsweptboots" onclick="showPage('weapon-windsweptboots')" class="mw-link block py-0.5">Windswept Boots</a></li>
+                        <li><a href="#/weapon-hermesboots" onclick="showPage('weapon-hermesboots')" class="mw-link block py-0.5">Hermes' Boots</a></li>
+                    </ul>
+                </div>
+
+                <!-- Miraheze Community Box -->
+                <div class="p-3 bg-[var(--mw-bg)] border border-[var(--mw-border-light)] rounded">
+                    <p class="font-semibold text-xs mb-1">Abyss SMP Miraheze</p>
+                    <p class="text-[11px] opacity-75">Community managed lore, item stats, and timeline registry.</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Article Container -->
+        <main class="flex-1 p-4 md:p-6 min-w-0">
+            <!-- Vector Tabs Bar -->
+            <div class="flex items-center justify-between border-b border-[var(--mw-border)] mb-4 text-xs">
+                <div class="flex gap-1 -mb-[1px]">
+                    <button class="mw-tab active px-3 py-1.5 rounded-t">Page</button>
+                    <button class="mw-tab px-3 py-1.5 rounded-t opacity-60 hover:opacity-100">Discussion</button>
+                </div>
+                <div class="flex gap-1 -mb-[1px]">
+                    <button class="mw-tab active px-3 py-1.5 rounded-t">Read</button>
+                    <button onclick="openEditModal()" class="mw-tab px-3 py-1.5 rounded-t opacity-60 hover:opacity-100">Edit Source</button>
+                    <button onclick="openHistoryModal()" class="mw-tab px-3 py-1.5 rounded-t opacity-60 hover:opacity-100">View History</button>
+                </div>
+            </div>
+
+            <!-- Breadcrumb Navigation -->
+            <nav id="breadcrumb" class="text-xs mb-3 text-gray-500 hidden">
+                <a href="#/home" onclick="showPage('home')" class="mw-link">Main Page</a> <span id="breadcrumb-parent"></span> &gt; <span id="breadcrumb-current">Current</span>
+            </nav>
+
+            <!-- Dynamic Article Container -->
+            <article id="app-view" class="main-content-card p-6 rounded-sm shadow-sm">
+                <!-- Content injected via showPage JS -->
+            </article>
+        </main>
+    </div>
+
+    <!-- Edit Modal Simulation -->
+    <div id="edit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[var(--mw-content-bg)] border border-[var(--mw-border)] rounded-md max-w-xl w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold wiki-title">Editing Article Source</h3>
+                <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-xs text-gray-500 mb-2">Simulated Wikitext editor (MediaWiki format):</p>
+            <textarea id="edit-textarea" rows="10" class="w-full font-mono text-xs p-3 border border-[var(--mw-border)] bg-[var(--mw-bg)] text-[var(--mw-text)] rounded focus:outline-none focus:ring-1 focus:ring-blue-500"></textarea>
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="closeEditModal()" class="px-3 py-1.5 text-xs border border-[var(--mw-border)] rounded hover:bg-gray-100 dark:hover:bg-gray-800">Cancel</button>
+                <button onclick="saveEditModal()" class="px-3 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Modal (Replaces alert()) -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-[var(--mw-content-bg)] border border-[var(--mw-border)] rounded-md max-w-sm w-full p-5 shadow-2xl text-center">
+            <div id="msg-modal-title" class="text-base font-bold wiki-title mb-2">Notice</div>
+            <div id="msg-modal-body" class="text-xs text-gray-600 dark:text-gray-300 mb-4">Message content...</div>
+            <button onclick="closeMsgModal()" class="px-4 py-1.5 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-[var(--mw-border-light)] bg-[var(--mw-header-bg)] py-6 mt-12 text-xs text-center text-gray-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>This page was last edited on October 2026, at 14:00 (UTC).</p>
+            <p class="mt-1">Content is available under <a href="#" class="mw-link">Creative Commons Attribution-ShareAlike License</a> unless otherwise noted.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Engine & SPA Router Data -->
+    <script>
+        // Chronological Master Video Log with Verified YouTube URLs
+        const masterEpisodes = [
+            { id: 1, title: "Searching For A Player Who Doesn't Exist", creator: "IamStormz", channel: "https://youtube.com/@IamStormz", videoUrl: "https://www.youtube.com/watch?v=rtxAq4VcxVU", date: "26 January 2026", desc: "IamStormz investigates anomalous player activity across the map." },
+            { id: 2, title: "I Found Minecraft's Lost Superweapon", creator: "DumbIsDumb", channel: "https://youtube.com/@DumbIsDumb", videoUrl: "https://www.youtube.com/watch?v=3HD84mVK8fY", date: "25 January 2026", desc: "DumbIsDumb uncovers the first lost superweapon on the server." },
+            { id: 3, title: "I Discovered Minecraft's Deadliest Secret", creator: "IamStormz", channel: "https://youtube.com/@IamStormz", videoUrl: "https://www.youtube.com/watch?v=K5YBSxB5P4o", date: "19 February 2026", desc: "Stormz stumbles into an ancient subterranean complex." },
+            { id: 4, title: "I Escaped Minecraft's Deadliest Labyrinth", creator: "DumbIsDumb", channel: "https://youtube.com/@DumbIsDumb", videoUrl: "https://www.youtube.com/watch?v=M-iXZ7t4AoY", date: "16 February 2026", desc: "DumbIsDumb navigates a dangerous maze structure to survive." },
+            { id: 5, title: "I Joined A Secret Superteam", creator: "gopg", channel: "https://youtube.com/@gopgvevo", videoUrl: "https://www.youtube.com/watch?v=pSA6iSfNCbs", date: "26 April 2026", desc: "gopg gets recruited into an elite covert alliance." },
+            { id: 6, title: "I Crafted A God Weapon", creator: "IamStormz", channel: "https://youtube.com/@IamStormz", videoUrl: "https://www.youtube.com/watch?v=DHucV7uG2tM", date: "31 March 2026", desc: "Stormz acquires and crafts an extreme high-tier superweapon." },
+            { id: 7, title: "I Survived Minecraft's Highest Bounty", creator: "DumbIsDumb", channel: "https://youtube.com/@DumbIsDumb", videoUrl: "https://www.youtube.com/watch?v=uFPefWvl_HE", date: "2 May 2026", desc: "DumbIsDumb faces constant hunts due to a server-wide bounty." },
+            { id: 8, title: "I Mastered Mace Combat", creator: "DumbIsDumb", channel: "https://youtube.com/@DumbIsDumb", videoUrl: "https://www.youtube.com/watch?v=qcejOGV0_Do", date: "12 June 2026", desc: "DumbIsDumb trains with heavy mace weapons." },
+            { id: 9, title: "I Took Over A Ruined Civilization", creator: "IamStormz", channel: "https://youtube.com/@IamStormz", videoUrl: "https://www.youtube.com/watch?v=IN4g8jFGJwM", date: "16 June 2026", desc: "Stormz establishes dominance over an ancient ruined city." },
+            { id: 10, title: "I Became A Secrat Assassin", creator: "gopg", channel: "https://youtube.com/@gopgvevo", videoUrl: "https://www.youtube.com/watch?v=Q2gLU1e8LDo", date: "21 June 2026", desc: "gopg carries out covert strikes across the server." },
+            { id: 11, title: "I Waged War on a Minecraft Civilization", creator: "DumbIsDumb", channel: "https://youtube.com/@DumbIsDumb", videoUrl: "https://www.youtube.com/watch?v=VOa6gWa-yRM", date: "5 August 2026", desc: "DumbIsDumb launches a full campaign against rival factions." },
+            { id: 12, title: "I Hunted A Secrat Superteam", creator: "IamStormz", channel: "https://youtube.com/@IamStormz", videoUrl: "https://www.youtube.com/watch?v=PqIy6CIVzb4", date: "5 August 2026", desc: "Stormz tracks down and confronts an underground superteam." },
+            { id: 13, title: "I Found Minecraft's Strongest Spear", creator: "gopg", channel: "https://youtube.com/@gopgvevo", videoUrl: "https://www.youtube.com/watch?v=NOSb3RPcVzs", date: "13 September 2026", desc: "gopg claims Redline, the beam-firing Netherite Spear superweapon." },
+            { id: 14, title: "My Best Friend Is Missing", creator: "AllAspen", channel: "https://youtube.com/@AllAspen", videoUrl: "https://www.youtube.com/watch?v=0u9jzdTmtfk", date: "12 October 2026", desc: "AllAspen begins searching for missing server members as tensions rise." }
+        ];
+
+        // Article Database
+        const wikiData = {
+            home: {
+                title: "Main Page",
+                subtitle: "From Abyss SMP Wiki, the official encyclopedia",
+                infobox: {
+                    title: "Abyss SMP",
+                    image: "https://mc-heads.net/avatar/DumbIsDumb/120",
+                    imageCaption: "Abyss SMP Server Seal",
+                    details: [
+                        { label: "Run By", value: "<a href='https://youtube.com/@DumbIsDumb' target='_blank' class='mw-link'>DumbIsDumb</a>, <a href='https://youtube.com/@IamStormz' target='_blank' class='mw-link'>IamStormz</a>, <a href='https://youtube.com/@gopgvevo' target='_blank' class='mw-link'>gopg</a>, <a href='https://youtube.com/@AllAspen' target='_blank' class='mw-link'>AllAspen</a>" },
+                        { label: "Format", value: "Scripted Lore" },
+                        { label: "Lives", value: "1 Life (Death Ban)" },
+                        { label: "Status", value: "Active" },
+                        { label: "Special Element", value: "<a href='#/weapons-hub' onclick=\"showPage('weapons-hub')\" class='mw-link font-semibold'>Custom Superweapons & Artifacts</a>" }
+                    ]
+                },
+                content: `
+                    <div class="text-sm leading-relaxed space-y-4">
+                        <div class="p-4 bg-[var(--mw-bg)] border-l-4 border-purple-600 my-2 rounded-r shadow-sm">
+                            <p class="text-base italic">
+                                "The Abyss SMP is a scripted Minecraft SMP run by DumbIsDumb, IamStormz, gopg, and AllAspen. Each player on this server only has one life, and if you die, you get banned. Whilst this server seems vanilla at first, look a little deeper, and you will be faced with a world of unknown and uncertainty."
+                            </p>
+                        </div>
+
+                        <div class="border border-[var(--mw-border-light)] bg-[var(--mw-bg)] p-3 rounded w-fit my-4">
+                            <span class="font-bold text-xs uppercase tracking-wider block mb-1">Contents</span>
+                            <ol class="text-xs space-y-1 list-decimal list-inside mw-link">
+                                <li><a href="#overview-section">Overview & Rules</a></li>
+                                <li><a href="#protagonists-section">Protagonists</a></li>
+                                <li><a href="#weapons-banner-section">Custom Weapons & Gear</a></li>
+                            </ol>
+                        </div>
+
+                        <h2 id="overview-section" class="mw-heading-2 text-xl font-serif">Overview & Rules</h2>
+                        <p>
+                            The <strong>Abyss SMP</strong> merges hardcore deathban survival with high-stakes story arcs. Players start out in an environment resembling standard vanilla Minecraft before discovering secret superweapons, mysterious items, and lore encounters.
+                        </p>
+                        <ul class="list-disc list-inside space-y-1 pl-2">
+                            <li><strong>One Life Limit:</strong> Death results in an immediate permanent ban.</li>
+                            <li><strong>Custom Arsenal:</strong> Unheard of abilities unlocked through custom artifacts.</li>
+                        </ul>
+
+                        <h2 id="protagonists-section" class="mw-heading-2 text-xl font-serif">Protagonists</h2>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6">
+                            <a href="#/player-iamstormz" onclick="showPage('player-iamstormz')" class="item-card p-4 rounded text-center block group relative border-red-300 dark:border-red-900/50">
+                                <span class="absolute top-2 right-2 bg-red-500/20 text-red-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-red-500/30">DEAD 💀</span>
+                                <img src="https://mc-heads.net/avatar/IamStormz/100" alt="IamStormz" class="w-20 h-20 mx-auto mb-3 pixelated rounded bg-[var(--mw-bg)] border border-[var(--mw-border)] p-1 grayscale group-hover:grayscale-0 transition">
+                                <span class="font-bold text-sm block group-hover:text-blue-600 mw-link">IamStormz</span>
+                                <span class="text-[11px] text-gray-500">PvP Specialist</span>
+                            </a>
+
+                            <a href="#/player-dumbisdumb" onclick="showPage('player-dumbisdumb')" class="item-card p-4 rounded text-center block group relative">
+                                <span class="absolute top-2 right-2 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">ALIVE</span>
+                                <img src="https://mc-heads.net/avatar/DumbIsDumb/100" alt="DumbIsDumb" class="w-20 h-20 mx-auto mb-3 pixelated rounded bg-[var(--mw-bg)] border border-[var(--mw-border)] p-1">
+                                <span class="font-bold text-sm block group-hover:text-blue-600 mw-link">DumbIsDumb</span>
+                                <span class="text-[11px] text-gray-500">Co-Founder</span>
+                            </a>
+
+                            <a href="#/player-gopg" onclick="showPage('player-gopg')" class="item-card p-4 rounded text-center block group relative">
+                                <span class="absolute top-2 right-2 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">ALIVE</span>
+                                <img src="https://mc-heads.net/avatar/gopg/100" alt="gopg" class="w-20 h-20 mx-auto mb-3 pixelated rounded bg-[var(--mw-bg)] border border-[var(--mw-border)] p-1">
+                                <span class="font-bold text-sm block group-hover:text-blue-600 mw-link">gopg</span>
+                                <span class="text-[11px] text-gray-500">Explorer</span>
+                            </a>
+
+                            <a href="#/player-allaspen" onclick="showPage('player-allaspen')" class="item-card p-4 rounded text-center block group relative">
+                                <span class="absolute top-2 right-2 bg-emerald-500/20 text-emerald-600 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30">ALIVE</span>
+                                <img src="https://mc-heads.net/avatar/AllAspen/100" alt="AllAspen" class="w-20 h-20 mx-auto mb-3 pixelated rounded bg-[var(--mw-bg)] border border-[var(--mw-border)] p-1">
+                                <span class="font-bold text-sm block group-hover:text-blue-600 mw-link">AllAspen</span>
+                                <span class="text-[11px] text-gray-500">Historian</span>
+                            </a>
+                        </div>
+
+                        <h2 id="weapons-banner-section" class="mw-heading-2 text-xl font-serif">Custom Superweapons Hub</h2>
+                        <div class="p-4 border border-purple-500/30 bg-purple-50 dark:bg-purple-950/20 rounded flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <h3 class="font-bold text-base text-purple-900 dark:text-purple-300">Discover Superweapons & Custom Artifacts</h3>
+                                <p class="text-xs text-purple-700 dark:text-purple-400 mt-0.5">Explore full stats, origins, passive/active abilities, base items, and wielders.</p>
+                            </div>
+                            <a href="#/weapons-hub" onclick="showPage('weapons-hub')" class="px-4 py-2 bg-purple-700 text-white text-xs font-semibold rounded hover:bg-purple-800 transition whitespace-nowrap">
+                                View Superweapons Registry <i class="fa-solid fa-arrow-right ml-1"></i>
+                            </a>
+                        </div>
+                    </div>
+                `
+            },
+
+            // DEDICATED VIDEOS CHRONOLOGICAL LOG PAGE
+            'videos': {
+                title: "Chronological Video Registry",
+                subtitle: "Master list of all Abyss SMP video uploads across all creators",
+                parent: { name: "Main Page", pageId: "home" },
+                content: `
+                    <div class="text-sm leading-relaxed space-y-4">
+                        <div class="p-4 bg-[var(--mw-bg)] border-l-4 border-red-600 my-2 rounded-r shadow-sm">
+                            <p class="text-base italic">
+                                "Watch the story unfold from every creator's perspective. All video logs are organized in strict chronological release order."
+                            </p>
+                        </div>
+
+                        <div class="flex justify-between items-center mw-heading-2">
+                            <h2 class="text-xl font-serif m-0 border-none p-0">Master Episode Directory</h2>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="text-gray-500">Order:</span>
+                                <button onclick="toggleMasterVideoSort()" id="master-sort-btn" class="border border-[var(--mw-border)] px-2 py-1 rounded bg-[var(--mw-bg)] hover:bg-gray-200 dark:hover:bg-gray-700">
+                                    <i class="fa-solid fa-arrow-down-1-9"></i> Oldest First
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="master-video-list-container" class="space-y-3 mt-3">
+                            <!-- Injected by JavaScript -->
+                        </div>
+                    </div>
+                `
+            },
+
+            // PROTAGONISTS
+            'player-iamstormz': {
+                title: "IamStormz",
+                subtitle: "Protagonist / PvP Specialist",
+                parent: { name: "Main Page", pageId: "home" },
+                infobox: {
+                    title: "IamStormz",
+                    image: "https://mc-heads.net/body/IamStormz/150",
+                    imageCaption: "In-game Skin Render",
+                    details: [
+                        { label: "Alias", value: "Stormz" },
+                        { label: "YouTube Channel", value: "<a href='https://youtube.com/@IamStormz' target='_blank' class='mw-link font-bold text-red-600'><i class='fa-brands fa-youtube mr-1'></i>@IamStormz</a>" },
+                        { label: "Status", value: "<span class='text-red-600 font-bold'>Deceased 💀 (0/1 Life)</span>" },
+                        { label: "Killed By", value: "<span class='font-semibold text-purple-600'>TusuGoBRR</span>" },
+                        { label: "Role", value: "Protagonist / PvP Specialist" },
+                        { label: "Superweapon Held", value: "<a href='#/weapon-envy' onclick=\"showPage('weapon-envy')\" class='mw-link'>Envy</a>" }
+                    ]
+                },
+                lore: "IamStormz (commonly Stormz) is one of the four protagonists on the Abyss SMP. Alongside this, he is one of the strongest and most adept at PvP (as of making this Wiki). Throughout his time on the server, he has been betrayed, backstabbed, and even killed. Currently, he is dead, killed by TusuGoBRR.",
+                videos: masterEpisodes.filter(v => v.creator === "IamStormz")
+            },
+            'player-dumbisdumb': {
+                title: "DumbIsDumb",
+                subtitle: "Protagonist / Co-Founder",
+                parent: { name: "Main Page", pageId: "home" },
+                infobox: {
+                    title: "DumbIsDumb",
+                    image: "https://mc-heads.net/body/DumbIsDumb/150",
+                    imageCaption: "In-game Skin Render",
+                    details: [
+                        { label: "Alias", value: "Dumb" },
+                        { label: "YouTube Channel", value: "<a href='https://youtube.com/@DumbIsDumb' target='_blank' class='mw-link font-bold text-red-600'><i class='fa-brands fa-youtube mr-1'></i>@DumbIsDumb</a>" },
+                        { label: "Status", value: "<span class='text-emerald-600 font-bold'>Alive (1/1 Life)</span>" },
+                        { label: "Role", value: "Protagonist / Co-Founder" },
+                        { label: "Superweapon Held", value: "<a href='#/weapon-mazeheart' onclick=\"showPage('weapon-mazeheart')\" class='mw-link'>Mazeheart</a> (Previous Owner)" }
+                    ]
+                },
+                lore: "DumbIsDumb (commonly Dumb) is one of the four protagonists of the Abyss SMP. He is one of the best PvPers on the entire server, and is one of the previous owners of <a href='#/weapon-mazeheart' onclick=\"showPage('weapon-mazeheart')\" class='mw-link font-semibold'>Mazeheart</a>. He has no friends, with them all being either killed or betraying him.",
+                videos: masterEpisodes.filter(v => v.creator === "DumbIsDumb")
+            },
+            'player-gopg': {
+                title: "gopg",
+                subtitle: "Protagonist / Explorer",
+                parent: { name: "Main Page", pageId: "home" },
+                infobox: {
+                    title: "gopg",
+                    image: "https://mc-heads.net/body/gopg/150",
+                    imageCaption: "In-game Skin Render",
+                    details: [
+                        { label: "Alias", value: "gop" },
+                        { label: "YouTube Channel", value: "<a href='https://youtube.com/@gopgvevo' target='_blank' class='mw-link font-bold text-red-600'><i class='fa-brands fa-youtube mr-1'></i>@gopgvevo</a>" },
+                        { label: "Status", value: "<span class='text-emerald-600 font-bold'>Alive (1/1 Life)</span>" },
+                        { label: "Role", value: "Protagonist / Explorer / Syndicate Member" },
+                        { label: "Superweapon Held", value: "<a href='#/weapon-redline' onclick=\"showPage('weapon-redline')\" class='mw-link'>Redline</a>" }
+                    ]
+                },
+                lore: "gopg (commonly gop) is one of the four protagonists of the Abyss SMP. Whilst he isn't the best at PvP, he holds one of the most powerful Custom Weapons, <a href='#/weapon-redline' onclick=\"showPage('weapon-redline')\" class='mw-link font-semibold'>Redline</a>, making him one of the most powerful members of the Syndicate. He doesn't have many friends, only really spending his time with Quakitus (\"The Wizard\").",
+                videos: masterEpisodes.filter(v => v.creator === "gopg")
+            },
+            'player-allaspen': {
+                title: "AllAspen",
+                subtitle: "Protagonist / Historian",
+                parent: { name: "Main Page", pageId: "home" },
+                infobox: {
+                    title: "AllAspen",
+                    image: "https://mc-heads.net/body/AllAspen/150",
+                    imageCaption: "In-game Skin Render",
+                    details: [
+                        { label: "Alias", value: "Aspen" },
+                        { label: "YouTube Channel", value: "<a href='https://youtube.com/@AllAspen' target='_blank' class='mw-link font-bold text-red-600'><i class='fa-brands fa-youtube mr-1'></i>@AllAspen</a>" },
+                        { label: "Status", value: "<span class='text-emerald-600 font-bold'>Alive (1/1 Life)</span>" },
+                        { label: "Role", value: "Protagonist / Historian / Infiltrator" }
+                    ]
+                },
+                lore: "AllAspen (commonly Aspen) is one of the four protagonists of the Abyss SMP. She is the worst protagonist in terms of PvP, but she makes up for it with her level of game sense and intelligence, being able to sneak into Soreia, the biggest civilisation on the server, and further into the Syndicate, the evil superteam residing underneath Soreia.",
+                videos: masterEpisodes.filter(v => v.creator === "AllAspen")
+            },
+
+            // CUSTOM WEAPONS HUB PAGE
+            'weapons-hub': {
+                title: "Custom Weapons & Superweapons",
+                subtitle: "Category & Hub Page for Abyss SMP Artifacts",
+                parent: { name: "Main Page", pageId: "home" },
+                content: `
+                    <div class="text-sm leading-relaxed space-y-4">
+                        <div class="p-4 bg-[var(--mw-bg)] border-l-4 border-amber-500 my-2 rounded-r shadow-sm">
+                            <p class="text-base italic">
+                                "Custom Weapons are what make Abyss special. Originally, the server is presented as a vanilla server, with no additional modifications. However, as the story progresses, weapons with abilities unheard of begin making appearances."
+                            </p>
+                        </div>
+
+                        <!-- Quakitus / The Wizard Feature Section -->
+                        <div class="p-4 border border-indigo-300 bg-indigo-50 dark:bg-indigo-950/30 rounded-md shadow-sm my-4">
+                            <div class="flex items-start gap-3">
+                                <img src="https://mc-heads.net/avatar/Quakitus/64" alt="Quakitus" class="w-12 h-12 pixelated rounded border border-indigo-400">
+                                <div>
+                                    <h3 class="font-bold text-base text-indigo-950 dark:text-indigo-200">Featured Key Player: Quakitus ("The Wizard")</h3>
+                                    <p class="text-xs text-indigo-800 dark:text-indigo-300 mt-1">
+                                        Quakitus is known across the realm as <strong>"The Wizard"</strong>. He maintains an extensive library of information covering every single custom weapon on the server. Furthermore, Quakitus possesses a legendary <strong>Enchanted Enchanting Table</strong> capable of enchanting any item with <em>any</em> enchantment (such as placing Density or Wind Burst onto custom armor boots).
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 class="mw-heading-2 text-xl font-serif">Superweapons & Artifacts Directory</h2>
+                        <p>Click on any custom weapon or piece of gear below to view its dedicated page, stats, abilities, base items, and current/past wielders:</p>
+
+                        <div id="weapons-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-6">
+                            <!-- Populated via JS loop -->
+                        </div>
+                    </div>
+                `
+            },
+
+            // INDIVIDUAL SUPERWEAPON & CUSTOM ITEM SUBPAGES
+            "weapon-puzzle": {
+                title: "Puzzle",
+                subtitle: "Inventory-Shuffling Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon",
+                baseItem: "N/A",
+                rarity: "Unique / Superweapon",
+                owner: "nemvevo",
+                enchantment: "Inventory Shuffle",
+                image: "https://placehold.co/120x120/065f46/34d399?text=Puzzle",
+                ability: "RIGHT-CLICK to throw out the Puzzle. Upon impact with the ground or an entity, causes all players' inventories in a 2.5 Block radius to be SHUFFLED 4 times before returning with a 30 second cooldown.",
+                lore: "Wielded by nemvevo. The Puzzle is an anomalous projectile superweapon that completely disorients opponents in close-quarters combat by scrambling their hotbars and inventory layouts."
+            },
+            "weapon-wingsofdaedalus": {
+                title: "Wings of Daedalus",
+                subtitle: "High-Mobility Flight Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon (Armor)",
+                baseItem: "Elytra (Equivalent to Netherite Chestplate armor stat)",
+                rarity: "Legendary / Superweapon",
+                owner: "Sorhin",
+                enchantment: "Passive Speed & Boosts",
+                image: "https://placehold.co/120x120/78350f/fbbf24?text=Daedalus+Wings",
+                ability: "WEAR to gain passive +40% Speed Boost. CROUCH while airborne for upward/horizontal momentum burst. CROUCH while flying for an immense horizontal momentum burst (Shared 20s cooldown).",
+                lore: "Wielded by Sorhin. Functioning as both a Netherite Chestplate equivalent and high-speed Elytra, the Wings of Daedalus dominate the skies of the Abyss."
+            },
+            "weapon-redline": {
+                title: "Redline",
+                subtitle: "Beam-Piercing Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon",
+                baseItem: "Netherite Spear",
+                rarity: "Superweapon",
+                owner: "Unknown, gopg",
+                enchantment: "Fire Aspect II, Lunge IV",
+                image: "https://placehold.co/120x120/831843/f472b6?text=Redline",
+                ability: "Hold RIGHT-CLICK for 4s to release a powerful beam dealing ~168 damage (~15 hearts to Prot 4 Netherite). Instant 20-block range beam that pierces through all obstacles.",
+                lore: "Wielded by gopg (and previously Unknown). Redline is a lethal ranged superweapon capable of melting heavily armored opponents through solid barriers.",
+                hasUpgraded: true,
+                upgradedData: {
+                    title: "Upgraded Redline",
+                    subtitle: "Enhanced Beam-Piercing Superweapon",
+                    baseItem: "Netherite Spear (Empowered)",
+                    rarity: "Ascended / Superweapon",
+                    owner: "gopg",
+                    enchantment: "Fire Aspect II, Lunge IV, Kinetic Recoil",
+                    image: "https://placehold.co/120x120/4c0519/fda4af?text=Upgraded+Redline",
+                    ability: "Hold RIGHT-CLICK for 4s to release an overwhelmingly powerful beam dealing ~700 damage. Instant 20-block range beam that pierces through all obstacles, but delivers extreme momentum recoil that knocks the user backwards upon firing.",
+                    lore: "The enhanced form of the Redline. By amplifying the spear's internal energy core, the beam damage escalates to a devastating ~700 damage, though the sheer force of the output unleashes immense kinetic knockback on the wielder."
+                }
+            },
+            "weapon-mazeheart": {
+                title: "Mazeheart",
+                subtitle: "Crushing Mace Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon",
+                baseItem: "Mace",
+                rarity: "Ancient / Superweapon",
+                owner: "Only_a_Squid, DumbIsDumb, TusuGoBRR",
+                enchantment: "Doubled Mace Enchantments (Active)",
+                image: "https://i.imgur.com/8Q9Z5aP.png",
+                ability: "ATTACK using Smash attack 3 times in quick succession to activate CRUMBLE. For the duration, targets below 6 Hearts Glow Red and all Mace Enchantments are doubled.",
+                lore: "Wielded across different eras by Only_a_Squid, DumbIsDumb, and TusuGoBRR. The Mazeheart turns heavy impacts into devastating execute opportunities."
+            },
+            "weapon-envy": {
+                title: "Envy",
+                subtitle: "Soul-Storing Chaining Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon",
+                baseItem: "Netherite Sword",
+                rarity: "Mythic / Superweapon",
+                owner: "Mugm (Presumed), ItzSans, IamStormz",
+                enchantment: "Soul Store, Mark & Link, Sky Slam",
+                image: "https://placehold.co/120x120/4c1d95/f472b6?text=Envy+Blade",
+                ability: "KILL a player to store their soul. ATTACK 15 times to chain target in place (4s). 15% chance per attack to MARK enemies (60s). Closest marked players become LINKED (damage taken is shared). ACTIVATION launches surrounding players (7 block radius) into the sky, slamming and stunning them for 4s.",
+                lore: "Wielded by Mugm (Presumed), ItzSans, and IamStormz. Envy is a terrifying superweapon that links enemies' fates together and dominates group battles."
+            },
+            "weapon-scarletvow": {
+                title: "Scarlet Vow",
+                subtitle: "Vitality Armor Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon (Helmet)",
+                baseItem: "Netherite Helmet",
+                rarity: "Cursed / Superweapon",
+                owner: "TusuGoBRR",
+                enchantment: "Stat Boosts / Vitality Overflow",
+                image: "https://placehold.co/120x120/991b1b/fca5a5?text=Scarlet+Vow",
+                ability: "When worn: +3 Attack Damage, +100 Maximum Health (Minimum / +50 Hearts), +1.0 Knockback Resistance, +20% Movement Speed (Potentially).",
+                lore: "Wielded by TusuGoBRR. The Scarlet Vow converts its wearer into an unstoppable juggernaut with massive stat multipliers and an immense pool of extra health."
+            },
+            "weapon-aurora": {
+                title: "Aurora",
+                subtitle: "Illusion Sword Superweapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Superweapon",
+                baseItem: "Netherite Sword",
+                rarity: "Legendary / Superweapon",
+                owner: "Hazeli",
+                enchantment: "Reflection, Refraction, Flutter, Kaleidoscope",
+                image: "https://placehold.co/120x120/1e3a8a/60a5fa?text=Aurora",
+                ability: "Reflection (Spawns 4 Clones), Refraction (Spawns 7 Clones that copy movements), Flutter (Short Dash in looking direction), Kaleidoscope (Swaps places between clones).",
+                lore: "Wielded by Hazeli. Aurora creates holographic duplicates to confuse opponents and allow instant positional swapping across the battlefield."
+            },
+            "weapon-reaperscythe": {
+                title: "Reaper Scythe",
+                subtitle: "Legendary Custom Scythe Weapon",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Custom Weapon",
+                baseItem: "Netherite / Diamond Scythe",
+                rarity: "Legendary",
+                owner: "N/A (Unowned)",
+                enchantment: "Soul Cleave",
+                image: "https://i.imgur.com/2Xy5PzS.png",
+                ability: "Harvests targets with high cleaving damage and soul harvesting effects.",
+                lore: "The Reaper Scythe is a legendary custom weapon on the Abyss SMP. Currently, it has no confirmed owner."
+            },
+            "weapon-romperstompers": {
+                title: "Romper Stompers",
+                subtitle: "Heavy Combat Boots",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Custom Gear (Boots)",
+                baseItem: "Custom Boots",
+                rarity: "Rare",
+                owner: "Quakitus (\"The Wizard\")",
+                enchantment: "Density (via Enchanted Table)",
+                image: "https://placehold.co/120x120/1f2937/9ca3af?text=Romper+Stompers",
+                ability: "Custom footwear enchanted with Density to deliver crushing ground attacks upon landing.",
+                lore: "Crafted and owned by Quakitus (\"The Wizard\"), enchanted with Density through his special Enchanting Table."
+            },
+            "weapon-windsweptboots": {
+                title: "Windswept Boots",
+                subtitle: "Agility & Wind Burst Boots",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Custom Gear (Boots)",
+                baseItem: "Custom Boots",
+                rarity: "Rare",
+                owner: "Quakitus (\"The Wizard\")",
+                enchantment: "Wind Burst (via Enchanted Table)",
+                image: "https://placehold.co/120x120/0284c7/38bdf8?text=Windswept+Boots",
+                ability: "Custom boots enchanted with Wind Burst to propel the wielder skyward.",
+                lore: "Crafted and owned by Quakitus (\"The Wizard\"), uniquely enchanted with Wind Burst to grant ascension capabilities."
+            },
+            "weapon-hermesboots": {
+                title: "Hermes' Boots",
+                subtitle: "Velocity Enhancement Gear",
+                parent: { name: "Custom Weapons", pageId: "weapons-hub" },
+                type: "Custom Gear (Boots)",
+                baseItem: "Custom Boots",
+                rarity: "Uncommon",
+                owner: "Quakitus (\"The Wizard\")",
+                enchantment: "??? (Universal Soul Speed variation)",
+                image: "https://placehold.co/120x120/ca8a04/fde047?text=Hermes'+Boots",
+                ability: "Passively grants incredible speed across all blocks and terrain types.",
+                lore: "Custom footwear owned by Quakitus. Enchanted with an unknown enchantment variation similar to universal Soul Speed."
+            }
+        };
+
+        const weaponListKeys = [
+            "weapon-puzzle", "weapon-wingsofdaedalus", "weapon-redline", "weapon-mazeheart",
+            "weapon-envy", "weapon-scarletvow", "weapon-aurora", "weapon-reaperscythe",
+            "weapon-romperstompers", "weapon-windsweptboots", "weapon-hermesboots"
+        ];
+
+        // Central Single Page Application Router Switcher
+        function showPage(pageId) {
+            const pageKey = pageId.toLowerCase();
+            const data = wikiData[pageKey] || wikiData['home'];
+            const appView = document.getElementById('app-view');
+            const breadcrumb = document.getElementById('breadcrumb');
+            const breadcrumbParent = document.getElementById('breadcrumb-parent');
+            const breadcrumbCurrent = document.getElementById('breadcrumb-current');
+
+            // Update Window URL Hash
+            window.location.hash = `#/${pageKey}`;
+
+            // Breadcrumb logic
+            if (pageKey === 'home') {
+                breadcrumb.classList.add('hidden');
+            } else {
+                breadcrumb.classList.remove('hidden');
+                if (data.parent) {
+                    breadcrumbParent.innerHTML = ` &gt; <a href="#/${data.parent.pageId}" onclick="showPage('${data.parent.pageId}')" class="mw-link">${data.parent.name}</a>`;
+                } else {
+                    breadcrumbParent.innerHTML = '';
+                }
+                breadcrumbCurrent.textContent = data.title;
+            }
+
+            // Render Views based on route
+            if (pageKey === 'home') {
+                appView.innerHTML = `
+                    <div class="border-b border-[var(--mw-border)] pb-2 mb-4">
+                        <h1 class="text-3xl font-serif wiki-title">${data.title}</h1>
+                        <p class="text-xs text-gray-500">${data.subtitle}</p>
+                    </div>
+                    ${buildInfobox(data.infobox)}
+                    ${data.content}
+                `;
+            } else if (pageKey === 'videos') {
+                appView.innerHTML = `
+                    <div class="border-b border-[var(--mw-border)] pb-2 mb-4 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-3xl font-serif wiki-title">${data.title}</h1>
+                            <p class="text-xs text-gray-500">${data.subtitle}</p>
+                        </div>
+                        <a href="#/home" onclick="showPage('home')" class="mw-link text-xs"><i class="fa-solid fa-arrow-left"></i> Main Page</a>
+                    </div>
+                    ${data.content}
+                `;
+                renderMasterVideoList('asc');
+            } else if (pageKey === 'weapons-hub') {
+                appView.innerHTML = `
+                    <div class="border-b border-[var(--mw-border)] pb-2 mb-4 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-3xl font-serif wiki-title">${data.title}</h1>
+                            <p class="text-xs text-gray-500">${data.subtitle}</p>
+                        </div>
+                        <a href="#/home" onclick="showPage('home')" class="mw-link text-xs"><i class="fa-solid fa-arrow-left"></i> Main Page</a>
+                    </div>
+                    ${data.content}
+                `;
+
+                // Populate weapons grid
+                const weaponsGrid = document.getElementById('weapons-grid');
+                if (weaponsGrid) {
+                    weaponsGrid.innerHTML = weaponListKeys.map(key => {
+                        const w = wikiData[key];
+                        return `
+                            <a href="#/${key}" onclick="showPage('${key}')" class="item-card p-4 rounded block group">
+                                <div class="flex items-center gap-3 mb-2">
+                                    <img src="${w.image}" alt="${w.title}" class="w-12 h-12 object-contain pixelated rounded bg-purple-950/20 border border-purple-300 p-1">
+                                    <div>
+                                        <h3 class="font-bold text-sm mw-link group-hover:text-blue-600 leading-tight">${w.title}</h3>
+                                        <span class="text-[10px] text-gray-500 block">Wielder: <strong>${w.owner}</strong></span>
+                                        <span class="text-[10px] text-purple-600 block">Base: ${w.baseItem}</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">${w.ability}</p>
+                                <div class="mt-3 flex justify-between items-center text-[10px]">
+                                    <span class="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 border border-[var(--mw-border-light)] font-semibold">${w.rarity}</span>
+                                    <span class="text-blue-600">View Superweapon Details →</span>
+                                </div>
+                            </a>
+                        `;
+                    }).join('');
+                }
+
+            } else if (pageKey.startsWith('weapon-')) {
+                // Individual Weapon Page Template
+                const infoboxData = {
+                    title: data.title,
+                    image: data.image,
+                    imageCaption: "Custom Item Model Texture",
+                    details: [
+                        { label: "Wielder(s)", value: `<strong class='text-blue-600'>${data.owner}</strong>` },
+                        { label: "Base Item", value: `<span class='font-semibold'>${data.baseItem}</span>` },
+                        { label: "Item Classification", value: data.type },
+                        { label: "Rarity Tier", value: `<span class='font-bold text-purple-600'>${data.rarity}</span>` },
+                        { label: "Enchantment / Effects", value: data.enchantment || "Standard" }
+                    ]
+                };
+
+                let upgradedSection = '';
+                if (data.hasUpgraded && data.upgradedData) {
+                    const up = data.upgradedData;
+                    const upgradedInfoboxData = {
+                        title: up.title,
+                        image: up.image,
+                        imageCaption: "Upgraded Variant Texture",
+                        details: [
+                            { label: "Wielder(s)", value: `<strong class='text-blue-600'>${up.owner}</strong>` },
+                            { label: "Base Item", value: `<span class='font-semibold'>${up.baseItem}</span>` },
+                            { label: "Item Classification", value: "Superweapon (Upgraded)" },
+                            { label: "Rarity Tier", value: `<span class='font-bold text-red-600'>${up.rarity}</span>` },
+                            { label: "Enchantment / Effects", value: up.enchantment }
+                        ]
+                    };
+
+                    upgradedSection = `
+                        <div class="mt-12 pt-8 border-t-2 border-red-500/40">
+                            <div class="bg-red-500/10 border border-red-500/30 p-3 rounded mb-6 flex items-center gap-3">
+                                <i class="fa-solid fa-bolt text-red-500 text-xl"></i>
+                                <div>
+                                    <h3 class="font-bold text-sm text-red-700 dark:text-red-400 uppercase tracking-wide">Upgraded Variant Registry</h3>
+                                    <p class="text-xs text-gray-600 dark:text-gray-300">Below are the stats and amplified mechanics for the upgraded form of ${data.title}.</p>
+                                </div>
+                            </div>
+
+                            <div class="border-b border-[var(--mw-border)] pb-2 mb-4">
+                                <h1 class="text-2xl font-serif wiki-title text-red-700 dark:text-red-400">${up.title}</h1>
+                                <p class="text-xs text-gray-500">${up.subtitle}</p>
+                            </div>
+
+                            ${buildInfobox(upgradedInfoboxData)}
+
+                            <div class="space-y-6 text-sm">
+                                <section>
+                                    <h2 class="mw-heading-2 text-xl font-serif">Upgraded Variant Lore</h2>
+                                    <p class="leading-relaxed">${up.lore}</p>
+                                </section>
+
+                                <section>
+                                    <h2 class="mw-heading-2 text-xl font-serif">Upgraded Abilities & Recoil Mechanics</h2>
+                                    <div class="p-4 bg-red-50 dark:bg-red-950/20 border-l-4 border-red-600 rounded-r space-y-2">
+                                        <p class="font-semibold text-red-900 dark:text-red-300">Amplified Beam Attack & Recoil:</p>
+                                        <p class="text-xs text-red-800 dark:text-red-200 leading-relaxed">${up.ability}</p>
+                                        <p class="text-xs text-red-700 dark:text-red-400 pt-2 border-t border-red-200 dark:border-red-800"><strong>Enchantments:</strong> ${up.enchantment}</p>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                appView.innerHTML = `
+                    <div class="border-b border-[var(--mw-border)] pb-2 mb-4 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-3xl font-serif wiki-title">${data.title}</h1>
+                            <p class="text-xs text-gray-500">${data.subtitle}</p>
+                        </div>
+                        <a href="#/weapons-hub" onclick="showPage('weapons-hub')" class="mw-link text-xs"><i class="fa-solid fa-arrow-left"></i> Back to Custom Weapons Hub</a>
+                    </div>
+
+                    ${buildInfobox(infoboxData)}
+
+                    <div class="space-y-6 text-sm">
+                        <section>
+                            <h2 class="mw-heading-2 text-xl font-serif">Overview & Wielder History</h2>
+                            <p class="leading-relaxed">${data.lore}</p>
+                        </section>
+
+                        <section>
+                            <h2 class="mw-heading-2 text-xl font-serif">Superweapon Abilities & Mechanics</h2>
+                            <div class="p-4 bg-purple-50 dark:bg-purple-950/20 border-l-4 border-purple-600 rounded-r space-y-2">
+                                <p class="font-semibold text-purple-900 dark:text-purple-300">Effects & Controls:</p>
+                                <p class="text-xs text-purple-800 dark:text-purple-200 leading-relaxed">${data.ability}</p>
+                                ${data.enchantment ? `<p class="text-xs text-purple-700 dark:text-purple-400 pt-2 border-t border-purple-200 dark:border-purple-800"><strong>Enchantment / Passives:</strong> ${data.enchantment}</p>` : ''}
+                            </div>
+                        </section>
+                    </div>
+
+                    ${upgradedSection}
+                `;
+            } else {
+                // Character Page Template
+                appView.innerHTML = `
+                    <div class="border-b border-[var(--mw-border)] pb-2 mb-4 flex justify-between items-end">
+                        <div>
+                            <h1 class="text-3xl font-serif wiki-title">${data.title}</h1>
+                            <p class="text-xs text-gray-500">${data.subtitle}</p>
+                        </div>
+                        <a href="#/home" onclick="showPage('home')" class="mw-link text-xs"><i class="fa-solid fa-arrow-left"></i> Back to Main Page</a>
+                    </div>
+
+                    ${buildInfobox(data.infobox)}
+
+                    <div class="space-y-6 text-sm">
+                        <section>
+                            <h2 class="mw-heading-2 text-xl font-serif">Character Lore & Backstory</h2>
+                            <p class="leading-relaxed">${data.lore}</p>
+                        </section>
+
+                        <section>
+                            <div class="flex justify-between items-center mw-heading-2">
+                                <h2 class="text-xl font-serif m-0 border-none p-0">Chronological Video Uploads</h2>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="text-gray-500">Order:</span>
+                                    <button onclick="toggleVideoSort('${pageKey}')" id="sort-btn" class="border border-[var(--mw-border)] px-2 py-1 rounded bg-[var(--mw-bg)] hover:bg-gray-200 dark:hover:bg-gray-700">
+                                        <i class="fa-solid fa-arrow-down-1-9"></i> Oldest First
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="video-list-container" class="space-y-3 mt-3">
+                                ${renderVideoList(data.videos || [], 'asc')}
+                            </div>
+                        </section>
+                    </div>
+                `;
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Helper to build MediaWiki Infobox
+        function buildInfobox(infobox) {
+            if (!infobox) return '';
+            let rows = infobox.details.map(d => `
+                <tr class="border-t border-[var(--mw-border-light)]">
+                    <th class="text-left py-1.5 px-2 bg-[var(--mw-bg)] font-semibold text-xs">${d.label}</th>
+                    <td class="py-1.5 px-2 text-xs">${d.value}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="mw-infobox rounded shadow-sm overflow-hidden">
+                    <div class="bg-[var(--mw-border-light)] text-center py-2 font-bold wiki-title text-sm border-b border-[var(--mw-border)]">
+                        ${infobox.title}
+                    </div>
+                    <div class="p-3 text-center bg-[var(--mw-content-bg)]">
+                        <img src="${infobox.image}" alt="${infobox.title}" class="mx-auto max-h-48 pixelated object-contain mb-1">
+                        <span class="text-[11px] text-gray-500 italic block">${infobox.imageCaption}</span>
+                    </div>
+                    <table class="w-full">
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Render Videos with Sort and YouTube direct link functionality
+        function renderVideoList(videos, order) {
+            if (!videos || videos.length === 0) return `<p class="text-xs text-gray-400 italic">No video logs recorded yet.</p>`;
+            let sorted = [...videos];
+            if (order === 'desc') sorted.reverse();
+
+            return sorted.map(v => `
+                <div class="flex flex-col sm:flex-row gap-3 p-3 border border-[var(--mw-border-light)] bg-[var(--mw-bg)] rounded hover:border-[var(--mw-border)] transition">
+                    <a href="${v.videoUrl}" target="_blank" class="w-full sm:w-36 h-20 bg-gray-800 rounded flex items-center justify-center text-white flex-shrink-0 relative group cursor-pointer block">
+                        <i class="fa-regular fa-circle-play text-2xl text-red-500 opacity-90 group-hover:opacity-100 group-hover:scale-110 transition"></i>
+                        <span class="absolute bottom-1 right-1 bg-black/80 text-[10px] px-1 rounded text-white">EP ${v.id}</span>
+                    </a>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-start gap-2">
+                            <a href="${v.videoUrl}" target="_blank" class="font-bold mw-link text-sm truncate hover:text-red-600">${v.title} <i class="fa-solid fa-arrow-up-right-from-square text-[10px] ml-1"></i></a>
+                            <span class="text-[11px] text-gray-500 whitespace-nowrap">${v.date}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">${v.desc}</p>
+                        <div class="flex items-center gap-3 mt-1.5">
+                            <a href="${v.channel}" target="_blank" class="text-[10px] text-red-600 font-semibold hover:underline"><i class="fa-brands fa-youtube mr-1"></i>${v.creator}</a>
+                            <a href="${v.videoUrl}" target="_blank" class="text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-medium hover:bg-red-700 transition">Watch Episode</a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let masterSortOrder = 'asc';
+        function renderMasterVideoList(order) {
+            const container = document.getElementById('master-video-list-container');
+            if (container) {
+                container.innerHTML = renderVideoList(masterEpisodes, order);
+            }
+        }
+
+        function toggleMasterVideoSort() {
+            masterSortOrder = masterSortOrder === 'asc' ? 'desc' : 'asc';
+            const btn = document.getElementById('master-sort-btn');
+            if (btn) {
+                btn.innerHTML = masterSortOrder === 'asc'
+                    ? '<i class="fa-solid fa-arrow-down-1-9"></i> Oldest First'
+                    : '<i class="fa-solid fa-arrow-down-9-1"></i> Newest First';
+            }
+            renderMasterVideoList(masterSortOrder);
+        }
+
+        let currentSortOrder = 'asc';
+        function toggleVideoSort(pageKey) {
+            currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+            const btn = document.getElementById('sort-btn');
+            const container = document.getElementById('video-list-container');
+
+            if (btn && container && wikiData[pageKey]) {
+                btn.innerHTML = currentSortOrder === 'asc'
+                    ? '<i class="fa-solid fa-arrow-down-1-9"></i> Oldest First'
+                    : '<i class="fa-solid fa-arrow-down-9-1"></i> Newest First';
+                container.innerHTML = renderVideoList(wikiData[pageKey].videos || [], currentSortOrder);
+            }
+        }
+
+        // Handle Hash-based initial routing
+        function handleHashRoute() {
+            const rawHash = window.location.hash.replace('#/', '').toLowerCase();
+            if (rawHash && wikiData[rawHash]) {
+                showPage(rawHash);
+            } else {
+                showPage('home');
+            }
+        }
+
+        window.addEventListener('hashchange', handleHashRoute);
+        window.addEventListener('DOMContentLoaded', handleHashRoute);
+
+        // Search Bar Functionality
+        const searchInput = document.getElementById('search-input');
+        const searchResults = document.getElementById('search-results');
+
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            if (!query) {
+                searchResults.classList.add('hidden');
+                return;
+            }
+
+            const matches = Object.keys(wikiData).filter(key => {
+                const item = wikiData[key];
+                return item.title.toLowerCase().includes(query) || key.includes(query);
+            });
+
+            if (matches.length > 0) {
+                searchResults.innerHTML = matches.map(key => `
+                    <a href="#/${key}" onclick="showPage('${key}'); closeSearch();" class="block px-3 py-2 text-xs hover:bg-blue-50 dark:hover:bg-gray-800 border-b border-[var(--mw-border-light)] last:border-none">
+                        <div class="font-bold text-[var(--mw-text)]">${wikiData[key].title}</div>
+                        <div class="text-[10px] text-gray-400">${wikiData[key].subtitle}</div>
+                    </a>
+                `).join('');
+                searchResults.classList.remove('hidden');
+            } else {
+                searchResults.innerHTML = `<div class="p-3 text-xs text-gray-400">No matching wiki articles found.</div>`;
+                searchResults.classList.remove('hidden');
+            }
+        });
+
+        function closeSearch() {
+            searchResults.classList.add('hidden');
+            searchInput.value = '';
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                closeSearch();
+            }
+        });
+
+        // Random Page Navigation
+        function navigateToRandom() {
+            const keys = Object.keys(wikiData);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            showPage(randomKey);
+        }
+
+        // Dark/Light Theme Toggle
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        themeToggleBtn.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            if (document.body.classList.contains('dark-mode')) {
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+            } else {
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+            }
+        });
+
+        // Modal Helpers (No alert())
+        function showMsg(title, body) {
+            document.getElementById('msg-modal-title').textContent = title;
+            document.getElementById('msg-modal-body').textContent = body;
+            document.getElementById('msg-modal').classList.remove('hidden');
+        }
+
+        function closeMsgModal() {
+            document.getElementById('msg-modal').classList.add('hidden');
+        }
+
+        // Edit Source Modal Handlers
+        function openEditModal() {
+            const hash = window.location.hash.replace('#/', '').toLowerCase() || 'home';
+            const page = wikiData[hash] || wikiData['home'];
+            document.getElementById('edit-textarea').value = `== ${page.title} ==\n\n${page.lore || 'Overview of the Abyss SMP article.'}\n\n[[Category:Abyss SMP]]`;
+            document.getElementById('edit-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').classList.add('hidden');
+        }
+
+        function saveEditModal() {
+            closeEditModal();
+            showMsg('Edit Saved', 'Wiki edit submitted successfully to the Abyss SMP community registry!');
+        }
+
+        function openHistoryModal() {
+            showMsg('Page History', 'Revision History: First created during the launch of Abyss SMP Season 1.');
+        }
+
+        // Mobile Sidebar Toggle
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('sidebar');
+
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('hidden');
+        });
+    </script>
+</body>
+</html>

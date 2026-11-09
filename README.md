@@ -49,6 +49,24 @@ minutes, and any way the program can end -- finishing normally, crashing,
 being killed by the timeout, or losing the connection -- always returns to
 the Python projects list automatically.
 
+## Add a web app
+
+Single-page web apps (the Year 10 "AI created, human designed" project) live in
+`webapps/`, one folder per app:
+
+1. Make a folder, e.g. `webapps/my-app/`, and put the app's HTML file in it
+   named `index.html` (plus any images or scripts it needs).
+2. Double-click `start.command`.
+
+`webapp_scan.py` builds `webapps.json` and draws a placeholder icon for any app
+without a custom `icon192.png`. Hand-edit `title`, `student`, `blurb` and
+`featured` in `webapps.json`; they survive re-scans. New apps start with
+`featured: true`; set it to `false` to keep one out of the featured list.
+
+Web apps open in the same player as games. Some apps load libraries, fonts or
+images from the internet (Tailwind, Three.js, Font Awesome and others), so
+those apps need the kiosk to be online to display properly.
+
 ## Start automatically at login
 
 To start the hub and open Chrome in kiosk mode whenever the user logs in, run
@@ -112,8 +130,12 @@ preserves them across re-scans:
 A `"student"` field is optional; if present it is shown too. New games start
 with an empty blurb and `featured: false`.
 
+The featured list is every game and web app marked `featured: true`. The
+banner on the landing screen shows one of them at random and swaps to a
+different one every 5 minutes (it never repeats the same one back to back).
+
 After 20 seconds with nobody touching the hub, it fades into attract mode and
-cycles through the featured games, six seconds each, showing the icon, title,
+cycles through the featured list, six seconds each, showing the icon, title,
 student and blurb. If nothing is marked featured yet it cycles through every
 game instead, so the screen is never blank. Any mouse movement, click, key or
 controller input returns to the tile grid immediately. Attract mode never

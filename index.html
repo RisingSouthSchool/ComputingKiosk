@@ -13,7 +13,7 @@
     h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: .02em; }
     .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
     main { max-width: 1200px; margin: 0 auto; padding: 10px 32px 50px; }
-    #games, #python-projects { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+    #games, #python-projects, #webapp-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
     .game-tile { position: relative; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 290px; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     .game-tile:hover, .game-tile:focus-within { transform: translateY(-4px); border-color: var(--focus); background: #22303c; }
     .game-launch { appearance: none; border: 0; width: 100%; min-height: 290px; padding: 18px 18px 58px; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
@@ -25,8 +25,10 @@
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
     #landing-view, #hub-view { display: none; }
     #landing-view.open, #hub-view.open { display: block; }
-    #hub-back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
-    #hub-back:hover, #hub-back:focus-visible { background: #22303c; outline: none; }
+    #webapps-view { display: none; }
+    #webapps-view.open { display: block; }
+    #hub-back, #webapps-back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
+    #hub-back:hover, #hub-back:focus-visible, #webapps-back:hover, #webapps-back:focus-visible { background: #22303c; outline: none; }
     #featured-banner { display: flex; gap: 24px; align-items: center; border: 2px solid transparent; background: var(--panel); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 10px 25px #0005; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     #featured-banner:hover, #featured-banner:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
     .featured-icon { width: 140px; height: 140px; flex: 0 0 auto; border-radius: 14px; background: #2b3945; display: grid; place-items: center; color: var(--accent); font-size: 3.5rem; font-weight: 700; overflow: hidden; }
@@ -83,7 +85,7 @@
     #terminal-ended.tone-warn #ended-title { color: var(--focus); }
     #terminal-ended.tone-error #ended-title { color: #ff6b6b; }
     #terminal-ended.tone-muted #ended-title { color: var(--muted); }
-    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games, #python-projects { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
+    @media (max-width: 600px) { header, main { padding-left: 18px; padding-right: 18px; } #games, #python-projects, #webapp-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } .game-tile, .game-launch { min-height: 210px; } .game-launch { padding: 10px 10px 50px; } .game-title { font-size: 1rem; margin-top: 10px; } .game-icon { font-size: 3rem; } }
 
     /* Attract mode: idle showcase layered over the hub, same palette and font. */
     #attract { position: fixed; inset: 0; z-index: 1; display: none; background: radial-gradient(circle at 30% 20%, #243746 0, var(--bg) 55%); opacity: 0; transition: opacity .6s ease; }
@@ -125,6 +127,10 @@
   <section id="python-view" aria-label="Python console project selection">
     <header><button id="python-back" type="button">&larr; Categories</button><h1>Python Console Projects</h1><p class="subtitle">Year 11 programming, live terminal programs</p></header>
     <main><div id="python-projects" aria-live="polite"></div><p id="python-empty" hidden>No Python projects found yet. Add an export zip to the py_zips folder, then run start.command.</p><p id="python-error" hidden>Could not load pythonProjects.json. Run start.command again.</p></main>
+  </section>
+  <section id="webapps-view" aria-label="Web app selection">
+    <header><button id="webapps-back" type="button">&larr; Categories</button><h1>Web Apps</h1><p class="subtitle">Year 10: AI created, human designed</p></header>
+    <main><div id="webapp-list" aria-live="polite"></div><p id="webapp-empty" hidden>No web apps found yet. Add a folder to webapps, then run start.command.</p><p id="webapp-error" hidden>Could not load webapps.json. Run start.command again.</p></main>
   </section>
   <section id="player" aria-label="Game player"><button id="back" type="button" tabindex="-1">Back to Hub</button><iframe id="game-frame" title="Selected game" allow="fullscreen"></iframe></section>
   <section id="terminal-view" aria-label="Python console session">
@@ -171,6 +177,11 @@
     const pythonProjectsElement = document.getElementById("python-projects");
     const pythonEmpty = document.getElementById("python-empty");
     const pythonError = document.getElementById("python-error");
+    const webappsView = document.getElementById("webapps-view");
+    const webappsBack = document.getElementById("webapps-back");
+    const webappListElement = document.getElementById("webapp-list");
+    const webappEmpty = document.getElementById("webapp-empty");
+    const webappError = document.getElementById("webapp-error");
     const terminalView = document.getElementById("terminal-view");
     const terminalBack = document.getElementById("terminal-back");
     const terminalTitle = document.getElementById("terminal-title");
@@ -193,6 +204,7 @@
     const CATEGORIES = [
       { id: "games", title: "Games", subtitle: "Play and vote on student-made games", icon: "🎮", real: true, enter: () => enterHub() },
       { id: "python", title: "Python projects", subtitle: "Year 11 programming, live terminal programs.", icon: "🐍", real: true, enter: () => enterPython() },
+      { id: "webapps", title: "Web apps", subtitle: "Year 10: AI created, human designed", icon: "💻", real: true, enter: () => enterWebapps() },
       { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱" },
       { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
       { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
@@ -207,6 +219,8 @@
     let votes = {};
     let pythonProjects = [];
     let pythonTiles = [];
+    let webapps = [];
+    let webappTiles = [];
     let currentProject = null;
     let currentSocket = null;
     let term = null;
@@ -246,6 +260,7 @@
       frame.src = "about:blank";
       history.replaceState(null, "", location.pathname + location.search);
       if (view === "hub") { if (tiles.length) tiles[0].focus(); }
+      else if (view === "webapps") { webappTiles[0]?.focus(); }
       else landingFocusables[0]?.focus();
     }
 
@@ -253,6 +268,7 @@
       view = "landing";
       hubView.classList.remove("open");
       pythonView.classList.remove("open");
+      webappsView.classList.remove("open");
       landingView.classList.add("open");
       landingFocusables[0]?.focus();
     }
@@ -271,8 +287,17 @@
       renderPython();
     }
 
+    function enterWebapps() {
+      view = "webapps";
+      landingView.classList.remove("open");
+      webappsView.classList.add("open");
+      renderWebapps();
+    }
+
+    // Games and web apps share the player; each item carries the folder it
+    // lives in ("games/" or "webapps/"), set when the manifests are loaded.
     function openGame(game) {
-      frame.src = "games/" + encodeURIComponent(game.slug) + "/index.html";
+      frame.src = (game.base || "games/") + encodeURIComponent(game.slug) + "/index.html";
       player.classList.add("open");
       history.replaceState(null, "", "#" + encodeURIComponent(game.slug));
       frame.focus();
@@ -463,7 +488,44 @@
     const ICON_FILES = { custom: "icon192.png", generated: "generated_icon.png", placeholder: "placeholder_icon.png" };
     function iconUrl(game) {
       const file = game.iconFile || ICON_FILES[game.iconSource] || (game.hasIcon ? "icon192.png" : null);
-      return file ? "games/" + encodeURIComponent(game.slug) + "/" + file : null;
+      return file ? (game.base || "games/") + encodeURIComponent(game.slug) + "/" + file : null;
+    }
+
+    function renderWebapps(selectedSlug = null) {
+      const ordered = [...webapps].sort((first, second) => String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+      webappEmpty.hidden = ordered.length !== 0;
+      webappListElement.replaceChildren();
+      ordered.forEach((app, index) => {
+        const tile = document.createElement("article");
+        tile.className = "game-tile";
+        tile.dataset.index = index;
+        tile.dataset.slug = app.slug;
+        const launch = document.createElement("button");
+        launch.className = "game-launch";
+        launch.type = "button";
+        launch.dataset.index = index;
+        launch.dataset.slug = app.slug;
+        const icon = document.createElement("span");
+        icon.className = "game-icon";
+        const iconSrc = iconUrl(app);
+        if (iconSrc) { const image = document.createElement("img"); image.src = iconSrc; image.alt = ""; icon.append(image); }
+        else icon.textContent = (app.title || "?").trim().charAt(0).toUpperCase();
+        const title = document.createElement("span"); title.className = "game-title"; title.textContent = app.title;
+        launch.append(icon, title);
+        launch.addEventListener("click", () => openGame(app));
+        tile.append(launch);
+        const student = app.student || app.students || app.author;
+        if (student) {
+          const line = document.createElement("span");
+          line.className = "project-student";
+          line.textContent = student;
+          tile.append(line);
+        }
+        webappListElement.append(tile);
+      });
+      webappTiles = [...document.querySelectorAll("#webapp-list .game-launch")];
+      const tileToFocus = selectedSlug ? webappTiles.find(tile => tile.dataset.slug === selectedSlug) : webappTiles[0];
+      tileToFocus?.focus();
     }
 
     function voteCount(slug) {
@@ -475,13 +537,24 @@
       return [...games].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
     }
 
-    // Prefer a manually featured game; among several, or when none are
-    // featured, fall back to whichever has the most votes.
+    // Everything marked featured, games and web apps together. Until anything
+    // is featured, every game counts so the banner and attract mode are never blank.
+    function featuredPool() {
+      const featured = [...games, ...webapps].filter(item => item.featured);
+      return featured.length ? featured : games.slice();
+    }
+
+    // The banner shows a random featured item and swaps to a different one
+    // every FEATURED_ROTATE_MS. It never repeats the current item back to back
+    // unless it is the only one.
+    const FEATURED_ROTATE_MS = 5 * 60 * 1000;
+    function featuredKey(item) { return item ? (item.base || "games/") + item.slug : null; }
     function featuredGame() {
-      if (!games.length) return null;
-      const featured = games.filter(game => game.featured);
-      const pool = featured.length ? featured : games;
-      return [...pool].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)))[0];
+      const pool = featuredPool();
+      if (!pool.length) return null;
+      const others = pool.filter(item => featuredKey(item) !== featuredKey(currentFeaturedGame));
+      const options = others.length ? others : pool;
+      return options[Math.floor(Math.random() * options.length)];
     }
 
     function renderFeatured() {
@@ -613,8 +686,7 @@
     // Featured games are the showcase; until any are tagged, show everything so
     // the screen is never blank.
     function attractList() {
-      const featured = games.filter(game => game.featured);
-      return featured.length ? featured : games.slice();
+      return featuredPool();
     }
 
     function fillSlide(slide, game) {
@@ -709,14 +781,14 @@
 
     function moveSelection(direction) {
       if (player.classList.contains("open") || terminalView.classList.contains("open")) return false;
-      const list = view === "hub" ? tiles : view === "python" ? pythonTiles : landingFocusables;
+      const list = view === "hub" ? tiles : view === "python" ? pythonTiles : view === "webapps" ? webappTiles : landingFocusables;
       if (!list.length) return false;
       const current = document.activeElement?.dataset?.index;
       if (current === undefined) return false;
       const index = Number(current);
       let next = index;
-      if (view === "hub" || view === "python") {
-        const container = view === "hub" ? gamesElement : pythonProjectsElement;
+      if (view === "hub" || view === "python" || view === "webapps") {
+        const container = view === "hub" ? gamesElement : view === "python" ? pythonProjectsElement : webappListElement;
         const columns = window.innerWidth <= 600 ? 2 : Math.max(1, Math.floor(container.clientWidth / 254));
         if (direction === "right") next++;
         if (direction === "left") next--;
@@ -749,7 +821,7 @@
         terminalBack.click();
         return;
       }
-      if (event.key === "Escape" && (view === "hub" || view === "python") && !player.classList.contains("open")) {
+      if (event.key === "Escape" && (view === "hub" || view === "python" || view === "webapps") && !player.classList.contains("open")) {
         event.preventDefault();
         showLanding();
         return;
@@ -765,6 +837,7 @@
     back.addEventListener("click", closePlayer);
     hubBack.addEventListener("click", showLanding);
     pythonBack.addEventListener("click", showLanding);
+    webappsBack.addEventListener("click", showLanding);
     terminalBack.addEventListener("click", () => { closeTerminalSession(); backToPythonList(); });
     featuredBanner.addEventListener("click", launchFeatured);
     featuredBanner.addEventListener("keydown", (event) => {
@@ -805,7 +878,7 @@
         previousDirection = direction;
         if (buttonJustPressed(0) && !player.classList.contains("open") && !terminalView.classList.contains("open")) {
           if (view === "hub") selectedGame() && tiles[Number(document.activeElement.dataset.index)]?.click();
-          else if (view === "python" || view === "landing") document.activeElement?.click();
+          else if (view === "python" || view === "webapps" || view === "landing") document.activeElement?.click();
         }
         if (buttonJustPressed(3) && view === "hub" && !player.classList.contains("open")) {
           const game = selectedGame();
@@ -814,7 +887,7 @@
         if (buttonJustPressed(1)) {
           if (player.classList.contains("open")) closePlayer();
           else if (terminalView.classList.contains("open")) terminalBack.click();
-          else if (view === "hub" || view === "python") showLanding();
+          else if (view === "hub" || view === "python" || view === "webapps") showLanding();
         }
         previousGamepadButtons = gamepad.buttons.map(button => button.pressed);
       } else {
@@ -828,11 +901,18 @@
     requestAnimationFrame(pollGamepad);
     Promise.all([
       fetch("games.json", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("games.json"); return response.json(); }),
-      fetch("/api/votes", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("votes.json"); return response.json(); })
-    ]).then(([gameList, voteList]) => {
-      games = gameList;
+      fetch("/api/votes", { cache: "no-store" }).then(response => { if (!response.ok) throw new Error("votes.json"); return response.json(); }),
+      // Web apps feed the featured pool, so they load with the games, but a
+      // missing webapps.json must not take the rest of the hub down.
+      fetch("webapps.json", { cache: "no-store" })
+        .then(response => { if (!response.ok) throw new Error("webapps.json"); return response.json(); })
+        .catch(() => { webappError.hidden = false; return []; })
+    ]).then(([gameList, voteList, webappList]) => {
+      games = gameList.map(game => ({ ...game, base: "games/" }));
+      webapps = (Array.isArray(webappList) ? webappList : []).map(app => ({ ...app, base: "webapps/" }));
       votes = voteList && typeof voteList === "object" ? voteList : {};
       renderFeatured();
+      setInterval(renderFeatured, FEATURED_ROTATE_MS);
       renderCategories();
       updateLandingFocusables();
       showLanding();

@@ -1,0 +1,3328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VEX V5 3D Driver Station Simulator - High Stakes Precision Edition</title>
+  <style>
+    :root {
+      --bg-color: #0d0f14;
+      --card-bg: #1a1d24;
+      --card-border: #2e3340;
+      --accent-color: #f59e0b;
+      --accent-hover: #d97706;
+      --accent-glow: rgba(245, 158, 11, 0.25);
+      --text-color: #f1f5f9;
+      --muted-color: #94a3b8;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin: 0 0 16px 0;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h1::before {
+      content: '';
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      background-color: var(--accent-color);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .container {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: nowrap;
+      justify-content: center;
+      max-width: 1120px;
+      width: 100%;
+      position: relative;
+    }
+
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    #simCanvasContainer {
+      width: 620px;
+      height: 620px;
+      border: 3px solid #3b404d;
+      border-radius: 10px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      background-color: #0c0e12;
+      cursor: pointer;
+      position: relative;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* OVERLAYS & MODALS */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(13, 15, 20, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      border-radius: 10px;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay.hidden {
+      display: none;
+      pointer-events: none;
+    }
+
+    .menu-card {
+      background: #1a1d24;
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 30px;
+      width: 82%;
+      max-width: 440px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .menu-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .menu-sub {
+      font-size: 13px;
+      color: var(--muted-color);
+      margin-top: -8px;
+    }
+
+    .btn-main {
+      background: var(--accent-color);
+      color: #000;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px var(--accent-glow);
+    }
+
+    .btn-main:hover {
+      background: var(--accent-hover);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+
+    .btn-replay {
+      background: #3b82f6;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 15px;
+      padding: 14px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-replay:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #242834;
+      color: var(--text-color);
+      font-weight: 600;
+      font-size: 14px;
+      padding: 12px 20px;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: #2e3340;
+      border-color: var(--muted-color);
+    }
+
+    /* COUNTDOWN & TIMER HUD */
+    #timerHUD {
+      position: absolute;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(17, 19, 24, 0.9);
+      border: 1px solid var(--card-border);
+      padding: 8px 20px;
+      border-radius: 30px;
+      font-family: monospace;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent-color);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #replayHUD {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 20;
+    }
+
+    #replayHUD.hidden {
+      display: none;
+    }
+
+    #countdownOverlay {
+      font-size: 96px;
+      font-weight: 900;
+      color: var(--accent-color);
+      text-shadow: 0 0 30px var(--accent-glow);
+      animation: pulse 0.5s infinite alternate;
+    }
+
+    /* SCORE BREAKDOWN TABLE */
+    .score-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: #111318;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .score-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dashed var(--card-border);
+      padding-bottom: 4px;
+    }
+
+    .score-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .score-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--accent-color);
+      border-top: 2px solid var(--card-border);
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    /* SIDE PANEL STYLING */
+    .side-panel {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 12px;
+      width: 340px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 6px;
+      background-color: #111318;
+      padding: 4px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--muted-color);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background-color: var(--accent-color);
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    .status-badge {
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      background-color: #242834;
+      color: var(--muted-color);
+      border: 1px solid var(--card-border);
+      transition: all 0.3s ease;
+    }
+
+    .status-connected {
+      background-color: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .control-group-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .grid-2x2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted-color);
+    }
+
+    select, button, input[type="number"], input[type="range"] {
+      background-color: #111318;
+      color: var(--text-color);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    select:focus, input[type="number"]:focus {
+      border-color: var(--accent-color);
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #242834;
+    }
+
+    .btn-loader {
+      font-size: 12px;
+      padding: 8px 10px;
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-loader.active {
+      border-color: var(--accent-color);
+      background-color: rgba(245, 158, 11, 0.2);
+      color: var(--accent-color);
+    }
+
+    .btn-lift {
+      font-size: 11px;
+      padding: 10px 4px;
+      border: 1px solid var(--card-border);
+      background-color: #181c24;
+      text-align: center;
+    }
+
+    .btn-lift:active, .btn-lift.active {
+      background-color: var(--accent-color);
+      color: #000;
+      border-color: var(--accent-color);
+    }
+
+    .btn-connect {
+      background-color: var(--accent-color);
+      color: #000000;
+      border: none;
+      font-weight: 700;
+      box-shadow: 0 4px 12px var(--accent-glow);
+    }
+
+    .btn-connect:hover {
+      background-color: var(--accent-hover);
+      color: #ffffff;
+    }
+
+    .specs-box {
+      font-size: 12px;
+      color: var(--muted-color);
+      background-color: #111318;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 3px solid var(--accent-color);
+      line-height: 1.5;
+    }
+
+    .range-val {
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent-color);
+      font-weight: bold;
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <h1>VEX V5 3D Driver Station Simulator - High Stakes Precision Edition</h1>
+
+  <div class="container">
+    <div class="main-panel">
+      <div id="simCanvasContainer">
+        <!-- MATCH TIMER HUD -->
+        <div id="timerHUD">⏱️ <span id="timerText">01:00.0</span></div>
+
+        <!-- REPLAY CONTROLS HUD -->
+        <div id="replayHUD" class="hidden">
+          <button id="btnExitReplay" class="btn-secondary" style="background: #ef4444; color: #fff; border: none; padding: 8px 16px;">🛑 EXIT REPLAY</button>
+        </div>
+
+        <!-- MAIN MENU OVERLAY -->
+        <div id="mainMenuOverlay" class="overlay">
+          <div class="menu-card">
+            <h2 class="menu-title">HIGH STAKES SIMULATOR</h2>
+            <div class="menu-sub">Select Game Mode to Begin</div>
+            <button id="btnStartSkills" class="btn-main">🏆 DRIVER SKILLS MATCH (1 MIN)</button>
+            <button id="btnStartFreeplay" class="btn-secondary">🎮 HEAD-TO-HEAD / FREE PLAY</button>
+          </div>
+        </div>
+
+        <!-- COUNTDOWN OVERLAY -->
+        <div id="countdownOverlay" class="overlay hidden">3</div>
+
+        <!-- GAME OVER / SCORE BREAKDOWN OVERLAY -->
+        <div id="gameOverOverlay" class="overlay hidden">
+          <div class="menu-card">
+            <h2 class="menu-title">TIME'S UP!</h2>
+            <div class="menu-sub">Driver Skills Final Score Breakdown</div>
+
+            <div class="score-breakdown">
+              <div class="score-row">
+                <span>Quadrant Yellow Pins (Toggle Red)</span>
+                <span id="scoreQuadYellow">0 x 10 = 0</span>
+              </div>
+              <div class="score-row">
+                <span>Visible Red Pins</span>
+                <span id="scoreVisibleRed">0 x 5 = 0</span>
+              </div>
+              <div class="score-row">
+                <span>Middle Goal Yellow Pins</span>
+                <span id="scoreMidYellow">0 x 10 = 0</span>
+              </div>
+              <div class="score-row">
+                <span>Middle Goal Red Pins</span>
+                <span id="scoreMidRed">0 x 5 = 0</span>
+              </div>
+              <div class="score-row">
+                <span>Robot Park (Middle Plane)</span>
+                <span id="scorePark">0 pts</span>
+              </div>
+              <div class="score-total">
+                <span>TOTAL SKILLS SCORE</span>
+                <span id="scoreTotal">0 PTS</span>
+              </div>
+            </div>
+
+            <button id="btnWatchReplay" class="btn-replay">🎥 WATCH REPLAY</button>
+            <button id="btnReplaySkills" class="btn-main">🔄 RETRY SKILLS MATCH</button>
+            <button id="btnReturnMenu" class="btn-secondary">🏠 MAIN MENU</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('driveTab')">Drive & Controls</button>
+        <button class="tab-btn" onclick="switchTab('configTab')">Robot Tuning</button>
+      </div>
+
+      <!-- TAB 1: DRIVE & CONTROLS -->
+      <div id="driveTab" class="tab-content active">
+        <div id="statusBadge" class="status-badge">Waiting for Controller...</div>
+
+        <button id="connectSerialBtn" class="btn-connect">Connect VEX V5 Controller (Serial)</button>
+
+        <div class="control-group">
+          <label for="matchloaderTypeSelect">Matchloader Preload Customizer</label>
+          <select id="matchloaderTypeSelect">
+            <option value="stack" selected>Stack (Default)</option>
+            <option value="pin">Single Pin</option>
+            <option value="cup">Single Cup</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>4-Stage Cascade Lift Controls</label>
+          <div class="grid-3col">
+            <button id="btnLiftUp" class="btn-lift">RAISE [L2 / R]</button>
+            <button id="btnLiftDown" class="btn-lift">LOWER [L1 / F]</button>
+            <button id="btnLiftReset" class="btn-lift">BASE 0" [B]</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>Flex Wheel Motorized Claw Controls</label>
+          <div class="grid-2x2">
+            <button id="btnClawOpen" class="btn-lift">INTAKE HOLD [R2 / E]</button>
+            <button id="btnClawClose" class="btn-lift">RELEASE / SCORE [R1 / Q]</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label>48T Spinner Controls (0.5s per 360°)</label>
+          <button id="btnGearRotate" class="btn-lift">ROTATE 48T (120 RPM) [DOWN ARROW]</button>
+        </div>
+
+        <div class="control-group">
+          <label>Match Loaders (Auto-Lifts Within 1 Tile)</label>
+          <div class="grid-2x2">
+            <button id="loaderBtn0" class="btn-loader">Red Left [DN]</button>
+            <button id="loaderBtn1" class="btn-loader">Red Right [DN]</button>
+            <button id="loaderBtn2" class="btn-loader">Blue Left [DN]</button>
+            <button id="loaderBtn3" class="btn-loader">Blue Right [DN]</button>
+          </div>
+        </div>
+
+        <button id="resetBtn">Reset Simulator State</button>
+      </div>
+
+      <!-- TAB 2: ROBOT CONFIGURATION & TUNING -->
+      <div id="configTab" class="tab-content">
+        <div class="control-group">
+          <div class="control-group-row">
+            <label for="turnSpeedRange">Turning Sensitivity</label>
+            <span id="turnSpeedVal" class="range-val">60%</span>
+          </div>
+          <input type="range" id="turnSpeedRange" min="30" max="200" value="60" step="5">
+        </div>
+
+        <div class="control-group">
+          <label for="rpmSelect">Drivetrain Output RPM</label>
+          <select id="rpmSelect">
+            <option value="200">200 RPM (Green Cart / Direct)</option>
+            <option value="250">250 RPM (Custom Setup)</option>
+            <option value="360">360 RPM (Blue Cart / Torque Setup)</option>
+            <option value="450" selected>450 RPM (Fast Competition Standard)</option>
+            <option value="600">600 RPM (Blue Cart Direct / Extreme Speed)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="wheelSelect">Wheel Setup (4 Omni + 2 Traction)</label>
+          <select id="wheelSelect">
+            <option value="2.0">2.0" Wheels (4 Omni + 2 Traction)</option>
+            <option value="2.75" selected>2.75" Wheels (4 Omni + 2 Traction)</option>
+            <option value="3.25">3.25" Wheels (4 Omni + 2 Traction)</option>
+            <option value="4.0">4.0" Wheels (4 Omni + 2 Traction)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="weightInput">Robot Weight / Mass (kg)</label>
+          <input type="number" id="weightInput" value="5.0" min="1.0" max="15.0" step="0.5">
+        </div>
+
+        <div class="specs-box" id="liveConfigSpecs">
+          <strong>Physics & Stacking Refinements:</strong><br>
+          • Skills Goal Setup: Neutral & Center goals start EMPTY in Driver Skills, but pre-loaded in Head-to-Head.<br>
+          • Skills Match Recording: Records complete 1-minute runs with 30 FPS snapshot replay engine.<br>
+          • Game Over Menu: 3 Options (Watch Replay, Retry Skills, Main Menu).<br>
+          • Reverted Stacks: Standard field stacks & flower cups intact.<br>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const container = document.getElementById('simCanvasContainer');
+    const statusBadge = document.getElementById('statusBadge');
+    const connectSerialBtn = document.getElementById('connectSerialBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    // UI Overlays & Buttons
+    const timerHUD = document.getElementById('timerHUD');
+    const timerText = document.getElementById('timerText');
+    const replayHUD = document.getElementById('replayHUD');
+    const btnExitReplay = document.getElementById('btnExitReplay');
+    const mainMenuOverlay = document.getElementById('mainMenuOverlay');
+    const countdownOverlay = document.getElementById('countdownOverlay');
+    const gameOverOverlay = document.getElementById('gameOverOverlay');
+
+    const btnStartSkills = document.getElementById('btnStartSkills');
+    const btnStartFreeplay = document.getElementById('btnStartFreeplay');
+    const btnWatchReplay = document.getElementById('btnWatchReplay');
+    const btnReplaySkills = document.getElementById('btnReplaySkills');
+    const btnReturnMenu = document.getElementById('btnReturnMenu');
+
+    // Score elements
+    const scoreQuadYellow = document.getElementById('scoreQuadYellow');
+    const scoreVisibleRed = document.getElementById('scoreVisibleRed');
+    const scoreMidYellow = document.getElementById('scoreMidYellow');
+    const scoreMidRed = document.getElementById('scoreMidRed');
+    const scorePark = document.getElementById('scorePark');
+    const scoreTotal = document.getElementById('scoreTotal');
+
+    const btnLiftUp = document.getElementById('btnLiftUp');
+    const btnLiftDown = document.getElementById('btnLiftDown');
+    const btnLiftReset = document.getElementById('btnLiftReset');
+    const btnClawClose = document.getElementById('btnClawClose');
+    const btnClawOpen = document.getElementById('btnClawOpen');
+    const btnGearRotate = document.getElementById('btnGearRotate');
+
+    const turnSpeedRange = document.getElementById('turnSpeedRange');
+    const turnSpeedVal = document.getElementById('turnSpeedVal');
+    const rpmSelect = document.getElementById('rpmSelect');
+    const wheelSelect = document.getElementById('wheelSelect');
+    const weightInput = document.getElementById('weightInput');
+    const matchloaderTypeSelect = document.getElementById('matchloaderTypeSelect');
+    const liveConfigSpecs = document.getElementById('liveConfigSpecs');
+
+    let config = {
+      rpm: 450,
+      wheelDiameterInches: 2.75,
+      massKg: 5.0,
+      turnSensitivity: 0.60,
+      wheelRadiusMeters: 0,
+      wheelCircumference: 0,
+      maxLinearSpeed: 0
+    };
+
+    function recalculatePhysicsParams() {
+      config.rpm = parseFloat(rpmSelect.value) || 450;
+      config.wheelDiameterInches = parseFloat(wheelSelect.value) || 2.75;
+      config.massKg = Math.max(0.5, parseFloat(weightInput.value) || 5.0);
+      config.turnSensitivity = (parseFloat(turnSpeedRange.value) || 60) / 100.0;
+
+      turnSpeedVal.textContent = `${turnSpeedRange.value}%`;
+
+      config.wheelRadiusMeters = (config.wheelDiameterInches * 0.0254) / 2.0;
+      config.wheelCircumference = 2 * Math.PI * config.wheelRadiusMeters;
+      config.maxLinearSpeed = (config.rpm / 60.0) * config.wheelCircumference;
+
+      const ftPerSec = (config.maxLinearSpeed * 3.28084).toFixed(1);
+      liveConfigSpecs.innerHTML =
+`<strong>Calculated Dynamics:</strong><br>
+• Drivetrain: Dual C-Channel Rails + Structural Delrin Goal Aligner<br>
+• 120 RPM Spinner: Symmetrical L-channel rotates at 0.5s per 360° on Down Arrow<br>
+• Spawn Preload: Spawns holding Yellow-Red pin in closed claw<br>
+• Skills Goal Setup: Empty Neutral/Center Goals in Skills, Pre-loaded in Head-to-Head<br>
+• Replay System: Recording & smooth playback with Exit Replay controls<br>
+• Max Speed: ${config.maxLinearSpeed.toFixed(2)} m/s (${ftPerSec} ft/s)`;
+    }
+
+    turnSpeedRange.addEventListener('input', recalculatePhysicsParams);
+    rpmSelect.addEventListener('change', recalculatePhysicsParams);
+    wheelSelect.addEventListener('change', recalculatePhysicsParams);
+    weightInput.addEventListener('input', recalculatePhysicsParams);
+    recalculatePhysicsParams();
+
+    // VEX Field Physics Constants
+    const FIELD_SIZE = 3.6576; // 12 feet in meters
+    const HALF_FIELD = FIELD_SIZE / 2;
+    const FIELD_RAISE_HEIGHT = 0.762; // 30 inches raised off floor
+    const TRACK_WIDTH_METERS = 0.35;
+    const MAX_MOTOR_FORCE = 52.0;
+    const TILE_SIZE = FIELD_SIZE / 6; // 0.6096m (2 feet per tile)
+    const S = TILE_SIZE;
+
+    // Colors
+    const COLOR_YELLOW = 0xeab308;
+    const COLOR_RED    = 0xef4444;
+    const COLOR_BLUE   = 0x3b82f6;
+    const COLOR_DARK_GREY = 0x334155;
+
+    // Robot Simulation State
+    const START_X = 0;
+    const START_Z = HALF_FIELD - 0.22; // Back of robot right up against front toggle
+    const START_HEADING = Math.PI / 2;  // Facing front (spinners touching toggle)
+
+    let robot = {
+      x: START_X,
+      z: START_Z,
+      vx: 0,
+      vz: 0,
+      heading: START_HEADING,
+      angularVelocity: 0,
+      leftWheelSpeed: 0,
+      rightWheelSpeed: 0,
+      lastTime: performance.now()
+    };
+
+    // GAME MODE, TIMER & REPLAY STATE
+    let gameMode = 'menu'; // 'menu', 'countdown', 'skills', 'freeplay', 'gameover', 'replay'
+    let timerRemaining = 60.0;
+    let countdownRemaining = 3;
+    let countdownInterval = null;
+
+    let recordedMatchFrames = [];
+    let recordSampleTimer = 0;
+    let replayPlaybackTime = 0;
+
+    // --- CASCADE LIFT STATE ---
+    const MAX_LIFT_INCHES = 50.0;
+    const LIFT_UP_SPEED_INCHES_PER_SEC = 50.0 / 0.9;
+    const LIFT_DOWN_SPEED_INCHES_PER_SEC = 50.0 / 0.65;
+
+    const STAGE_0_HEIGHT = 0.4064;
+    const STAGE_1_HEIGHT = 0.4064;
+    const STAGE_2_HEIGHT = 0.4064;
+    const STAGE_3_HEIGHT = 0.4064 * (2 / 3);
+    const TOWER_SPACING = 0.2413;
+    const REAR_DEPTH_STAGE_OFFSET = -0.0254;
+
+    let cascadeLift = {
+      currentInches: 0.0,
+      isAutoReturning: false,
+      isManualUp: false,
+      isManualDown: false
+    };
+
+    // --- 48T GEAR MECHANISM STATE (0.5s per 360° = 120 RPM) ---
+    let gear48TState = {
+      angleRad: 0.0,
+      isRotating: false
+    };
+    const GEAR_ROTATE_SPEED_RAD_PER_SEC = (2.0 * Math.PI) / 0.5;
+
+    // --- MOTORIZED FLEX WHEEL CLAW STATE ---
+    let claw = {
+      isOpen: false, // Closed around preload pin on start
+      isSpinning: false,
+      isR2Held: false,
+      currentPivotAngle: 0.08,
+      targetPivotAngle: 0.08,
+      wheelSpinAngle: 0,
+      heldStack: null,
+      intakingObject: null,
+      intakeProgress: 0.0
+    };
+
+    let gamepadIndex = null;
+    let serialPort = null;
+    let serialReader = null;
+    let serialAxes = { lx: 0, ly: 0, rx: 0, ry: 0 };
+
+    let keys = { r: false, f: false, b: false, e: false, q: false, arrowDown: false };
+
+    // ANIMATED DROP/STACKING ENGINE
+    const animatingScores = [];
+
+    function triggerRelease() {
+      if (gameMode === 'countdown' || gameMode === 'gameover' || gameMode === 'replay') return;
+      if (!claw.heldStack) return;
+
+      const payloadWorldVec = new THREE.Vector3();
+      clawPayloadGroup.getWorldPosition(payloadWorldVec);
+      const clawWorldX = payloadWorldVec.x;
+      const clawWorldY = payloadWorldVec.y;
+      const clawWorldZ = payloadWorldVec.z;
+
+      let scoredInGoal = false;
+
+      for (let g = 0; g < goalsList.length; g++) {
+        const goal = goalsList[g];
+        const distToGoal = Math.hypot(clawWorldX - goal.x, clawWorldZ - goal.z);
+
+        if (distToGoal <= 0.25) { // Lined up with aligner right against goal
+          const goalTopWorldY = FIELD_RAISE_HEIGHT + goal.currentY;
+
+          // Lift height requirement: holding element above current stack top
+          if (clawWorldY >= goalTopWorldY - 0.02) {
+            const held = claw.heldStack;
+            let canScore = false;
+            let targetY = 0;
+            let scoredMesh = null;
+            let nextTopType = goal.topType;
+
+            if (goal.topType === 'none') {
+              // 1. EMPTY GOAL: Single pin required first
+              if (held.type === 'pin' && (goal.pinCount + 1 <= goal.maxPins)) {
+                canScore = true;
+                scoredMesh = createPinMesh(held.colorTop, held.colorBot);
+                targetY = goal.height - 0.0825;
+
+                goal.cupBaseY = goal.height;
+                goal.currentY = goal.height + 0.076;
+                nextTopType = 'pin';
+                goal.pinCount++;
+                goal.scoredPins.push({ type: 'pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
+              }
+            } else if (goal.topType === 'pin') {
+              // 2. ON TOP OF A PIN
+              if (held.type === 'stack' && (goal.cupCount + 1 <= goal.maxCups) && (goal.pinCount + 1 <= goal.maxPins)) {
+                canScore = true;
+                scoredMesh = (held.isInverted) ? createInvertedWallStackMesh() : createStackMesh(held.colorTop, held.colorBot);
+                targetY = goal.cupBaseY;
+
+                goal.cupBaseY += 0.180;
+                goal.currentY = goal.cupBaseY;
+                nextTopType = 'pin';
+                goal.cupCount++;
+                goal.pinCount++;
+
+                goal.scoredPins.push({ type: 'stack_pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
+              } else if (held.type === 'cup' && (goal.cupCount + 1 <= goal.maxCups)) {
+                canScore = true;
+                scoredMesh = (held.isInverted) ? createInvertedCupMesh() : createCupMesh();
+                targetY = goal.cupBaseY;
+
+                goal.cupBaseY += 0.180;
+                goal.currentY = goal.cupBaseY;
+                nextTopType = 'cup';
+                goal.cupCount++;
+              } else if (held.type === 'pin' && (goal.pinCount + 1 <= goal.maxPins)) {
+                canScore = true;
+                scoredMesh = createPinMesh(held.colorTop, held.colorBot);
+                targetY = goal.currentY;
+
+                goal.currentY += 0.076;
+                nextTopType = 'pin';
+                goal.pinCount++;
+                goal.scoredPins.push({ type: 'pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
+              }
+            } else if (goal.topType === 'cup') {
+              // 3. ON TOP OF A SINGLE CUP: Single pin only
+              if (held.type === 'pin' && (goal.pinCount + 1 <= goal.maxPins)) {
+                canScore = true;
+                scoredMesh = createPinMesh(held.colorTop, held.colorBot);
+                targetY = goal.currentY - 0.0825;
+
+                goal.currentY += 0.076;
+                nextTopType = 'pin';
+                goal.pinCount++;
+                goal.scoredPins.push({ type: 'pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
+              }
+            }
+
+            if (canScore && scoredMesh) {
+              clawPayloadGroup.remove(held.mesh);
+              goal.goalGroup.add(scoredMesh);
+              goal.topType = nextTopType;
+
+              goal.scoredStackEntries.push({
+                type: held.type,
+                colorTop: held.colorTop,
+                colorBot: held.colorBot,
+                isInverted: held.isInverted || false,
+                targetY: targetY
+              });
+
+              // Animate falling into place smoothly
+              const initialLocalY = clawWorldY - FIELD_RAISE_HEIGHT;
+              scoredMesh.position.y = initialLocalY;
+
+              animatingScores.push({
+                mesh: scoredMesh,
+                targetY: targetY,
+                currentY: initialLocalY,
+                speed: 1.8
+              });
+
+              if (held.isFromMatchload) {
+                const ldr = loadersList.find(l => l.id === held.originLoaderId);
+                if (ldr) {
+                  ldr.itemGroup.clear();
+                  const newMesh = buildLoaderItemMesh(matchloaderTypeSelect.value, ldr.colorBot);
+                  ldr.itemGroup.add(newMesh);
+                  ldr.stackMesh = newMesh;
+                  ldr.hasStack = true;
+                  ldr.itemGroup.visible = true;
+                }
+              }
+
+              claw.heldStack = null;
+              scoredInGoal = true;
+              break;
+            }
+          }
+        }
+      }
+
+      // Standard ground release if not scored into goal
+      if (!scoredInGoal) {
+        clawPayloadGroup.remove(claw.heldStack.mesh);
+
+        if (claw.heldStack.isFromMatchload) {
+          const ldr = loadersList.find(l => l.id === claw.heldStack.originLoaderId);
+          if (ldr) {
+            ldr.itemGroup.clear();
+            const newMesh = buildLoaderItemMesh(matchloaderTypeSelect.value, ldr.colorBot);
+            ldr.itemGroup.add(newMesh);
+            ldr.stackMesh = newMesh;
+            ldr.hasStack = true;
+            ldr.itemGroup.visible = true;
+          }
+        }
+
+        const dropHeightMeters = Math.max(0.01, clawWorldY - FIELD_RAISE_HEIGHT);
+
+        if (claw.heldStack.type === 'stack') {
+          spawnDynamicObject('fallingStack', clawWorldX, clawWorldZ, {
+            isVertical: true,
+            colorTop: claw.heldStack.colorTop,
+            colorBot: claw.heldStack.colorBot,
+            y: dropHeightMeters,
+            vy: 0,
+            vx: robot.vx * 0.7,
+            vz: robot.vz * 0.7,
+            isDropping: true,
+            releaseImmunityTimer: 0.45
+          });
+        } else if (claw.heldStack.type === 'pin') {
+          spawnDynamicObject('pin', clawWorldX, clawWorldZ, {
+            isVertical: true,
+            colorTop: claw.heldStack.colorTop,
+            colorBot: claw.heldStack.colorBot,
+            y: dropHeightMeters,
+            vy: 0,
+            vx: robot.vx * 0.5,
+            vz: robot.vz * 0.5,
+            isDropping: true,
+            releaseImmunityTimer: 0.45
+          });
+        } else {
+          spawnDynamicObject('cup', clawWorldX, clawWorldZ, {
+            isVertical: true,
+            isInverted: claw.heldStack.isInverted || false,
+            y: dropHeightMeters,
+            vy: 0,
+            vx: robot.vx * 0.4,
+            vz: robot.vz * 0.4,
+            isDropping: true,
+            releaseImmunityTimer: 0.45
+          });
+        }
+
+        claw.heldStack = null;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      const k = e.key;
+      const kl = k.toLowerCase();
+      if (kl === 'r') keys.r = true;
+      if (kl === 'f') keys.f = true;
+      if (kl === 'b') cascadeLift.isAutoReturning = true;
+      if (kl === 'e') {
+        claw.isOpen = true;
+        claw.isR2Held = true;
+        claw.targetPivotAngle = 0.35;
+      }
+      if (kl === 'q') {
+        triggerRelease();
+      }
+      if (k === 'ArrowDown' || e.code === 'ArrowDown') {
+        keys.arrowDown = true;
+      }
+    });
+
+    window.addEventListener('keyup', (e) => {
+      const k = e.key;
+      const kl = k.toLowerCase();
+      if (kl === 'r') keys.r = false;
+      if (kl === 'f') keys.f = false;
+      if (kl === 'e') {
+        claw.isR2Held = false;
+      }
+      if (k === 'ArrowDown' || e.code === 'ArrowDown') {
+        keys.arrowDown = false;
+      }
+    });
+
+    btnLiftUp.addEventListener('mousedown', () => { cascadeLift.isManualUp = true; });
+    btnLiftUp.addEventListener('mouseup', () => { cascadeLift.isManualUp = false; });
+    btnLiftUp.addEventListener('mouseleave', () => { cascadeLift.isManualUp = false; });
+
+    btnLiftDown.addEventListener('mousedown', () => { cascadeLift.isManualDown = true; });
+    btnLiftDown.addEventListener('mouseup', () => { cascadeLift.isManualDown = false; });
+    btnLiftDown.addEventListener('mouseleave', () => { cascadeLift.isManualDown = false; });
+
+    btnLiftReset.addEventListener('click', () => { cascadeLift.isAutoReturning = true; });
+
+    btnGearRotate.addEventListener('mousedown', () => { gear48TState.isRotating = true; });
+    btnGearRotate.addEventListener('mouseup', () => { gear48TState.isRotating = false; });
+    btnGearRotate.addEventListener('mouseleave', () => { gear48TState.isRotating = false; });
+
+    btnClawClose.addEventListener('click', () => {
+      triggerRelease();
+    });
+
+    btnClawOpen.addEventListener('mousedown', () => {
+      claw.isOpen = true;
+      claw.isR2Held = true;
+      claw.targetPivotAngle = 0.35;
+    });
+    btnClawOpen.addEventListener('mouseup', () => { claw.isR2Held = false; });
+    btnClawOpen.addEventListener('mouseleave', () => { claw.isR2Held = false; });
+
+    // --- THREE.JS SCENE SETUP ---
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0c10);
+
+    const camera = new THREE.PerspectiveCamera(86, 1, 0.1, 100);
+    const driverEyeHeight = FIELD_RAISE_HEIGHT + 1.85;
+    const driverZPosition = HALF_FIELD + 1.25;
+    camera.position.set(0, driverEyeHeight, driverZPosition);
+    camera.lookAt(0, FIELD_RAISE_HEIGHT + 0.12, -0.35);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(620, 620);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.90);
+    mainLight.position.set(2.5, FIELD_RAISE_HEIGHT + 7, 2.5);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.40);
+    fillLight.position.set(-4, FIELD_RAISE_HEIGHT + 5, -4);
+    scene.add(fillLight);
+
+    // Floor Carpet
+    const venueFloorGeo = new THREE.PlaneGeometry(22, 22);
+    const venueFloorMat = new THREE.MeshStandardMaterial({ color: 0x161922, roughness: 0.9, metalness: 0.1 });
+    const venueFloor = new THREE.Mesh(venueFloorGeo, venueFloorMat);
+    venueFloor.rotation.x = -Math.PI / 2;
+    venueFloor.position.y = 0;
+    venueFloor.receiveShadow = true;
+    scene.add(venueFloor);
+
+    // Driver Station Backdrop
+    const backdropGroup = new THREE.Group();
+    backdropGroup.position.set(0, 0, -HALF_FIELD - 0.85);
+
+    const driverStationGeo = new THREE.BoxGeometry(3.8, 1.2, 0.15);
+    const driverStationMat = new THREE.MeshStandardMaterial({ color: 0x1e222b, roughness: 0.4, metalness: 0.8 });
+    const driverStationMesh = new THREE.Mesh(driverStationGeo, driverStationMat);
+    driverStationMesh.position.set(0, FIELD_RAISE_HEIGHT / 2, 0);
+    backdropGroup.add(driverStationMesh);
+
+    const screenFrameGeo = new THREE.BoxGeometry(2.6, 1.1, 0.05);
+    const screenFrameMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 });
+    const screenFrameMesh = new THREE.Mesh(screenFrameGeo, screenFrameMat);
+    screenFrameMesh.position.set(0, FIELD_RAISE_HEIGHT + 1.2, 0.03);
+    backdropGroup.add(screenFrameMesh);
+
+    const displayGeo = new THREE.PlaneGeometry(2.5, 1.0);
+    const displayMat = new THREE.MeshBasicMaterial({ color: 0x020617 });
+    const displayMesh = new THREE.Mesh(displayGeo, displayMat);
+    displayMesh.position.set(0, FIELD_RAISE_HEIGHT + 1.2, 0.06);
+    backdropGroup.add(displayMesh);
+
+    scene.add(backdropGroup);
+
+    // --- 3D RAISED FIELD SETUP ---
+    const fieldGroup = new THREE.Group();
+    fieldGroup.position.y = FIELD_RAISE_HEIGHT;
+    scene.add(fieldGroup);
+
+    const platformBaseGeo = new THREE.BoxGeometry(FIELD_SIZE + 0.12, FIELD_RAISE_HEIGHT, FIELD_SIZE + 0.12);
+    const platformBaseMat = new THREE.MeshStandardMaterial({ color: 0x181c24, roughness: 0.6, metalness: 0.4 });
+    const platformBaseMesh = new THREE.Mesh(platformBaseGeo, platformBaseMat);
+    platformBaseMesh.position.set(0, -FIELD_RAISE_HEIGHT / 2, 0);
+    platformBaseMesh.receiveShadow = true;
+    fieldGroup.add(platformBaseMesh);
+
+    const trimGeo = new THREE.BoxGeometry(FIELD_SIZE + 0.14, 0.03, FIELD_SIZE + 0.14);
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.8, roughness: 0.2 });
+    const trimMesh = new THREE.Mesh(trimGeo, trimMat);
+    trimMesh.position.set(0, -0.015, 0);
+    fieldGroup.add(trimMesh);
+
+    // Tiles
+    for (let r = 0; r < 6; r++) {
+      for (let c = 0; c < 6; c++) {
+        const isEven = (r + c) % 2 === 0;
+        const tileGeo = new THREE.PlaneGeometry(TILE_SIZE - 0.003, TILE_SIZE - 0.003);
+        const tileMat = new THREE.MeshStandardMaterial({
+          color: isEven ? 0x4a5060 : 0x585f72,
+          roughness: 0.75,
+          metalness: 0.05
+        });
+        const tileMesh = new THREE.Mesh(tileGeo, tileMat);
+        tileMesh.rotation.x = -Math.PI / 2;
+        tileMesh.position.set(-HALF_FIELD + c * TILE_SIZE + TILE_SIZE / 2, 0.001, -HALF_FIELD + r * TILE_SIZE + TILE_SIZE / 2);
+        tileMesh.receiveShadow = true;
+        fieldGroup.add(tileMesh);
+      }
+    }
+
+    // --- FIELD TAPE LAYOUT ---
+    const tapeMatWhite = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const tapeMatRed   = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide });
+    const tapeMatBlue  = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide });
+    const TAPE_W = 0.019;
+    const TAPE_Y = 0.0025;
+
+    function addTapeSegment(x1, z1, x2, z2, mat = tapeMatWhite) {
+      const dx = x2 - x1;
+      const dz = z2 - z1;
+      const len = Math.hypot(dx, dz);
+      const angle = Math.atan2(dz, dx);
+
+      const tapeGeo = new THREE.PlaneGeometry(len, TAPE_W);
+      const tapeMesh = new THREE.Mesh(tapeGeo, mat);
+      tapeMesh.rotation.x = -Math.PI / 2;
+      tapeMesh.rotation.z = -angle;
+      tapeMesh.position.set((x1 + x2) / 2, TAPE_Y, (z1 + z2) / 2);
+      fieldGroup.add(tapeMesh);
+    }
+
+    addTapeSegment(-S, 0, 0, -S, tapeMatWhite);
+    addTapeSegment(0, -S, S, 0, tapeMatWhite);
+    addTapeSegment(S, 0, 0, S, tapeMatWhite);
+    addTapeSegment(0, S, -S, 0, tapeMatWhite);
+
+    const PAR_OFF = 0.035;
+    addTapeSegment(-3 * S, 3 * S, -S / 2, S / 2, tapeMatWhite);
+    addTapeSegment(-3 * S + PAR_OFF, 3 * S + PAR_OFF, -S / 2 + PAR_OFF, S / 2 + PAR_OFF, tapeMatWhite);
+
+    addTapeSegment(S / 2, -S / 2, 3 * S, -3 * S, tapeMatWhite);
+    addTapeSegment(S / 2 + PAR_OFF, -S / 2 + PAR_OFF, 3 * S + PAR_OFF, -3 * S + PAR_OFF, tapeMatWhite);
+
+    addTapeSegment(3 * S, 3 * S, S / 2, S / 2, tapeMatWhite);
+    addTapeSegment(-S / 2, -S / 2, -3 * S, -3 * S, tapeMatWhite);
+
+    addTapeSegment(-3 * S, 3 * S, -2 * S, 3 * S, tapeMatRed);
+    addTapeSegment(-2 * S, 3 * S, -2 * S, 2 * S, tapeMatRed);
+    addTapeSegment(-2 * S, 2 * S, -3 * S, 2 * S, tapeMatRed);
+
+    addTapeSegment(3 * S, 3 * S, 2 * S, 3 * S, tapeMatRed);
+    addTapeSegment(2 * S, 3 * S, 2 * S, 2 * S, tapeMatRed);
+    addTapeSegment(2 * S, 2 * S, 3 * S, 2 * S, tapeMatRed);
+
+    addTapeSegment(-3 * S, -3 * S, -2 * S, -3 * S, tapeMatBlue);
+    addTapeSegment(-2 * S, -3 * S, -2 * S, -2 * S, tapeMatBlue);
+    addTapeSegment(-2 * S, -2 * S, -3 * S, -2 * S, tapeMatBlue);
+
+    addTapeSegment(3 * S, -3 * S, 2 * S, -3 * S, tapeMatBlue);
+    addTapeSegment(2 * S, -3 * S, 2 * S, -2 * S, tapeMatBlue);
+    addTapeSegment(2 * S, -2 * S, 3 * S, -2 * S, tapeMatBlue);
+
+    // White Perimeter Walls
+    const wallHeight = 0.28;
+    const wallThickness = 0.025;
+
+    const whiteWallMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25, metalness: 0.2, side: THREE.DoubleSide });
+    const transparentFrontWallMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.08, roughness: 0.05, transmission: 0.98, thickness: 0.02, side: THREE.DoubleSide });
+    const blackFrameMat = new THREE.MeshStandardMaterial({ color: 0x1e222b, metalness: 0.8, roughness: 0.3 });
+
+    const wallPositions = [
+      { x: 0, z: -HALF_FIELD, length: FIELD_SIZE, rotY: 0, isFront: false },
+      { x: 0, z: HALF_FIELD, length: FIELD_SIZE, rotY: 0, isFront: true },
+      { x: -HALF_FIELD, z: 0, length: FIELD_SIZE, rotY: Math.PI / 2, isFront: false },
+      { x: HALF_FIELD, z: 0, length: FIELD_SIZE, rotY: Math.PI / 2, isFront: false }
+    ];
+
+    wallPositions.forEach(pos => {
+      const wallGroup = new THREE.Group();
+      wallGroup.position.set(pos.x, 0, pos.z);
+      wallGroup.rotation.y = pos.rotY;
+
+      const panelGeo = new THREE.BoxGeometry(pos.length, wallHeight, wallThickness);
+      const panelMesh = new THREE.Mesh(panelGeo, pos.isFront ? transparentFrontWallMat : whiteWallMat);
+      panelMesh.position.y = wallHeight / 2;
+      panelMesh.castShadow = !pos.isFront;
+      panelMesh.receiveShadow = true;
+      wallGroup.add(panelMesh);
+
+      const topFrameGeo = new THREE.BoxGeometry(pos.length + 0.02, 0.02, wallThickness + 0.015);
+      const topFrameMesh = new THREE.Mesh(topFrameGeo, blackFrameMat);
+      topFrameMesh.position.y = wallHeight + 0.01;
+      wallGroup.add(topFrameMesh);
+
+      const botFrameGeo = new THREE.BoxGeometry(pos.length + 0.02, 0.02, wallThickness + 0.015);
+      const botFrameMesh = new THREE.Mesh(botFrameGeo, blackFrameMat);
+      botFrameMesh.position.y = 0.01;
+      wallGroup.add(botFrameMesh);
+
+      fieldGroup.add(wallGroup);
+    });
+
+    // --- HIGH STAKES 3-FACED WALL TOGGLES ---
+    const wallTogglesList = [];
+
+    function createWallToggle(x, z, axisAligned, quadIndex) {
+      const toggleGroup = new THREE.Group();
+      toggleGroup.position.set(x, FIELD_RAISE_HEIGHT + wallHeight + 0.032, z);
+
+      if (axisAligned === 'Z') {
+        toggleGroup.rotation.y = Math.PI / 2;
+      }
+
+      const radius = 0.032;
+      const length = 0.62;
+
+      const yellowMat = new THREE.MeshStandardMaterial({ color: COLOR_YELLOW, roughness: 0.3, metalness: 0.2 });
+      const redMat    = new THREE.MeshStandardMaterial({ color: COLOR_RED,    roughness: 0.3, metalness: 0.2 });
+      const blueMat   = new THREE.MeshStandardMaterial({ color: COLOR_BLUE,   roughness: 0.3, metalness: 0.2 });
+      const darkMat   = new THREE.MeshStandardMaterial({ color: 0x1e222b, roughness: 0.5, metalness: 0.5 });
+      const shaftMat  = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+
+      const shaftGeo = new THREE.CylinderGeometry(0.006, 0.006, length + 0.06, 12);
+      const shaftMesh = new THREE.Mesh(shaftGeo, shaftMat);
+      shaftMesh.rotation.z = Math.PI / 2;
+      toggleGroup.add(shaftMesh);
+
+      const rollerGroup = new THREE.Group();
+      toggleGroup.add(rollerGroup);
+
+      const face0Mat = yellowMat;
+      const face1Mat = blueMat;
+      const face2Mat = redMat;
+
+      const faceMats = [face0Mat, face1Mat, face2Mat];
+      const faceAngleStep = (Math.PI * 2) / 3;
+
+      for (let i = 0; i < 3; i++) {
+        const ang = i * faceAngleStep;
+        const plateGeo = new THREE.BoxGeometry(length, 0.006, radius * 1.55);
+        const plateMesh = new THREE.Mesh(plateGeo, faceMats[i]);
+        plateMesh.position.set(0, Math.cos(ang) * (radius * 0.65), Math.sin(ang) * (radius * 0.65));
+        plateMesh.rotation.x = ang;
+        plateMesh.castShadow = true;
+        rollerGroup.add(plateMesh);
+      }
+
+      const capGeo = new THREE.CylinderGeometry(radius, radius, 0.012, 3);
+      const cap1 = new THREE.Mesh(capGeo, darkMat);
+      cap1.rotation.z = Math.PI / 2;
+      cap1.position.x = length / 2 + 0.006;
+      rollerGroup.add(cap1);
+
+      const cap2 = new THREE.Mesh(capGeo, darkMat);
+      cap2.rotation.z = Math.PI / 2;
+      cap2.position.x = -length / 2 - 0.006;
+      rollerGroup.add(cap2);
+
+      const bracketGeo = new THREE.BoxGeometry(0.015, 0.055, 0.038);
+      const b1 = new THREE.Mesh(bracketGeo, darkMat);
+      b1.position.set(length / 2 + 0.025, -0.02, 0);
+      toggleGroup.add(b1);
+
+      const b2 = new THREE.Mesh(bracketGeo, darkMat);
+      b2.position.set(-length / 2 - 0.025, -0.02, 0);
+      toggleGroup.add(b2);
+
+      scene.add(toggleGroup);
+
+      const toggleObj = {
+        x: x,
+        y: FIELD_RAISE_HEIGHT + wallHeight + 0.032,
+        z: z,
+        quadIndex: quadIndex, // 1 (Q1), 2 (Q2), 3 (Q3), 4 (Q4)
+        axisAligned: axisAligned,
+        length: length,
+        radius: radius,
+        rollerGroup: rollerGroup,
+        currentAngle: 0.0,
+        targetAngle: 0.0,
+        strikeCount: 0,
+        lastHitTipIndex: -1
+      };
+
+      wallTogglesList.push(toggleObj);
+      return toggleObj;
+    }
+
+    // Assign each wall toggle to its corresponding quadrant
+    createWallToggle(0, HALF_FIELD - 0.01, 'X', 2);                 // Front Toggle (Q2)
+    createWallToggle(HALF_FIELD - 0.01, 0, 'Z', 1);                 // Right Toggle (Q1)
+    createWallToggle(0, -HALF_FIELD + 0.01, 'X', 4);                // Back Toggle  (Q4)
+    createWallToggle(-HALF_FIELD + 0.01, 0, 'Z', 3);                // Left Toggle  (Q3)
+
+    function isToggleRedActive(tgl) {
+      const faceIndex = Math.round((tgl.targetAngle % (Math.PI * 2)) / ((Math.PI * 2) / 3)) % 3;
+      const normalizedFace = (faceIndex + 3) % 3;
+      return normalizedFace === 2; // Face 2 is Red
+    }
+
+    // --- GAME PIECE MESH FACTORIES ---
+    function createPinMesh(colorTop = COLOR_YELLOW, colorBot = COLOR_YELLOW) {
+      const group = new THREE.Group();
+
+      const topMat = new THREE.MeshStandardMaterial({ color: colorTop, roughness: 0.3, metalness: 0.2 });
+      const botMat = new THREE.MeshStandardMaterial({ color: colorBot, roughness: 0.3, metalness: 0.2 });
+
+      const botGeo = new THREE.CylinderGeometry(0.038, 0.018, 0.076, 16);
+      const botMesh = new THREE.Mesh(botGeo, botMat);
+      botMesh.position.y = 0.038;
+      botMesh.castShadow = true;
+      group.add(botMesh);
+
+      const ringGeo = new THREE.CylinderGeometry(0.042, 0.042, 0.012, 16);
+      const ringMesh = new THREE.Mesh(ringGeo, topMat);
+      ringMesh.position.y = 0.0825;
+      ringMesh.castShadow = true;
+      group.add(ringMesh);
+
+      const topGeo = new THREE.CylinderGeometry(0.020, 0.038, 0.076, 16);
+      const topMesh = new THREE.Mesh(topGeo, topMat);
+      topMesh.position.y = 0.0825 + 0.038;
+      topMesh.castShadow = true;
+      group.add(topMesh);
+
+      return group;
+    }
+
+    // REVERTED STANDARD UPRIGHT CUP (Dark Grey Base on Bottom, Transparent Cylinder on Top)
+    function createCupMesh() {
+      const group = new THREE.Group();
+
+      const baseMat = new THREE.MeshStandardMaterial({ color: COLOR_DARK_GREY, roughness: 0.5, metalness: 0.3 });
+      const baseGeo = new THREE.CylinderGeometry(0.048, 0.055, 0.085, 16);
+      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      baseMesh.position.y = 0.0425;
+      baseMesh.castShadow = true;
+      group.add(baseMesh);
+
+      const cupTopMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.50,
+        roughness: 0.1,
+        metalness: 0.1,
+        transmission: 0.85,
+        thickness: 0.01,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const topGeo = new THREE.CylinderGeometry(0.065, 0.048, 0.095, 16, 1, true);
+      const topMesh = new THREE.Mesh(topGeo, cupTopMat);
+      topMesh.position.y = 0.085 + 0.0475;
+      group.add(topMesh);
+
+      return group;
+    }
+
+    // INVERTED CUP (Dark Opaque Base on top, Transparent cone below)
+    function createInvertedCupMesh() {
+      const group = new THREE.Group();
+
+      const baseMat = new THREE.MeshStandardMaterial({ color: COLOR_DARK_GREY, roughness: 0.5, metalness: 0.3 });
+      const baseGeo = new THREE.CylinderGeometry(0.055, 0.048, 0.085, 16);
+      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      baseMesh.position.y = 0.095 + 0.0425;
+      baseMesh.castShadow = true;
+      group.add(baseMesh);
+
+      const cupTopMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.50,
+        roughness: 0.1,
+        metalness: 0.1,
+        transmission: 0.85,
+        thickness: 0.01,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const topGeo = new THREE.CylinderGeometry(0.048, 0.065, 0.095, 16, 1, true);
+      const topMesh = new THREE.Mesh(topGeo, cupTopMat);
+      topMesh.position.y = 0.0475;
+      group.add(topMesh);
+
+      return group;
+    }
+
+    // REVERTED STANDARD STACK (Standard Upright Cup + Pin Elevated Higher)
+    function createStackMesh(colorTop = COLOR_YELLOW, colorBot = COLOR_YELLOW) {
+      const group = new THREE.Group();
+
+      const cupMesh = createCupMesh();
+      group.add(cupMesh);
+
+      const pinMesh = createPinMesh(colorTop, colorBot);
+      pinMesh.position.y = 0.122;
+      group.add(pinMesh);
+
+      return group;
+    }
+
+    // INVERTED WALL STACK (Opaque Top Cup + Yellow-Yellow Pin)
+    function createInvertedWallStackMesh() {
+      const group = new THREE.Group();
+
+      const invCup = createInvertedCupMesh();
+      group.add(invCup);
+
+      const pinMesh = createPinMesh(COLOR_YELLOW, COLOR_YELLOW);
+      pinMesh.position.y = 0.122;
+      group.add(pinMesh);
+
+      return group;
+    }
+
+    // --- OPAQUE FIELD GOALS & SCORING MECHANICS SETUP ---
+    const BASE_RADIUS = 0.07125;
+    const TOP_RADIUS = 0.0444;
+    const HOLE_RADIUS = 0.0300;
+
+    const goalConfigs = [
+      { id: 'c0', x: 0, z: 0, color: 0x2d323e, type: 'center' },
+      { id: 'n1', x: 2 * S, z: -1 * S, color: 0x2d323e, type: 'neutral' },
+      { id: 'n2', x: 1 * S, z: -2 * S, color: 0x2d323e, type: 'neutral' },
+      { id: 'n3', x: -1 * S, z: 2 * S, color: 0x2d323e, type: 'neutral' },
+      { id: 'n4', x: -2 * S, z: 1 * S, color: 0x2d323e, type: 'neutral' },
+      { id: 'a1', x: 1 * S, z: 2 * S, color: 0xef4444, type: 'alliance' },
+      { id: 'a2', x: 2 * S, z: 1 * S, color: 0xef4444, type: 'alliance' },
+      { id: 'a3', x: -2 * S, z: -1 * S, color: 0x3b82f6, type: 'alliance' },
+      { id: 'a4', x: -1 * S, z: -2 * S, color: 0x3b82f6, type: 'alliance' }
+    ];
+
+    const goalsList = [];
+
+    function getQuadrantIndex(x, z) {
+      if (x >= 0 && z >= 0) return 1; // Q1 Front-Right
+      if (x < 0  && z >= 0) return 2; // Q2 Front-Left
+      if (x < 0  && z < 0)  return 3; // Q3 Back-Left
+      return 4;                       // Q4 Back-Right
+    }
+
+    function createCadGoalMesh(cfg) {
+      const goalGroup = new THREE.Group();
+      goalGroup.position.set(cfg.x, FIELD_RAISE_HEIGHT, cfg.z);
+
+      const mainMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.35, metalness: 0.4, side: THREE.DoubleSide });
+      const innerMat = new THREE.MeshStandardMaterial({ color: 0x07080a, roughness: 0.95, side: THREE.DoubleSide });
+      const rimMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.20, metalness: 0.85 });
+
+      let totalH = 0.0825;
+      if (cfg.type === 'alliance') totalH = 0.0825;
+      else if (cfg.type === 'neutral') totalH = 0.1465;
+      else if (cfg.type === 'center') totalH = 0.2227;
+
+      const baseGeo = new THREE.CylinderGeometry(BASE_RADIUS, BASE_RADIUS, totalH * 0.6, 16);
+      const baseMesh = new THREE.Mesh(baseGeo, mainMat);
+      baseMesh.position.y = (totalH * 0.6) / 2;
+      goalGroup.add(baseMesh);
+
+      const coneGeo = new THREE.CylinderGeometry(TOP_RADIUS, BASE_RADIUS, totalH * 0.4, 16, 1, true);
+      const coneMesh = new THREE.Mesh(coneGeo, mainMat);
+      coneMesh.position.y = totalH * 0.6 + (totalH * 0.4) / 2;
+      goalGroup.add(coneMesh);
+
+      const capGeo = new THREE.RingGeometry(HOLE_RADIUS, TOP_RADIUS, 16);
+      const capMesh = new THREE.Mesh(capGeo, mainMat);
+      capMesh.rotation.x = -Math.PI / 2;
+      capMesh.position.y = totalH;
+      goalGroup.add(capMesh);
+
+      const ringGeo = new THREE.TorusGeometry(HOLE_RADIUS + 0.003, 0.003, 8, 16);
+      const ringMesh = new THREE.Mesh(ringGeo, rimMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = totalH;
+      goalGroup.add(ringMesh);
+
+      const wellGeo = new THREE.CylinderGeometry(HOLE_RADIUS, HOLE_RADIUS, totalH, 16, 1, true);
+      const wellMesh = new THREE.Mesh(wellGeo, innerMat);
+      wellMesh.position.y = totalH / 2;
+      goalGroup.add(wellMesh);
+
+      const socketFloorGeo = new THREE.CircleGeometry(HOLE_RADIUS, 16);
+      const socketFloorMesh = new THREE.Mesh(socketFloorGeo, innerMat);
+      socketFloorMesh.rotation.x = -Math.PI / 2;
+      socketFloorMesh.position.y = 0.003;
+      goalGroup.add(socketFloorMesh);
+
+      scene.add(goalGroup);
+
+      const goalObj = {
+        id: cfg.id,
+        x: cfg.x,
+        z: cfg.z,
+        quadrant: getQuadrantIndex(cfg.x, cfg.z),
+        radius: BASE_RADIUS,
+        height: totalH,
+        type: cfg.type,
+        goalGroup: goalGroup,
+        topType: 'none',
+        cupBaseY: totalH,
+        currentY: totalH,
+        cupCount: 0,
+        pinCount: 0,
+        maxCups: (cfg.type === 'center') ? 4 : 5,
+        maxPins: (cfg.type === 'center') ? 5 : 6,
+        scoredPins: [],
+        scoredStackEntries: []
+      };
+
+      goalsList.push(goalObj);
+      resetGoalContents(goalObj, false); // Default empty until reset mode
+    }
+
+    function resetGoalContents(goal, includePreloadPin) {
+      // Base goal CAD meshes consist of the first 6 meshes
+      while (goal.goalGroup.children.length > 6) {
+        goal.goalGroup.remove(goal.goalGroup.children[goal.goalGroup.children.length - 1]);
+      }
+
+      goal.scoredStackEntries = [];
+
+      if (includePreloadPin && (goal.type === 'neutral' || goal.type === 'center')) {
+        const goalPinMesh = createPinMesh(COLOR_YELLOW, COLOR_YELLOW);
+        goalPinMesh.position.y = goal.height - 0.0825;
+        goal.goalGroup.add(goalPinMesh);
+        goal.topType = 'pin';
+        goal.cupBaseY = goal.height;
+        goal.currentY = goal.height + 0.076;
+        goal.cupCount = 0;
+        goal.pinCount = 1;
+        goal.scoredPins = [{ type: 'pin', colorTop: COLOR_YELLOW, colorBot: COLOR_YELLOW, coveredByOpaque: false }];
+        goal.scoredStackEntries.push({ type: 'pin', colorTop: COLOR_YELLOW, colorBot: COLOR_YELLOW, targetY: goal.height - 0.0825 });
+      } else {
+        goal.topType = 'none';
+        goal.cupBaseY = goal.height;
+        goal.currentY = goal.height;
+        goal.cupCount = 0;
+        goal.pinCount = 0;
+        goal.scoredPins = [];
+      }
+    }
+
+    goalConfigs.forEach(cfg => createCadGoalMesh(cfg));
+
+    // --- MATCH LOADERS ---
+    const LOADER_WIDTH = 0.1021;
+    const LOADER_DEPTH = 0.095;
+    const LOADER_HEIGHT = 0.5835;
+    const CORNER_TILE_X = 2.5 * TILE_SIZE;
+    const MAX_LIFT_HEIGHT = 0.22;
+
+    const loaderConfigs = [
+      { id: 0, name: 'Red Left',   x: -CORNER_TILE_X, z: HALF_FIELD - 0.02, color: 0xef4444, rotY: 0 },
+      { id: 1, name: 'Red Right',  x:  CORNER_TILE_X, z: HALF_FIELD - 0.02, color: 0xef4444, rotY: 0 },
+      { id: 2, name: 'Blue Left',  x: -CORNER_TILE_X, z: -HALF_FIELD + 0.02, color: 0x3b82f6, rotY: Math.PI },
+      { id: 3, name: 'Blue Right', x:  CORNER_TILE_X, z: -HALF_FIELD + 0.02, color: 0x3b82f6, rotY: Math.PI }
+    ];
+
+    const loadersList = [];
+
+    // MATCHLOAD STACKS: OPAQUE ON TOP WITH YELLOW-YELLOW PIN (WALL STACK STYLE)
+    function buildLoaderItemMesh(itemType, botPinColor) {
+      if (itemType === 'pin') {
+        return createPinMesh(COLOR_YELLOW, botPinColor);
+      } else if (itemType === 'cup') {
+        return createCupMesh();
+      } else {
+        return createInvertedWallStackMesh();
+      }
+    }
+
+    function createMatchLoader(cfg) {
+      const loaderGroup = new THREE.Group();
+      loaderGroup.position.set(cfg.x, FIELD_RAISE_HEIGHT, cfg.z);
+      loaderGroup.rotation.y = cfg.rotY;
+
+      const bracketMat = new THREE.MeshStandardMaterial({ color: 0x1e222b, metalness: 0.8, roughness: 0.3 });
+      const bracketGeo = new THREE.BoxGeometry(LOADER_WIDTH + 0.01, 0.301, 0.015);
+      const bracketMesh = new THREE.Mesh(bracketGeo, bracketMat);
+      bracketMesh.position.set(0, 0.1505, 0.0075);
+      bracketMesh.castShadow = true;
+      loaderGroup.add(bracketMesh);
+
+      const chuteGroup = new THREE.Group();
+      loaderGroup.add(chuteGroup);
+
+      const channelGeo = new THREE.BoxGeometry(LOADER_WIDTH, LOADER_HEIGHT - 0.12, 0.006);
+      const channelMat = new THREE.MeshPhysicalMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.65, roughness: 0.15, metalness: 0.1 });
+
+      const frontPlate = new THREE.Mesh(channelGeo, channelMat);
+      frontPlate.position.set(0, LOADER_HEIGHT / 2 + 0.04, -LOADER_DEPTH);
+      chuteGroup.add(frontPlate);
+
+      const backPlate = new THREE.Mesh(channelGeo, channelMat);
+      backPlate.position.set(0, LOADER_HEIGHT / 2 + 0.04, -0.01);
+      chuteGroup.add(backPlate);
+
+      const capMat = new THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.35, metalness: 0.5 });
+      const topCapGeo = new THREE.BoxGeometry(LOADER_WIDTH + 0.012, 0.04, LOADER_DEPTH + 0.012);
+      const topCapMesh = new THREE.Mesh(topCapGeo, capMat);
+      topCapMesh.position.set(0, LOADER_HEIGHT + 0.02, -LOADER_DEPTH / 2);
+      topCapMesh.castShadow = true;
+      chuteGroup.add(topCapMesh);
+
+      const botPinColor = (cfg.color === 0x3b82f6) ? COLOR_BLUE : COLOR_RED;
+
+      const itemGroup = new THREE.Group();
+      itemGroup.position.set(0, 0.001, -LOADER_DEPTH / 2);
+      loaderGroup.add(itemGroup);
+
+      const loadedMesh = buildLoaderItemMesh(matchloaderTypeSelect.value, botPinColor);
+      itemGroup.add(loadedMesh);
+
+      scene.add(loaderGroup);
+
+      loadersList.push({
+        id: cfg.id,
+        name: cfg.name,
+        x: cfg.x,
+        z: cfg.z,
+        rotY: cfg.rotY,
+        colorBot: botPinColor,
+        isOpen: false,
+        currentLift: 0.0,
+        chuteGroup: chuteGroup,
+        itemGroup: itemGroup,
+        stackMesh: loadedMesh,
+        hasStack: true,
+        isLoader: true,
+        height: 0.30,
+        radius: 0.07
+      });
+    }
+
+    loaderConfigs.forEach(cfg => createMatchLoader(cfg));
+
+    function reloadMatchloaders() {
+      const newType = matchloaderTypeSelect.value;
+      loadersList.forEach(ldr => {
+        ldr.itemGroup.clear();
+        const newMesh = buildLoaderItemMesh(newType, ldr.colorBot);
+        ldr.itemGroup.add(newMesh);
+        ldr.stackMesh = newMesh;
+        ldr.hasStack = true;
+        ldr.itemGroup.visible = true;
+      });
+    }
+
+    matchloaderTypeSelect.addEventListener('change', reloadMatchloaders);
+
+    // --- DYNAMIC GAME OBJECT ENGINE & PHYSICS ---
+    const dynamicObjects = [];
+
+    function spawnDynamicObject(type, x, z, configOpts = {}) {
+      const objGroup = new THREE.Group();
+      objGroup.position.set(x, FIELD_RAISE_HEIGHT, z);
+
+      let mesh;
+      const colorTop = configOpts.colorTop || COLOR_YELLOW;
+      const colorBot = configOpts.colorBot || COLOR_YELLOW;
+      const isVertical = configOpts.isVertical !== undefined ? configOpts.isVertical : true;
+      const isInverted = configOpts.isInverted || false;
+
+      if (type === 'stack' || type === 'fallingStack') {
+        mesh = createStackMesh(colorTop, colorBot);
+      } else if (type === 'invStack') {
+        mesh = createInvertedWallStackMesh();
+      } else if (type === 'pin') {
+        mesh = createPinMesh(colorTop, colorBot);
+      } else if (type === 'cup') {
+        mesh = isInverted ? createInvertedCupMesh() : createCupMesh();
+      }
+
+      if (!isVertical && type !== 'invStack' && type !== 'fallingStack') {
+        mesh.rotation.z = Math.PI / 2;
+        mesh.position.y = 0.035;
+      }
+
+      objGroup.add(mesh);
+      scene.add(objGroup);
+
+      const dynObj = {
+        id: Math.random().toString(36).substr(2, 9),
+        type: type,
+        group: objGroup,
+        mesh: mesh,
+        x: x,
+        y: configOpts.y || 0,
+        z: z,
+        vx: configOpts.vx || 0,
+        vy: configOpts.vy || 0,
+        vz: configOpts.vz || 0,
+        tiltAngle: isVertical ? 0 : Math.PI / 2,
+        isVertical: isVertical,
+        isInverted: isInverted,
+        isDropping: configOpts.isDropping || false,
+        releaseImmunityTimer: configOpts.releaseImmunityTimer || 0,
+        radius: isVertical ? 0.048 : 0.080,
+        colorTop: colorTop,
+        colorBot: colorBot
+      };
+
+      dynamicObjects.push(dynObj);
+      return dynObj;
+    }
+
+    // =========================================================================
+    // ACCURATE OFFICIAL HIGH STAKES FIELD INITIAL SETUP
+    // =========================================================================
+
+    // 1. FOUR FLOWER PARTS (FLOWER CENTER CUPS ARE STANDARD UPRIGHT CUPS)
+    const flowerPositions = [
+      { x: -S * 2.2, z:  S * 2.2 },
+      { x: -S * 1.3, z:  S * 1.3 },
+      { x:  S * 1.3, z: -S * 1.3 },
+      { x:  S * 2.2, z: -S * 2.2 }
+    ];
+
+    flowerPositions.forEach(fl => {
+      spawnDynamicObject('cup', fl.x, fl.z, { isVertical: true, isInverted: false });
+
+      const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+      const pinDist = 0.18;
+
+      angles.forEach(ang => {
+        const px = fl.x + Math.cos(ang) * pinDist;
+        const pz = fl.z + Math.sin(ang) * pinDist;
+
+        const isRedSide = (pz + px >= 0);
+        const outerColor = isRedSide ? COLOR_RED : COLOR_BLUE;
+
+        const p = spawnDynamicObject('pin', px, pz, {
+          isVertical: false,
+          colorTop: COLOR_YELLOW,
+          colorBot: outerColor
+        });
+
+        p.mesh.rotation.x = 0;
+        p.mesh.rotation.y = ang + Math.PI;
+        p.mesh.rotation.z = Math.PI / 2;
+      });
+    });
+
+    // 2. VERTICES OF THE CENTER LITTLE WHITE SQUARE
+    const centerSquareVertices = [
+      { x: 0,  z:  S, top: COLOR_RED,  bot: COLOR_BLUE },
+      { x: -S, z:  0, top: COLOR_BLUE, bot: COLOR_RED },
+      { x: 0,  z: -S, top: COLOR_BLUE, bot: COLOR_RED },
+      { x: S,  z:  0, top: COLOR_RED,  bot: COLOR_BLUE }
+    ];
+
+    centerSquareVertices.forEach(v => {
+      spawnDynamicObject('stack', v.x, v.z, {
+        isVertical: true,
+        colorTop: v.top,
+        colorBot: v.bot
+      });
+    });
+
+    // 3. WALL GOAL STACKS - BEHIND EACH GOAL
+    const WALL_TOUCH = HALF_FIELD - 0.0675;
+
+    const wallGoalLocations = [
+      { x: -1 * S, z:  WALL_TOUCH, axis: 'X' },
+      { x:  1 * S, z:  WALL_TOUCH, axis: 'X' },
+      { x: -1 * S, z: -WALL_TOUCH, axis: 'X' },
+      { x:  1 * S, z: -WALL_TOUCH, axis: 'X' },
+      { x: -WALL_TOUCH, z: -1 * S, axis: 'Z' },
+      { x: -WALL_TOUCH, z:  1 * S, axis: 'Z' },
+      { x:  WALL_TOUCH, z: -1 * S, axis: 'Z' },
+      { x:  WALL_TOUCH, z:  1 * S, axis: 'Z' }
+    ];
+
+    wallGoalLocations.forEach(loc => {
+      spawnDynamicObject('invStack', loc.x, loc.z, { isVertical: true, isInverted: true });
+
+      const sideOffset = 0.14;
+      const dx = (loc.axis === 'X') ? sideOffset : 0;
+      const dz = (loc.axis === 'Z') ? sideOffset : 0;
+
+      spawnDynamicObject('cup', loc.x + dx, loc.z + dz, { isVertical: true, isInverted: true });
+      spawnDynamicObject('cup', loc.x - dx, loc.z - dz, { isVertical: true, isInverted: true });
+    });
+
+    // 4. ALLIANCE GOAL STACKS
+    const allianceGoalStacks = [
+      { x: 1 * S, z: 1 * S },
+      { x: 2 * S, z: 2 * S },
+      { x: -1 * S, z: -1 * S },
+      { x: -2 * S, z: -2 * S }
+    ];
+
+    allianceGoalStacks.forEach(ag => {
+      spawnDynamicObject('stack', ag.x, ag.z, {
+        isVertical: true,
+        colorTop: COLOR_YELLOW,
+        colorBot: COLOR_YELLOW
+      });
+    });
+
+    // --- DRIVETRAIN & ROBOT ASSEMBLY ---
+    const robotGroup = new THREE.Group();
+    robotGroup.position.y = FIELD_RAISE_HEIGHT;
+    scene.add(robotGroup);
+
+    const vexCChannelMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.85, roughness: 0.25 });
+    const highStrengthShaftMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.90, roughness: 0.20 });
+    const whiteFlexWheelMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.85, metalness: 0.05 });
+    const delrinMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.15, metalness: 0.1 });
+
+    const OUT_CH_LEN = 0.381;
+    const INN_CH_LEN = 0.3556;
+    const INNER_GAP = 0.2413;
+    const SIDE_SPACING = 0.0508;
+
+    const rightInnerZ = INNER_GAP / 2;
+    const rightOuterZ = rightInnerZ + SIDE_SPACING;
+    const leftInnerZ = -INNER_GAP / 2;
+    const leftOuterZ = leftInnerZ - SIDE_SPACING;
+
+    function createCChannelMesh(lengthMeters, widthMeters = 0.025, depthMeters = 0.025) {
+      const group = new THREE.Group();
+      const wallThick = 0.002;
+
+      const backGeo = new THREE.BoxGeometry(lengthMeters, depthMeters, wallThick);
+      const backMesh = new THREE.Mesh(backGeo, vexCChannelMat);
+      backMesh.castShadow = true;
+      group.add(backMesh);
+
+      const flangeGeo = new THREE.BoxGeometry(lengthMeters, wallThick, widthMeters);
+      const topFlange = new THREE.Mesh(flangeGeo, vexCChannelMat);
+      topFlange.position.set(0, depthMeters / 2 - wallThick / 2, widthMeters / 2 - wallThick / 2);
+      topFlange.castShadow = true;
+      group.add(topFlange);
+
+      const botFlange = new THREE.Mesh(flangeGeo, wallThick, widthMeters);
+      botFlange.position.set(0, -depthMeters / 2 + wallThick / 2, widthMeters / 2 - wallThick / 2);
+      botFlange.castShadow = true;
+      group.add(botFlange);
+
+      return group;
+    }
+
+    function createLChannelMesh(lengthMeters, widthMeters = 0.018, depthMeters = 0.018) {
+      const group = new THREE.Group();
+      const wallThick = 0.002;
+
+      const f1Geo = new THREE.BoxGeometry(lengthMeters, wallThick, widthMeters);
+      const f1 = new THREE.Mesh(f1Geo, vexCChannelMat);
+      f1.position.set(0, depthMeters / 2 - wallThick / 2, 0);
+      f1.castShadow = true;
+      group.add(f1);
+
+      const f2Geo = new THREE.BoxGeometry(lengthMeters, depthMeters, wallThick);
+      const f2 = new THREE.Mesh(f2Geo, vexCChannelMat);
+      f2.position.set(0, 0, widthMeters / 2 - wallThick / 2);
+      f2.castShadow = true;
+      group.add(f2);
+
+      return group;
+    }
+
+    function create48TGearMesh() {
+      const group = new THREE.Group();
+      const gearRadius = 0.030;
+      const gearThick = 0.007;
+
+      const gearMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4, metalness: 0.6 });
+
+      const discGeo = new THREE.CylinderGeometry(gearRadius, gearRadius, gearThick, 32);
+      const discMesh = new THREE.Mesh(discGeo, gearMat);
+      discMesh.rotation.x = Math.PI / 2;
+      discMesh.castShadow = true;
+      group.add(discMesh);
+
+      const hubGeo = new THREE.BoxGeometry(0.012, 0.012, gearThick + 0.002);
+      const hubMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.8 });
+      const hubMesh = new THREE.Mesh(hubGeo, hubMat);
+      group.add(hubMesh);
+
+      const teethCount = 16;
+      const toothGeo = new THREE.BoxGeometry(0.004, 0.005, gearThick);
+      for (let i = 0; i < teethCount; i++) {
+        const ang = (i / teethCount) * Math.PI * 2;
+        const tooth = new THREE.Mesh(toothGeo, gearMat);
+        tooth.position.set(Math.cos(ang) * (gearRadius + 0.002), Math.sin(ang) * (gearRadius + 0.002), 0);
+        tooth.rotation.z = ang;
+        group.add(tooth);
+      }
+
+      const holeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
+      for (let i = 0; i < 4; i++) {
+        const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
+        const hMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, gearThick + 0.003, 12), holeMat);
+        hMesh.rotation.x = Math.PI / 2;
+        hMesh.position.set(Math.cos(ang) * 0.016, Math.sin(ang) * 0.016, 0);
+        group.add(hMesh);
+      }
+
+      return group;
+    }
+
+    const chassisGroup = new THREE.Group();
+    chassisGroup.position.y = 0.04;
+    robotGroup.add(chassisGroup);
+
+    const rightOuterMesh = createCChannelMesh(OUT_CH_LEN);
+    rightOuterMesh.position.set(0, 0, rightOuterZ);
+    chassisGroup.add(rightOuterMesh);
+
+    const rightInnerMesh = createCChannelMesh(INN_CH_LEN);
+    rightInnerMesh.position.set(0, 0, rightInnerZ);
+    chassisGroup.add(rightInnerMesh);
+
+    const endConnGeo = new THREE.BoxGeometry(0.025, 0.025, SIDE_SPACING);
+    const rightFrontCap = new THREE.Mesh(endConnGeo, vexCChannelMat);
+    rightFrontCap.position.set(-OUT_CH_LEN / 2 + 0.0125, 0, (rightOuterZ + rightInnerZ) / 2);
+    chassisGroup.add(rightFrontCap);
+
+    const rightRearCap = new THREE.Mesh(endConnGeo, vexCChannelMat);
+    rightRearCap.position.set(OUT_CH_LEN / 2 - 0.0125, 0, (rightOuterZ + rightInnerZ) / 2);
+    chassisGroup.add(rightRearCap);
+
+    const leftOuterMesh = createCChannelMesh(OUT_CH_LEN);
+    leftOuterMesh.position.set(0, 0, leftOuterZ);
+    chassisGroup.add(leftOuterMesh);
+
+    const leftInnerMesh = createCChannelMesh(INN_CH_LEN);
+    leftInnerMesh.position.set(0, 0, leftInnerZ);
+    chassisGroup.add(leftInnerMesh);
+
+    const leftFrontCap = new THREE.Mesh(endConnGeo, vexCChannelMat);
+    leftFrontCap.position.set(-OUT_CH_LEN / 2 + 0.0125, 0, (leftOuterZ + leftInnerZ) / 2);
+    chassisGroup.add(leftFrontCap);
+
+    const leftRearCap = new THREE.Mesh(endConnGeo, vexCChannelMat);
+    leftRearCap.position.set(OUT_CH_LEN / 2 - 0.0125, 0, (leftOuterZ + leftInnerZ) / 2);
+    chassisGroup.add(leftRearCap);
+
+    const frontCrossX = -OUT_CH_LEN / 2 + 0.1016;
+    const frontCrossGeo = new THREE.BoxGeometry(0.025, 0.025, INNER_GAP + 0.025);
+    const frontCrossMesh = new THREE.Mesh(frontCrossGeo, vexCChannelMat);
+    frontCrossMesh.position.set(frontCrossX, 0, 0);
+    frontCrossMesh.castShadow = true;
+    chassisGroup.add(frontCrossMesh);
+
+    const rearCrossX = OUT_CH_LEN / 2 - 0.015;
+    const hsShaftGeo = new THREE.CylinderGeometry(0.006, 0.006, leftOuterZ - rightOuterZ, 6);
+    const rearShaftMesh = new THREE.Mesh(hsShaftGeo, highStrengthShaftMat);
+    rearShaftMesh.rotation.x = Math.PI / 2;
+    rearShaftMesh.position.set(rearCrossX, 0, 0);
+    rearShaftMesh.castShadow = true;
+    chassisGroup.add(rearShaftMesh);
+
+    // STRUCTURAL DELRIN ALIGNER
+    const alignerGroup = new THREE.Group();
+    const alignerXOffset = -0.180;
+    const alignerRadius = BASE_RADIUS + 0.006;
+
+    const alignerArcSweep = Math.PI * 1.15;
+    const alignerRingGeo = new THREE.TorusGeometry(alignerRadius, 0.008, 12, 24, alignerArcSweep);
+    const alignerRingMesh = new THREE.Mesh(alignerRingGeo, delrinMat);
+    alignerRingMesh.rotation.x = Math.PI / 2;
+    alignerRingMesh.rotation.z = -alignerArcSweep / 2;
+    alignerRingMesh.position.set(alignerXOffset, 0.015, 0);
+    alignerRingMesh.castShadow = true;
+    alignerGroup.add(alignerRingMesh);
+
+    const chassisFrontEdge = -OUT_CH_LEN / 2 + 0.0125;
+    const strutLen = Math.abs(alignerXOffset - frontCrossX);
+    const strutGeo = new THREE.BoxGeometry(strutLen, 0.015, 0.018);
+
+    const leftStrutMesh = new THREE.Mesh(strutGeo, vexCChannelMat);
+    leftStrutMesh.position.set(frontCrossX - strutLen / 2, 0.015, alignerRadius - 0.012);
+    leftStrutMesh.castShadow = true;
+    alignerGroup.add(leftStrutMesh);
+
+    const rightStrutMesh = new THREE.Mesh(strutGeo, vexCChannelMat);
+    rightStrutMesh.position.set(frontCrossX - strutLen / 2, 0.015, -alignerRadius + 0.012);
+    rightStrutMesh.castShadow = true;
+    alignerGroup.add(rightStrutMesh);
+
+    const gussetGeo = new THREE.BoxGeometry(0.015, 0.022, alignerRadius * 2 + 0.010);
+    const gussetMesh = new THREE.Mesh(gussetGeo, vexCChannelMat);
+    gussetMesh.position.set(chassisFrontEdge, 0.015, 0);
+    gussetMesh.castShadow = true;
+    alignerGroup.add(gussetMesh);
+
+    const standoffGeo = new THREE.CylinderGeometry(0.004, 0.004, 0.025, 8);
+    const standoffMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.9, roughness: 0.2 });
+
+    const standoffLeft = new THREE.Mesh(standoffGeo, standoffMat);
+    standoffLeft.position.set(alignerXOffset + 0.015, 0.015, alignerRadius - 0.008);
+    alignerGroup.add(standoffLeft);
+
+    const standoffRight = new THREE.Mesh(standoffGeo, standoffMat);
+    standoffRight.position.set(alignerXOffset + 0.015, 0.015, -alignerRadius + 0.008);
+    alignerGroup.add(standoffRight);
+
+    chassisGroup.add(alignerGroup);
+
+    const wheelRadius = (2.75 * 0.0254) / 2;
+    const wheelThick = 0.022;
+    const wheelGeo = new THREE.CylinderGeometry(wheelRadius, wheelRadius, wheelThick, 18);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.4 });
+
+    const wheelPositionsX = [-0.13, 0.0, 0.13];
+    const rightWheelZ = (rightOuterZ + rightInnerZ) / 2;
+    const leftWheelZ = (leftOuterZ + leftInnerZ) / 2;
+
+    wheelPositionsX.forEach(wx => {
+      const rw = new THREE.Mesh(wheelGeo, wheelMat);
+      rw.rotation.x = Math.PI / 2;
+      rw.position.set(wx, 0, rightWheelZ);
+      rw.castShadow = true;
+      chassisGroup.add(rw);
+
+      const lw = new THREE.Mesh(wheelGeo, wheelMat);
+      lw.rotation.x = Math.PI / 2;
+      lw.position.set(wx, 0, leftWheelZ);
+      lw.castShadow = true;
+      chassisGroup.add(lw);
+    });
+
+    // --- CASCADE LIFT ASSEMBLY ---
+    const cascadeMountGroup = new THREE.Group();
+    cascadeMountGroup.position.set(0.02, 0.05, 0);
+    cascadeMountGroup.rotation.y = Math.PI / 2;
+    robotGroup.add(cascadeMountGroup);
+
+    function createTwinTowerMesh(cWidth, cDepth, cHeight, spacingX) {
+      const group = new THREE.Group();
+      const channelGeo = new THREE.BoxGeometry(cWidth, cHeight, cDepth);
+
+      const leftCh = new THREE.Mesh(channelGeo, vexCChannelMat);
+      leftCh.position.set(-spacingX / 2, cHeight / 2, 0);
+      leftCh.castShadow = true;
+      group.add(leftCh);
+
+      const rightCh = new THREE.Mesh(channelGeo, vexCChannelMat);
+      rightCh.position.set(spacingX / 2, cHeight / 2, 0);
+      rightCh.castShadow = true;
+      group.add(rightCh);
+
+      const crossGeo = new THREE.BoxGeometry(spacingX + cWidth, 0.025, 0.015);
+      const topCross = new THREE.Mesh(crossGeo, vexCChannelMat);
+      topCross.position.set(0, cHeight - 0.02, 0);
+      group.add(topCross);
+
+      const botCross = new THREE.Mesh(crossGeo, vexCChannelMat);
+      botCross.position.set(0, 0.02, 0);
+      group.add(botCross);
+
+      return group;
+    }
+
+    const stage0Group = createTwinTowerMesh(0.025, 0.025, STAGE_0_HEIGHT, TOWER_SPACING);
+    cascadeMountGroup.add(stage0Group);
+
+    const stage1Group = createTwinTowerMesh(0.025, 0.025, STAGE_1_HEIGHT, TOWER_SPACING);
+    stage1Group.position.set(0, 0, REAR_DEPTH_STAGE_OFFSET);
+    stage0Group.add(stage1Group);
+
+    const stage2Group = createTwinTowerMesh(0.025, 0.025, STAGE_2_HEIGHT, TOWER_SPACING);
+    stage2Group.position.set(0, 0, REAR_DEPTH_STAGE_OFFSET);
+    stage1Group.add(stage2Group);
+
+    const stage3Group = createTwinTowerMesh(0.025, 0.025, STAGE_3_HEIGHT, TOWER_SPACING);
+    stage3Group.position.set(0, 0, REAR_DEPTH_STAGE_OFFSET);
+    stage2Group.add(stage3Group);
+
+    // --- REAR LONG L-CHANNELS, CROSS C-CHANNEL & SYMMETRICAL 48T GEAR SPINNER ---
+    const rearSupportGroup = new THREE.Group();
+    robotGroup.add(rearSupportGroup);
+
+    const zPositions = [leftOuterZ, rightOuterZ];
+
+    const p1X = rearCrossX;
+    const p1Y = 0.04;
+    const p2X = 0.02;
+    const p2Y = 0.05 + STAGE_0_HEIGHT / 2;
+    const p3X = 0.16;
+    const p3Y = 0.46;
+
+    const segALen = Math.hypot(p2X - p1X, p2Y - p1Y);
+    const segAAng = Math.atan2(p2Y - p1Y, p2X - p1X);
+    const segBLen = Math.hypot(p3X - p2X, p3Y - p2Y);
+    const segBAng = Math.atan2(p3Y - p2Y, p3X - p2X);
+
+    zPositions.forEach(zPos => {
+      const segAMesh = createLChannelMesh(segALen);
+      segAMesh.position.set((p1X + p2X) / 2, (p1Y + p2Y) / 2, zPos);
+      segAMesh.rotation.z = segAAng;
+      rearSupportGroup.add(segAMesh);
+
+      const segBMesh = createLChannelMesh(segBLen);
+      segBMesh.position.set((p2X + p3X) / 2, (p2Y + p3Y) / 2, zPos);
+      segBMesh.rotation.z = segBAng;
+      rearSupportGroup.add(segBMesh);
+    });
+
+    const crossSpanLen = rightOuterZ - leftOuterZ;
+    const topCrossCChannel = createCChannelMesh(crossSpanLen);
+    topCrossCChannel.rotation.y = Math.PI / 2;
+    topCrossCChannel.position.set(p3X, p3Y, 0);
+    rearSupportGroup.add(topCrossCChannel);
+
+    const vertLChanLen = 0.12;
+    const vertLChanYMid = p3Y - vertLChanLen / 2;
+
+    let leftGearRotatingGroup, rightGearRotatingGroup;
+    const DOUBLE_SPINNER_BAR_LEN = 0.22;
+
+    zPositions.forEach((zPos, idx) => {
+      const vertLChan = createLChannelMesh(vertLChanLen);
+      vertLChan.rotation.z = -Math.PI / 2;
+      vertLChan.position.set(p3X, vertLChanYMid, zPos);
+      rearSupportGroup.add(vertLChan);
+
+      const gearYPos = p3Y - vertLChanLen + 0.02;
+      const gearZOffset = (zPos < 0) ? -0.010 : 0.010;
+
+      const gearRotGroup = new THREE.Group();
+      gearRotGroup.position.set(p3X, gearYPos, zPos + gearZOffset);
+
+      const gearMesh = create48TGearMesh();
+      gearRotGroup.add(gearMesh);
+
+      const extraLChan = createLChannelMesh(DOUBLE_SPINNER_BAR_LEN);
+      extraLChan.position.set(0, 0, gearZOffset * 0.8);
+      gearRotGroup.add(extraLChan);
+
+      rearSupportGroup.add(gearRotGroup);
+
+      if (idx === 0) leftGearRotatingGroup = gearRotGroup;
+      else rightGearRotatingGroup = gearRotGroup;
+    });
+
+    // --- COMPACT CLAW & CARRIAGE ---
+    const clawYPos = 0.06;
+    const PIVOT_SPACING = 0.14;
+
+    const stage3CrossBarGeo = new THREE.BoxGeometry(TOWER_SPACING + 0.03, 0.025, 0.025);
+    const stage3CrossBar = new THREE.Mesh(stage3CrossBarGeo, vexCChannelMat);
+    stage3CrossBar.position.set(0, clawYPos, -0.015);
+    stage3Group.add(stage3CrossBar);
+
+    const leftArmGroup = new THREE.Group();
+    leftArmGroup.position.set(-PIVOT_SPACING / 2, clawYPos, -0.015);
+    stage3Group.add(leftArmGroup);
+
+    const rightArmGroup = new THREE.Group();
+    rightArmGroup.position.set(PIVOT_SPACING / 2, clawYPos, -0.015);
+    stage3Group.add(rightArmGroup);
+
+    const lChannelLength = 0.12;
+    const lChannelGeo = new THREE.BoxGeometry(0.012, 0.010, lChannelLength);
+
+    const leftLChannelTop = new THREE.Mesh(lChannelGeo, vexCChannelMat);
+    leftLChannelTop.position.set(-0.008, 0.018, -lChannelLength / 2);
+    leftArmGroup.add(leftLChannelTop);
+
+    const rightLChannelTop = new THREE.Mesh(lChannelGeo, vexCChannelMat);
+    rightLChannelTop.position.set(0.008, 0.018, -lChannelLength / 2);
+    rightArmGroup.add(rightLChannelTop);
+
+    const flexWheelRadius = 0.030;
+    const flexWheelGeo = new THREE.CylinderGeometry(flexWheelRadius, flexWheelRadius, 0.014, 16);
+
+    const leftFlexWheel1 = new THREE.Mesh(flexWheelGeo, whiteFlexWheelMat);
+    leftFlexWheel1.position.set(-0.008, 0.008, -lChannelLength);
+    leftArmGroup.add(leftFlexWheel1);
+
+    const rightFlexWheel1 = new THREE.Mesh(flexWheelGeo, whiteFlexWheelMat);
+    rightFlexWheel1.position.set(0.008, 0.008, -lChannelLength);
+    rightArmGroup.add(rightFlexWheel1);
+
+    const clawPayloadGroup = new THREE.Group();
+    clawPayloadGroup.position.set(0, clawYPos - 0.035, -0.135);
+    stage3Group.add(clawPayloadGroup);
+
+    // --- INITIAL SINGLE PIN PRELOAD AT SPAWN ---
+    function attachSpawnPreloadPin() {
+      clawPayloadGroup.clear();
+      const preloadPinMesh = createPinMesh(COLOR_YELLOW, COLOR_RED);
+      clawPayloadGroup.add(preloadPinMesh);
+
+      claw.heldStack = {
+        type: 'pin',
+        mesh: preloadPinMesh,
+        colorTop: COLOR_YELLOW,
+        colorBot: COLOR_RED,
+        isFromMatchload: false,
+        isInverted: false
+      };
+      claw.isOpen = false;
+      claw.targetPivotAngle = 0.08;
+    }
+
+    attachSpawnPreloadPin();
+
+    // BUMPER BOUNDING BOXES
+    const chassisSubBoxes = [
+      { minX: -0.24, maxX: OUT_CH_LEN / 2, minZ: rightInnerZ, maxZ: rightOuterZ },
+      { minX: -0.24, maxX: OUT_CH_LEN / 2, minZ: leftOuterZ, maxZ: leftInnerZ },
+      { minX: -0.24, maxX: frontCrossX + 0.01, minZ: leftInnerZ, maxZ: rightInnerZ },
+      { minX: rearCrossX - 0.01, maxX: rearCrossX + 0.01, minZ: leftOuterZ, maxZ: rightOuterZ }
+    ];
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+      if (tabId === 'driveTab') {
+        document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      } else {
+        document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      }
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    // --- GAME FLOW, COUNTDOWN & SKILLS SCORING LOGIC ---
+    function resetSimForMode(mode) {
+      gameMode = mode;
+      robot.x = START_X;
+      robot.z = START_Z;
+      robot.vx = 0;
+      robot.vz = 0;
+      robot.heading = START_HEADING;
+      robot.leftWheelSpeed = 0;
+      robot.rightWheelSpeed = 0;
+      robot.angularVelocity = 0;
+      cascadeLift.currentInches = 0.0;
+      cascadeLift.isAutoReturning = false;
+      gear48TState.angleRad = 0.0;
+      gear48TState.isRotating = false;
+      claw.isSpinning = false;
+      claw.isR2Held = false;
+      claw.intakingObject = null;
+      claw.intakeProgress = 0.0;
+      animatingScores.length = 0;
+
+      attachSpawnPreloadPin();
+      reloadMatchloaders();
+
+      // IN DRIVER SKILLS: NEUTRAL & CENTER GOALS START EMPTY (NO PRELOAD PIN)
+      // IN HEAD-TO-HEAD (FREEPLAY): NEUTRAL & CENTER GOALS START WITH PRELOAD PIN
+      const isSkills = (mode === 'skills' || mode === 'countdown');
+      goalsList.forEach(goal => {
+        resetGoalContents(goal, !isSkills);
+      });
+
+      wallTogglesList.forEach(tgl => {
+        tgl.currentAngle = 0.0;
+        tgl.targetAngle = 0.0;
+        tgl.strikeCount = 0;
+        tgl.lastHitTipIndex = -1;
+        tgl.rollerGroup.rotation.x = 0.0;
+      });
+      serialAxes = { lx: 0, ly: 0, rx: 0, ry: 0 };
+    }
+
+    function startSkillsMatch() {
+      resetSimForMode('countdown');
+      recordedMatchFrames = [];
+      recordSampleTimer = 0;
+      mainMenuOverlay.classList.add('hidden');
+      gameOverOverlay.classList.add('hidden');
+      replayHUD.classList.add('hidden');
+      countdownOverlay.classList.remove('hidden');
+
+      countdownRemaining = 3;
+      countdownOverlay.textContent = "3";
+      timerRemaining = 60.0;
+      updateTimerDisplay();
+
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      countdownInterval = setInterval(() => {
+        countdownRemaining--;
+        if (countdownRemaining > 0) {
+          countdownOverlay.textContent = countdownRemaining.toString();
+        } else if (countdownRemaining === 0) {
+          countdownOverlay.textContent = "GO!";
+        } else {
+          clearInterval(countdownInterval);
+          countdownOverlay.classList.add('hidden');
+          gameMode = 'skills';
+        }
+      }, 1000);
+    }
+
+    function startFreeplayMatch() {
+      resetSimForMode('freeplay');
+      mainMenuOverlay.classList.add('hidden');
+      gameOverOverlay.classList.add('hidden');
+      countdownOverlay.classList.add('hidden');
+      replayHUD.classList.add('hidden');
+      timerRemaining = 60.0;
+      updateTimerDisplay();
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(timerRemaining / 60);
+      const secs = (timerRemaining % 60).toFixed(1);
+      const secsStr = secs < 10 ? '0' + secs : secs;
+      timerText.textContent = `0${mins}:${secsStr}`;
+    }
+
+    function checkRobotPlaneBreakMiddle() {
+      const centerTileHalfSize = S / 2; // 0.3048m
+      const rx = Math.abs(robot.x);
+      const rz = Math.abs(robot.z);
+      return (rx <= centerTileHalfSize + 0.18) && (rz <= centerTileHalfSize + 0.18);
+    }
+
+    function endSkillsMatch() {
+      gameMode = 'gameover';
+      timerRemaining = 0.0;
+      updateTimerDisplay();
+
+      const isParked = checkRobotPlaneBreakMiddle();
+
+      let quadYellowCount = 0;
+      let visibleRedCount = 0;
+      let midYellowCount = 0;
+      let midRedCount = 0;
+
+      goalsList.forEach(goal => {
+        const isMidGoal = (goal.type === 'center');
+        const quadIndex = goal.quadrant;
+        const matchingToggle = wallTogglesList.find(t => t.quadIndex === quadIndex);
+        const isRedActive = matchingToggle ? isToggleRedActive(matchingToggle) : false;
+
+        goal.scoredPins.forEach(pin => {
+          if (isMidGoal) {
+            if (isParked) {
+              if (pin.colorTop === COLOR_YELLOW) midYellowCount++;
+              if (pin.colorTop === COLOR_RED) midRedCount++;
+            }
+          } else {
+            if (pin.colorTop === COLOR_YELLOW && isRedActive) {
+              quadYellowCount++;
+            }
+            if (pin.colorTop === COLOR_RED) {
+              visibleRedCount++;
+            }
+          }
+        });
+      });
+
+      const ptsQuadYellow = quadYellowCount * 10;
+      const ptsVisibleRed = visibleRedCount * 5;
+      const ptsMidYellow = midYellowCount * 10;
+      const ptsMidRed = midRedCount * 5;
+      const ptsPark = isParked ? 8 : 0;
+
+      const totalScore = ptsQuadYellow + ptsVisibleRed + ptsMidYellow + ptsMidRed + ptsPark;
+
+      scoreQuadYellow.textContent = `${quadYellowCount} x 10 = ${ptsQuadYellow}`;
+      scoreVisibleRed.textContent = `${visibleRedCount} x 5 = ${ptsVisibleRed}`;
+      scoreMidYellow.textContent = `${midYellowCount} x 10 = ${ptsMidYellow}`;
+      scoreMidRed.textContent = `${midRedCount} x 5 = ${ptsMidRed}`;
+      scorePark.textContent = `${ptsPark} pts`;
+      scoreTotal.textContent = `${totalScore} PTS`;
+
+      gameOverOverlay.classList.remove('hidden');
+    }
+
+    function startReplayPlayback() {
+      if (recordedMatchFrames.length === 0) return;
+      gameMode = 'replay';
+      replayPlaybackTime = 0;
+      gameOverOverlay.classList.add('hidden');
+      replayHUD.classList.remove('hidden');
+    }
+
+    function stopReplayPlayback() {
+      gameMode = 'gameover';
+      replayHUD.classList.add('hidden');
+      gameOverOverlay.classList.remove('hidden');
+    }
+
+    btnStartSkills.addEventListener('click', startSkillsMatch);
+    btnStartFreeplay.addEventListener('click', startFreeplayMatch);
+    btnWatchReplay.addEventListener('click', startReplayPlayback);
+    btnReplaySkills.addEventListener('click', startSkillsMatch);
+    btnExitReplay.addEventListener('click', stopReplayPlayback);
+    btnReturnMenu.addEventListener('click', () => {
+      gameMode = 'menu';
+      mainMenuOverlay.classList.remove('hidden');
+      gameOverOverlay.classList.add('hidden');
+      countdownOverlay.classList.add('hidden');
+      replayHUD.classList.add('hidden');
+    });
+
+    window.addEventListener('gamepadconnected', (e) => {
+      gamepadIndex = e.gamepad.index;
+      statusBadge.textContent = `Gamepad Connected`;
+      statusBadge.classList.add('status-connected');
+    });
+
+    window.addEventListener('gamepaddisconnected', (e) => {
+      if (gamepadIndex === e.gamepad.index) {
+        gamepadIndex = null;
+        statusBadge.textContent = 'Controller Disconnected';
+        statusBadge.classList.remove('status-connected');
+      }
+    });
+
+    connectSerialBtn.addEventListener('click', async () => {
+      if (!('serial' in navigator)) {
+        alert("Web Serial API is not supported on this browser. Please use Chrome or Edge.");
+        return;
+      }
+
+      try {
+        serialPort = await navigator.serial.requestPort();
+        await serialPort.open({ baudRate: 115200 });
+
+        statusBadge.textContent = 'VEX Serial Connected';
+        statusBadge.classList.add('status-connected');
+        connectSerialBtn.textContent = 'Serial Active';
+        connectSerialBtn.disabled = true;
+
+        readSerialData();
+      } catch (err) {
+        console.error("Serial Connection Failed:", err);
+      }
+    });
+
+    async function readSerialData() {
+      const textDecoder = new TextDecoderStream();
+      const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+      serialReader = textDecoder.readable.getReader();
+      let buffer = "";
+
+      try {
+        while (true) {
+          const { value, done } = await serialReader.read();
+          if (done) break;
+          if (value) {
+            buffer += value;
+            let lines = buffer.split('\n');
+            buffer = lines.pop();
+            for (let line of lines) {
+              parseVexSerialLine(line.trim());
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Serial Read Error:", err);
+      }
+    }
+
+    function parseVexSerialLine(line) {
+      const parts = line.split(',');
+      if (parts.length >= 4) {
+        serialAxes.lx = applyDeadzone(parseFloat(parts[0]) / 100 || 0);
+        serialAxes.ly = applyDeadzone(parseFloat(parts[1]) / 100 || 0);
+        serialAxes.rx = applyDeadzone(parseFloat(parts[2]) / 100 || 0);
+        serialAxes.ry = applyDeadzone(parseFloat(parts[3]) / 100 || 0);
+      }
+    }
+
+    function applyDeadzone(val, threshold = 0.12) {
+      return Math.abs(val) < threshold ? 0 : val;
+    }
+
+    function processInputs() {
+      if (gameMode === 'countdown' || gameMode === 'gameover' || gameMode === 'menu' || gameMode === 'replay') {
+        return { targetLeftSpeed: 0, targetRightSpeed: 0, btnL2Held: false, btnL1Held: false, btnBBPressed: false, btnGearDown: false };
+      }
+
+      let axisLX = 0, axisLY = 0, axisRX = 0, axisRY = 0;
+      let btnL2Held = false;
+      let btnL1Held = false;
+      let btnBBPressed = false;
+      let btnGearDown = false;
+
+      if (serialPort) {
+        axisLX = serialAxes.lx;
+        axisLY = serialAxes.ly;
+        axisRX = serialAxes.rx;
+        axisRY = serialAxes.ry;
+      } else if (gamepadIndex !== null) {
+        const gp = navigator.getGamepads()[gamepadIndex];
+        if (gp) {
+          axisLX = applyDeadzone(gp.axes[0] || 0);
+          axisLY = applyDeadzone(gp.axes[1] || 0);
+          axisRX = applyDeadzone(gp.axes[2] || 0);
+          axisRY = applyDeadzone(gp.axes[3] || 0);
+
+          btnL2Held = gp.buttons[6]?.pressed || false;
+          btnL1Held = gp.buttons[4]?.pressed || false;
+          btnBBPressed = gp.buttons[0]?.pressed || false;
+          btnGearDown = gp.buttons[13]?.pressed || false;
+
+          if (gp.buttons[7]?.pressed) {
+            claw.isOpen = true;
+            claw.isR2Held = true;
+            claw.targetPivotAngle = 0.35;
+          } else {
+            if (!keys.e) claw.isR2Held = false;
+          }
+
+          if (gp.buttons[5]?.pressed) {
+            triggerRelease();
+          }
+        }
+      }
+
+      if (keys.r || cascadeLift.isManualUp) btnL2Held = true;
+      if (keys.f || cascadeLift.isManualDown) btnL1Held = true;
+      if (keys.arrowDown || gear48TState.isRotating) btnGearDown = true;
+
+      const forward = -axisLY;
+      const turn = -axisRX * config.turnSensitivity;
+
+      let targetLeftPct = Math.max(-1.0, Math.min(1.0, forward + turn));
+      let targetRightPct = Math.max(-1.0, Math.min(1.0, forward - turn));
+
+      if (Math.abs(targetLeftPct) < 0.01) targetLeftPct = 0;
+      if (Math.abs(targetRightPct) < 0.01) targetRightPct = 0;
+
+      return {
+        targetLeftSpeed: targetLeftPct * config.maxLinearSpeed,
+        targetRightSpeed: targetRightPct * config.maxLinearSpeed,
+        btnL2Held,
+        btnL1Held,
+        btnBBPressed,
+        btnGearDown
+      };
+    }
+
+    function renderGoalReplayEntries(goal, entries) {
+      while (goal.goalGroup.children.length > 6) {
+        goal.goalGroup.remove(goal.goalGroup.children[goal.goalGroup.children.length - 1]);
+      }
+      entries.forEach(entry => {
+        let m;
+        if (entry.type === 'pin') m = createPinMesh(entry.colorTop, entry.colorBot);
+        else if (entry.type === 'cup') m = entry.isInverted ? createInvertedCupMesh() : createCupMesh();
+        else if (entry.type === 'invStack') m = createInvertedWallStackMesh();
+        else m = createStackMesh(entry.colorTop, entry.colorBot);
+        m.position.y = entry.targetY;
+        goal.goalGroup.add(m);
+      });
+    }
+
+    function updatePhysics(dt, targets) {
+      if (dt <= 0) return;
+
+      // REPLAY PLAYBACK ENGINE
+      if (gameMode === 'replay') {
+        replayPlaybackTime += dt;
+        if (replayPlaybackTime >= 60.0 || recordedMatchFrames.length === 0) {
+          stopReplayPlayback();
+          return;
+        }
+
+        timerRemaining = Math.max(0.0, 60.0 - replayPlaybackTime);
+        updateTimerDisplay();
+
+        let frame = recordedMatchFrames[0];
+        for (let f = 0; f < recordedMatchFrames.length; f++) {
+          if (recordedMatchFrames[f].time <= replayPlaybackTime) {
+            frame = recordedMatchFrames[f];
+          } else {
+            break;
+          }
+        }
+
+        // Apply Frame Pose to 3D Scene
+        robot.x = frame.robot.x;
+        robot.z = frame.robot.z;
+        robot.heading = frame.robot.heading;
+
+        cascadeLift.currentInches = frame.liftInches;
+        const liftRatio = cascadeLift.currentInches / MAX_LIFT_INCHES;
+        stage1Group.position.y = (12.0 * 0.0254) * liftRatio;
+        stage2Group.position.y = (12.0 * 0.0254) * liftRatio;
+        stage3Group.position.y = (10.0 * 0.0254) * liftRatio;
+
+        claw.currentPivotAngle = frame.clawAngle;
+        leftArmGroup.rotation.y = -claw.currentPivotAngle;
+        rightArmGroup.rotation.y = claw.currentPivotAngle;
+
+        gear48TState.angleRad = frame.gearAngle;
+        leftGearRotatingGroup.rotation.z = gear48TState.angleRad;
+        rightGearRotatingGroup.rotation.z = gear48TState.angleRad;
+
+        wallTogglesList.forEach((tgl, idx) => {
+          tgl.rollerGroup.rotation.x = frame.toggles[idx];
+        });
+
+        loadersList.forEach((ldr, idx) => {
+          ldr.chuteGroup.position.y = frame.loaders[idx].currentLift;
+          ldr.itemGroup.visible = frame.loaders[idx].visible;
+        });
+
+        // Recreate Payload Mesh
+        clawPayloadGroup.clear();
+        if (frame.held) {
+          let heldMesh;
+          if (frame.held.type === 'pin') heldMesh = createPinMesh(frame.held.colorTop, frame.held.colorBot);
+          else if (frame.held.type === 'cup') heldMesh = frame.held.isInverted ? createInvertedCupMesh() : createCupMesh();
+          else heldMesh = frame.held.isInverted ? createInvertedWallStackMesh() : createStackMesh(frame.held.colorTop, frame.held.colorBot);
+          clawPayloadGroup.add(heldMesh);
+        }
+
+        // Recreate Dynamic Objects
+        dynamicObjects.forEach(d => scene.remove(d.group));
+        dynamicObjects.length = 0;
+
+        frame.dynObjs.forEach(dData => {
+          spawnDynamicObject(dData.type, dData.x, dData.z, {
+            y: dData.y,
+            colorTop: dData.colorTop,
+            colorBot: dData.colorBot,
+            isInverted: dData.isInverted,
+            isVertical: dData.isVertical
+          });
+        });
+
+        // Recreate Goals
+        goalsList.forEach(goal => {
+          const gFrame = frame.goals.find(g => g.id === goal.id);
+          if (gFrame) {
+            renderGoalReplayEntries(goal, gFrame.entries);
+          }
+        });
+
+        robotGroup.position.set(robot.x, FIELD_RAISE_HEIGHT, robot.z);
+        robotGroup.rotation.y = -robot.heading;
+        return;
+      }
+
+      // SKILLS MATCH RECORDING
+      if (gameMode === 'skills') {
+        timerRemaining = Math.max(0.0, timerRemaining - dt);
+        updateTimerDisplay();
+
+        recordSampleTimer += dt;
+        if (recordSampleTimer >= 0.033) { // 30 FPS Sampling
+          recordSampleTimer = 0;
+          recordedMatchFrames.push({
+            time: 60.0 - timerRemaining,
+            robot: { x: robot.x, z: robot.z, heading: robot.heading },
+            liftInches: cascadeLift.currentInches,
+            clawAngle: claw.currentPivotAngle,
+            gearAngle: gear48TState.angleRad,
+            toggles: wallTogglesList.map(t => t.currentAngle),
+            loaders: loadersList.map(l => ({ currentLift: l.currentLift, visible: l.itemGroup.visible })),
+            held: claw.heldStack ? {
+              type: claw.heldStack.type,
+              colorTop: claw.heldStack.colorTop,
+              colorBot: claw.heldStack.colorBot,
+              isInverted: claw.heldStack.isInverted || false
+            } : null,
+            dynObjs: dynamicObjects.map(d => ({
+              type: d.type, x: d.x, y: d.y, z: d.z,
+              tiltAngle: d.tiltAngle, isVertical: d.isVertical,
+              colorTop: d.colorTop, colorBot: d.colorBot, isInverted: d.isInverted
+            })),
+            goals: goalsList.map(g => ({
+              id: g.id,
+              entries: JSON.parse(JSON.stringify(g.scoredStackEntries || []))
+            }))
+          });
+        }
+
+        if (timerRemaining <= 0.0) {
+          endSkillsMatch();
+        }
+      }
+
+      // ANIMATED STACKING DROP INTERPOLATION
+      for (let i = animatingScores.length - 1; i >= 0; i--) {
+        const anim = animatingScores[i];
+        anim.currentY -= anim.speed * dt;
+        if (anim.currentY <= anim.targetY) {
+          anim.currentY = anim.targetY;
+          animatingScores.splice(i, 1);
+        }
+        anim.mesh.position.y = anim.currentY;
+      }
+
+      // 48T GEAR ROTATION
+      if (targets.btnGearDown) {
+        gear48TState.angleRad += GEAR_ROTATE_SPEED_RAD_PER_SEC * dt;
+      }
+      leftGearRotatingGroup.rotation.z = gear48TState.angleRad;
+      rightGearRotatingGroup.rotation.z = gear48TState.angleRad;
+
+      leftGearRotatingGroup.updateMatrixWorld(true);
+      rightGearRotatingGroup.updateMatrixWorld(true);
+
+      // ALL-ANGLE TOGGLE ROTATION
+      const tipRadius = DOUBLE_SPINNER_BAR_LEN / 2;
+
+      const leftTip0  = new THREE.Vector3( tipRadius, 0, 0).applyMatrix4(leftGearRotatingGroup.matrixWorld);
+      const leftTip1  = new THREE.Vector3(-tipRadius, 0, 0).applyMatrix4(leftGearRotatingGroup.matrixWorld);
+
+      const rightTip0 = new THREE.Vector3( tipRadius, 0, 0).applyMatrix4(rightGearRotatingGroup.matrixWorld);
+      const rightTip1 = new THREE.Vector3(-tipRadius, 0, 0).applyMatrix4(rightGearRotatingGroup.matrixWorld);
+
+      const spinnerTipsWorld = [
+        { tipIndex: 0, pos: leftTip0 },
+        { tipIndex: 1, pos: leftTip1 },
+        { tipIndex: 0, pos: rightTip0 },
+        { tipIndex: 1, pos: rightTip1 }
+      ];
+
+      wallTogglesList.forEach(tgl => {
+        tgl.currentAngle += (tgl.targetAngle - tgl.currentAngle) * Math.min(1.0, 25.0 * dt);
+        tgl.rollerGroup.rotation.x = tgl.currentAngle;
+
+        let isAnyTipInContact = false;
+
+        for (let i = 0; i < spinnerTipsWorld.length; i++) {
+          const item = spinnerTipsWorld[i];
+          const tip = item.pos;
+          let dist = 999.0;
+
+          if (tgl.axisAligned === 'X') {
+            if (Math.abs(tip.x - tgl.x) <= tgl.length / 2 + 0.06) {
+              dist = Math.hypot(tip.y - tgl.y, tip.z - tgl.z);
+            }
+          } else {
+            if (Math.abs(tip.z - tgl.z) <= tgl.length / 2 + 0.06) {
+              dist = Math.hypot(tip.x - tgl.x, tip.y - tgl.y);
+            }
+          }
+
+          if (dist <= 0.095) {
+            isAnyTipInContact = true;
+
+            if (targets.btnGearDown) {
+              if (tgl.lastHitTipIndex !== item.tipIndex) {
+                tgl.strikeCount++;
+                tgl.targetAngle += (Math.PI * 2.0) / 3.0;
+                tgl.lastHitTipIndex = item.tipIndex;
+              }
+            }
+            break;
+          }
+        }
+
+        if (!isAnyTipInContact) {
+          tgl.lastHitTipIndex = -1;
+        }
+      });
+
+      // CASCADE LIFT MOVEMENT
+      if (targets.btnBBPressed) cascadeLift.isAutoReturning = true;
+
+      if (targets.btnL2Held) {
+        cascadeLift.isAutoReturning = false;
+        cascadeLift.currentInches = Math.min(MAX_LIFT_INCHES, cascadeLift.currentInches + LIFT_UP_SPEED_INCHES_PER_SEC * dt);
+      } else if (targets.btnL1Held) {
+        cascadeLift.isAutoReturning = false;
+        cascadeLift.currentInches = Math.max(0.0, cascadeLift.currentInches - LIFT_DOWN_SPEED_INCHES_PER_SEC * dt);
+      } else if (cascadeLift.isAutoReturning) {
+        cascadeLift.currentInches = Math.max(0.0, cascadeLift.currentInches - LIFT_DOWN_SPEED_INCHES_PER_SEC * dt);
+        if (cascadeLift.currentInches <= 0.0) {
+          cascadeLift.currentInches = 0.0;
+          cascadeLift.isAutoReturning = false;
+        }
+      }
+
+      const liftRatio = cascadeLift.currentInches / MAX_LIFT_INCHES;
+      stage1Group.position.y = (12.0 * 0.0254) * liftRatio;
+      stage2Group.position.y = (12.0 * 0.0254) * liftRatio;
+      stage3Group.position.y = (10.0 * 0.0254) * liftRatio;
+
+      // MOTORIZED CLAW ANIMATION
+      claw.currentPivotAngle += (claw.targetPivotAngle - claw.currentPivotAngle) * Math.min(1.0, 10.0 * dt);
+      leftArmGroup.rotation.y = -claw.currentPivotAngle;
+      rightArmGroup.rotation.y = claw.currentPivotAngle;
+
+      if (claw.isR2Held || claw.isSpinning) {
+        claw.wheelSpinAngle += 24.0 * dt;
+        leftFlexWheel1.rotation.y = claw.wheelSpinAngle;
+        rightFlexWheel1.rotation.y = -claw.wheelSpinAngle;
+      }
+
+      // AUTOMATIC PROXIMITY MATCHLOADER LIFTING
+      const AUTO_LOADER_DIST = TILE_SIZE * 1.15;
+      loadersList.forEach(ldr => {
+        const distToRobot = Math.hypot(robot.x - ldr.x, robot.z - ldr.z);
+        const shouldBeOpen = distToRobot <= AUTO_LOADER_DIST;
+
+        if (ldr.isOpen !== shouldBeOpen) {
+          ldr.isOpen = shouldBeOpen;
+          const btn = document.getElementById(`loaderBtn${ldr.id}`);
+          if (btn) {
+            if (ldr.isOpen) {
+              btn.classList.add('active');
+              btn.textContent = `${ldr.name} [UP]`;
+            } else {
+              btn.classList.remove('active');
+              btn.textContent = `${ldr.name} [DN]`;
+            }
+          }
+        }
+
+        const targetLift = ldr.isOpen ? MAX_LIFT_HEIGHT : 0.0;
+        ldr.currentLift += (targetLift - ldr.currentLift) * Math.min(1.0, 12.0 * dt);
+        ldr.chuteGroup.position.y = ldr.currentLift;
+      });
+
+      // DRIVETRAIN DYNAMICS
+      const calculateWheelAcceleration = (currentSpeed, targetSpeed) => {
+        const speedError = targetSpeed - currentSpeed;
+        if (Math.abs(speedError) < 0.0001) return 0;
+        const isReversing = (targetSpeed * currentSpeed < 0);
+        const availableForce = MAX_MOTOR_FORCE * (isReversing ? 4.5 : 1.0);
+        let accel = (availableForce / config.massKg) * Math.sign(speedError);
+        if (targetSpeed === 0) {
+          accel = -Math.sign(currentSpeed) * (2.0 * 9.81);
+          if (Math.abs(accel * dt) >= Math.abs(currentSpeed)) return -currentSpeed / dt;
+        }
+        return accel;
+      };
+
+      robot.leftWheelSpeed += calculateWheelAcceleration(robot.leftWheelSpeed, targets.targetLeftSpeed) * dt;
+      robot.rightWheelSpeed += calculateWheelAcceleration(robot.rightWheelSpeed, targets.targetRightSpeed) * dt;
+
+      const linearVelocity = (robot.leftWheelSpeed + robot.rightWheelSpeed) / 2.0;
+      const targetAngularVelocity = (robot.rightWheelSpeed - robot.leftWheelSpeed) / TRACK_WIDTH_METERS;
+
+      robot.angularVelocity += (targetAngularVelocity - robot.angularVelocity) * Math.min(1.0, 20.0 * dt);
+      robot.heading += robot.angularVelocity * dt;
+
+      const cosH = Math.cos(robot.heading);
+      const sinH = Math.sin(robot.heading);
+
+      const fwdX = -cosH;
+      const fwdZ = -sinH;
+      const rightX = sinH;
+      const rightZ = -cosH;
+
+      const forwardVx = linearVelocity * fwdX;
+      const forwardVz = linearVelocity * fwdZ;
+
+      robot.vx += (forwardVx - robot.vx) * Math.min(1.0, 45.0 * dt);
+      robot.vz += (forwardVz - robot.vz) * Math.min(1.0, 45.0 * dt);
+
+      robot.x += robot.vx * dt;
+      robot.z += robot.vz * dt;
+
+      // REAL-TIME 3D WORLD POSITION OF CLAW TIP & PAYLOAD
+      const payloadWorldVec = new THREE.Vector3();
+      clawPayloadGroup.getWorldPosition(payloadWorldVec);
+      const clawWorldX = payloadWorldVec.x;
+      const clawWorldZ = payloadWorldVec.z;
+
+      const isLiftAtBase = cascadeLift.currentInches <= 0.5;
+
+      // 1. Smooth Suction Intake
+      if (claw.intakingObject) {
+        claw.intakeProgress += dt / 0.25;
+        claw.intakingObject.x += (clawWorldX - claw.intakingObject.x) * Math.min(1.0, 14.0 * dt);
+        claw.intakingObject.z += (clawWorldZ - claw.intakingObject.z) * Math.min(1.0, 14.0 * dt);
+
+        if (claw.intakeProgress >= 1.0) {
+          if (claw.intakingObject.group && claw.intakingObject.group.parent) {
+            scene.remove(claw.intakingObject.group);
+          }
+
+          let payloadMesh;
+          const isInverted = claw.intakingObject.isInverted || (claw.intakingObject.type === 'invStack');
+
+          if (claw.intakingObject.type === 'cup') {
+            payloadMesh = isInverted ? createInvertedCupMesh() : createCupMesh();
+          } else if (claw.intakingObject.type === 'pin') {
+            payloadMesh = createPinMesh(claw.intakingObject.colorTop, claw.intakingObject.colorBot);
+          } else if (claw.intakingObject.type === 'invStack') {
+            payloadMesh = createInvertedWallStackMesh();
+          } else {
+            payloadMesh = createStackMesh(claw.intakingObject.colorTop, claw.intakingObject.colorBot);
+          }
+
+          clawPayloadGroup.add(payloadMesh);
+          claw.heldStack = {
+            type: (claw.intakingObject.type === 'invStack') ? 'stack' : claw.intakingObject.type,
+            mesh: payloadMesh,
+            colorTop: claw.intakingObject.colorTop || COLOR_YELLOW,
+            colorBot: claw.intakingObject.colorBot || COLOR_YELLOW,
+            isFromMatchload: false,
+            isInverted: isInverted
+          };
+
+          const idx = dynamicObjects.indexOf(claw.intakingObject);
+          if (idx !== -1) dynamicObjects.splice(idx, 1);
+
+          claw.intakingObject = null;
+          claw.intakeProgress = 0.0;
+          claw.isOpen = false;
+          claw.targetPivotAngle = 0.08;
+        }
+      }
+
+      // 2. INTAKE TRIGGER
+      if (claw.isR2Held && claw.isOpen && !claw.heldStack && !claw.intakingObject && isLiftAtBase && gameMode !== 'countdown' && gameMode !== 'gameover') {
+        for (let i = 0; i < dynamicObjects.length; i++) {
+          const obj = dynamicObjects[i];
+          if ((obj.type === 'stack' || obj.type === 'cup' || obj.type === 'pin' || obj.type === 'invStack') && obj.isVertical) {
+            const distToClaw = Math.hypot(obj.x - clawWorldX, obj.z - clawWorldZ);
+
+            const rdx = obj.x - robot.x;
+            const rdz = obj.z - robot.z;
+            const lx = rdx * cosH + rdz * sinH;
+            const lz = -rdx * sinH + rdz * cosH;
+
+            const isFrontMouth = (lx < -0.02 && lx > -0.42 && Math.abs(lz) < 0.22);
+
+            if (distToClaw < 0.22 || isFrontMouth) {
+              claw.intakingObject = obj;
+              claw.intakeProgress = 0.0;
+              break;
+            }
+          }
+        }
+
+        if (!claw.intakingObject) {
+          loadersList.forEach(ldr => {
+            if (ldr.isOpen && ldr.hasStack) {
+              const stackWorldX = ldr.x + Math.sin(ldr.rotY) * (LOADER_DEPTH / 2);
+              const stackWorldZ = ldr.z - Math.cos(ldr.rotY) * (LOADER_DEPTH / 2);
+              const dist = Math.hypot(stackWorldX - clawWorldX, stackWorldZ - clawWorldZ);
+
+              if (dist < 0.12) {
+                ldr.hasStack = false;
+                ldr.itemGroup.visible = false;
+
+                const currentLoaderSelection = matchloaderTypeSelect.value;
+                const payloadMesh = buildLoaderItemMesh(currentLoaderSelection, ldr.colorBot);
+
+                clawPayloadGroup.add(payloadMesh);
+                claw.heldStack = {
+                  type: currentLoaderSelection,
+                  mesh: payloadMesh,
+                  colorTop: COLOR_YELLOW,
+                  colorBot: ldr.colorBot,
+                  isFromMatchload: true,
+                  originLoaderId: ldr.id,
+                  isInverted: (currentLoaderSelection === 'stack')
+                };
+
+                claw.isOpen = false;
+                claw.targetPivotAngle = 0.08;
+              }
+            }
+          });
+        }
+      }
+
+      // PIN & CUP DYNAMIC COLLISION RESOLUTION
+      for (let i = 0; i < dynamicObjects.length; i++) {
+        for (let j = i + 1; j < dynamicObjects.length; j++) {
+          const o1 = dynamicObjects[i];
+          const o2 = dynamicObjects[j];
+          const dx = o2.x - o1.x;
+          const dz = o2.z - o1.z;
+          const dist = Math.hypot(dx, dz);
+          const r1 = o1.isVertical ? o1.radius : 0.06;
+          const r2 = o2.isVertical ? o2.radius : 0.06;
+          const minDist = r1 + r2;
+
+          if (dist < minDist && dist > 0.0001) {
+            const overlap = (minDist - dist) / 2.0;
+            const nx = dx / dist;
+            const nz = dz / dist;
+
+            o1.x -= nx * overlap;
+            o1.z -= nz * overlap;
+            o2.x += nx * overlap;
+            o2.z += nz * overlap;
+
+            const vRelX = o1.vx - o2.vx;
+            const vRelZ = o1.vz - o2.vz;
+            const impulse = (vRelX * nx + vRelZ * nz) * 0.5;
+
+            if (impulse > 0) {
+              o1.vx -= impulse * nx;
+              o1.vz -= impulse * nz;
+              o2.vx += impulse * nx;
+              o2.vz += impulse * nz;
+            }
+          }
+        }
+      }
+
+      // Dynamic Object Physics
+      const BOUND = HALF_FIELD - 0.015;
+
+      for (let i = dynamicObjects.length - 1; i >= 0; i--) {
+        const obj = dynamicObjects[i];
+
+        if (obj.releaseImmunityTimer > 0) {
+          obj.releaseImmunityTimer -= dt;
+        }
+
+        if (obj.isDropping) {
+          obj.vy -= 9.81 * dt;
+          obj.y += obj.vy * dt;
+
+          if (obj.y <= 0) {
+            obj.y = 0;
+            obj.vy = 0;
+            obj.isDropping = false;
+
+            if (obj.type === 'fallingStack') {
+              scene.remove(obj.group);
+              dynamicObjects.splice(i, 1);
+
+              const impactSpeed = Math.hypot(obj.vx, obj.vz);
+
+              const cupObj = spawnDynamicObject('cup', obj.x, obj.z, {
+                isVertical: false,
+                vx: obj.vx * 0.3 + (Math.random() - 0.5) * 0.08,
+                vz: obj.vz * 0.3 + (Math.random() - 0.5) * 0.08,
+                releaseImmunityTimer: 0.3
+              });
+              cupObj.tiltAngle = Math.PI / 2;
+
+              const popAngle = Math.random() * Math.PI * 2;
+              const popVel = 0.15 + impactSpeed * 0.6;
+
+              const pinObj = spawnDynamicObject('pin', obj.x + Math.cos(popAngle) * 0.04, obj.z + Math.sin(popAngle) * 0.04, {
+                isVertical: false,
+                colorTop: obj.colorTop,
+                colorBot: obj.colorBot,
+                vx: obj.vx * 0.8 + Math.cos(popAngle) * popVel,
+                vz: obj.vz * 0.8 + Math.sin(popAngle) * popVel,
+                releaseImmunityTimer: 0.3
+              });
+              pinObj.tiltAngle = Math.PI / 2;
+
+              continue;
+            } else if (obj.type === 'stack' || obj.type === 'pin' || obj.type === 'cup') {
+              obj.isVertical = false;
+              obj.tiltAngle = Math.max(0.15, obj.tiltAngle);
+            }
+          }
+        }
+
+        if (!obj.isVertical || obj.tiltAngle > 0) {
+          obj.tiltAngle = Math.min(Math.PI / 2, obj.tiltAngle + dt * 8.5);
+          obj.mesh.rotation.z = obj.tiltAngle;
+          obj.mesh.position.y = 0.035 * Math.sin(obj.tiltAngle);
+          if (obj.tiltAngle >= Math.PI / 2) {
+            obj.isVertical = false;
+          }
+        }
+
+        obj.vx *= Math.exp(-5.0 * dt);
+        obj.vz *= Math.exp(-5.0 * dt);
+
+        obj.x += obj.vx * dt;
+        obj.z += obj.vz * dt;
+
+        if (obj.x < -BOUND) { obj.x = -BOUND; obj.vx *= -0.4; }
+        if (obj.x > BOUND)  { obj.x = BOUND;  obj.vx *= -0.4; }
+        if (obj.z < -BOUND) { obj.z = -BOUND; obj.vz *= -0.4; }
+        if (obj.z > BOUND)  { obj.z = BOUND;  obj.vz *= -0.4; }
+
+        goalsList.forEach(goal => {
+          const gdx = obj.x - goal.x;
+          const gdz = obj.z - goal.z;
+          const gdist = Math.hypot(gdx, gdz);
+          const minGDist = goal.radius + obj.radius;
+          if (gdist < minGDist && gdist > 0.0001) {
+            const overlap = minGDist - gdist;
+            obj.x += (gdx / gdist) * overlap;
+            obj.z += (gdz / gdist) * overlap;
+            obj.vx *= -0.4;
+            obj.vz *= -0.4;
+          }
+        });
+
+        // BUMPER & ALIGNER COLLISION PHYSICS
+        if (obj.releaseImmunityTimer <= 0) {
+          const rdx = obj.x - robot.x;
+          const rdz = obj.z - robot.z;
+          const lx = rdx * cosH + rdz * sinH;
+          const lz = -rdx * sinH + rdz * cosH;
+
+          const isBeingIntaken = (claw.isR2Held && claw.isOpen && isLiftAtBase && lx < 0.05 && lx > -0.42 && Math.abs(lz) < 0.22);
+
+          if (!isBeingIntaken) {
+            chassisSubBoxes.forEach(box => {
+              const cx = Math.max(box.minX, Math.min(box.maxX, lx));
+              const cz = Math.max(box.minZ, Math.min(box.maxZ, lz));
+
+              const vxLocal = lx - cx;
+              const vzLocal = lz - cz;
+              const distSq = vxLocal * vxLocal + vzLocal * vzLocal;
+
+              const effRadius = obj.isVertical ? (obj.radius + 0.02) : 0.095;
+
+              if (distSq < effRadius * effRadius && distSq > 0.00001) {
+                const dist = Math.sqrt(distSq);
+                const overlap = effRadius - dist;
+                const nlx = vxLocal / dist;
+                const nlz = vzLocal / dist;
+
+                const nxWorld = nlx * cosH - nlz * sinH;
+                const nzWorld = nlx * sinH + nlz * cosH;
+
+                obj.x += nxWorld * overlap;
+                obj.z += nzWorld * overlap;
+
+                const speed = Math.hypot(robot.vx, robot.vz);
+                obj.vx = robot.vx * 1.1 + nxWorld * (speed + 0.25);
+                obj.vz = robot.vz * 1.1 + nzWorld * (speed + 0.25);
+
+                if (obj.type === 'stack' && obj.isVertical) {
+                  obj.isDropping = true;
+                }
+              }
+            });
+          }
+        }
+
+        const worldY = FIELD_RAISE_HEIGHT + (obj.isDropping ? obj.y : 0);
+        obj.group.position.set(obj.x, worldY, obj.z);
+      }
+
+      // Wall Perimeter Collisions
+      const w2Front = 0.265;
+      const w2Rear = OUT_CH_LEN / 2;
+      const h2 = (rightOuterZ - leftOuterZ) / 2;
+      const localCorners = [
+        { x:  w2Rear, z:  h2 },
+        { x: -w2Front, z:  h2 },
+        { x: -w2Front, z: -h2 },
+        { x:  w2Rear, z: -h2 }
+      ];
+
+      localCorners.forEach(corner => {
+        const rx = corner.x * cosH - corner.z * sinH;
+        const rz = corner.x * sinH + corner.z * cosH;
+        const wx = robot.x + rx;
+        const wz = robot.z + rz;
+
+        if (wx < -BOUND) { robot.x = -BOUND - rx; robot.vx = 0; }
+        else if (wx > BOUND) { robot.x = BOUND - rx; robot.vx = 0; }
+        if (wz < -BOUND) { robot.z = -BOUND - rz; robot.vx = 0; }
+        else if (wz > BOUND) { robot.z = BOUND - rz; robot.vx = 0; }
+      });
+
+      // Goal Collisions
+      goalsList.forEach(goal => {
+        const dx = goal.x - robot.x;
+        const dz = goal.z - robot.z;
+
+        const localFwd = dx * fwdX + dz * fwdZ;
+        const localRight = dx * rightX + dz * rightZ;
+
+        const arcCenterFwd = 0.180;
+        const dFwd = localFwd - arcCenterFwd;
+
+        const isNearAlignerMouth = (localFwd > 0.08 && localFwd < 0.32) && (Math.abs(localRight) < 0.14);
+
+        if (isNearAlignerMouth) {
+          const currentForwardVel = robot.vx * fwdX + robot.vz * fwdZ;
+
+          if (currentForwardVel > 0.01 && Math.abs(localRight) > 0.002) {
+            const steerCorrection = -Math.sign(localRight) * Math.min(2.5, Math.abs(localRight) * 20.0) * Math.min(1.0, currentForwardVel + 0.2);
+            robot.angularVelocity += steerCorrection * dt;
+
+            const lateralSlide = localRight * Math.min(3.0, Math.abs(localRight) * 18.0) * dt;
+            robot.x += rightX * lateralSlide;
+            robot.z += rightZ * lateralSlide;
+          }
+
+          const backWallFwd = 0.180;
+          if (localFwd < backWallFwd) {
+            const penetration = backWallFwd - localFwd;
+            robot.x -= fwdX * penetration;
+            robot.z -= fwdZ * penetration;
+
+            if (currentForwardVel > 0) {
+              robot.vx -= fwdX * currentForwardVel;
+              robot.vz -= fwdZ * currentForwardVel;
+            }
+          }
+
+          const maxLateralSpan = Math.sqrt(Math.max(0.0001, alignerRadius * alignerRadius - Math.pow(Math.max(0, dFwd), 2)));
+          if (Math.abs(localRight) > maxLateralSpan && dFwd < 0.06) {
+            const sideOverlap = Math.abs(localRight) - maxLateralSpan;
+            robot.x += rightX * (Math.sign(localRight) * sideOverlap);
+            robot.z += rightZ * (Math.sign(localRight) * sideOverlap);
+          }
+        } else {
+          chassisSubBoxes.forEach(box => {
+            const lx = dx * cosH + dz * sinH;
+            const lz = -dx * sinH + dz * cosH;
+
+            const cx = Math.max(box.minX, Math.min(box.maxX, lx));
+            const cz = Math.max(box.minZ, Math.min(box.maxZ, lz));
+
+            const vxLocal = lx - cx;
+            const vzLocal = lz - cz;
+            const distSq = vxLocal * vxLocal + vzLocal * vzLocal;
+            const minDist = goal.radius;
+
+            if (distSq < minDist * minDist && distSq > 0.00001) {
+              const dist = Math.sqrt(distSq);
+              const overlap = minDist - dist;
+              const nlx = vxLocal / dist;
+              const nlz = vzLocal / dist;
+
+              const nxWorld = nlx * cosH - nlz * sinH;
+              const nzWorld = nlx * sinH + nlz * cosH;
+
+              robot.x -= nxWorld * overlap;
+              robot.z -= nzWorld * overlap;
+
+              const vDotN = robot.vx * nxWorld + robot.vz * nzWorld;
+              if (vDotN < 0) {
+                robot.vx -= vDotN * nxWorld;
+                robot.vz -= vDotN * nzWorld;
+              }
+            }
+          });
+        }
+      });
+
+      // Matchloaders Collisions
+      loadersList.forEach(ldr => {
+        const dx = ldr.x - robot.x;
+        const dz = ldr.z - robot.z;
+        const lx = dx * cosH + dz * sinH;
+        const lz = -dx * sinH + dz * cosH;
+
+        let effectiveRadius = ldr.isOpen ? 0.035 : 0.085;
+        chassisSubBoxes.forEach(box => {
+          const cx = Math.max(box.minX, Math.min(box.maxX, lx));
+          const cz = Math.max(box.minZ, Math.min(box.maxZ, lz));
+
+          const vxLocal = lx - cx;
+          const vzLocal = lz - cz;
+          const distSq = vxLocal * vxLocal + vzLocal * vzLocal;
+
+          if (distSq < effectiveRadius * effectiveRadius && distSq > 0.00001) {
+            const dist = Math.sqrt(distSq);
+            const overlap = effectiveRadius - dist;
+            const nlx = vxLocal / dist;
+            const nlz = vzLocal / dist;
+
+            const nxWorld = nlx * cosH - nlz * sinH;
+            const nzWorld = nlx * sinH + nlz * cosH;
+
+            robot.x -= nxWorld * overlap;
+            robot.z -= nzWorld * overlap;
+          }
+        });
+      });
+
+      robotGroup.position.set(robot.x, FIELD_RAISE_HEIGHT, robot.z);
+      robotGroup.rotation.y = -robot.heading;
+    }
+
+    function render() {
+      renderer.render(scene, camera);
+    }
+
+    function loop(currentTime) {
+      const dt = Math.min((currentTime - robot.lastTime) / 1000.0, 0.05);
+      robot.lastTime = currentTime;
+
+      const targets = processInputs();
+      updatePhysics(dt, targets);
+      render();
+
+      requestAnimationFrame(loop);
+    }
+
+    resetBtn.addEventListener('click', () => {
+      resetSimForMode(gameMode);
+    });
+
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>

@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Cooking? - Easy Recipes for Beginners</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            DEFAULT: '#FAF6EE',
+                            dark: '#F3EDE0',
+                            card: '#FFFFFF'
+                        },
+                        sage: {
+                            light: '#94AF93',
+                            DEFAULT: '#739072',
+                            dark: '#4F6D4E',
+                            deep: '#3A5239'
+                        },
+                        terracotta: {
+                            light: '#F4A261',
+                            DEFAULT: '#E07A5F',
+                            dark: '#C85A3F'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAF6EE;
+            color: #2D3748;
+        }
+        h1, h2, h3, h4, .font-heading {
+            font-family: 'Outfit', sans-serif;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .recipe-card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(115, 144, 114, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+        .recipe-card-shadow:hover {
+            box-shadow: 0 20px 30px -10px rgba(115, 144, 114, 0.18), 0 12px 15px -8px rgba(224, 122, 95, 0.15);
+        }
+    </style>
+</head>
+<body class="bg-cream text-gray-800 flex flex-col min-h-screen antialiased selection:bg-terracotta selection:text-white">
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="sticky top-0 z-40 bg-cream/90 backdrop-blur-md border-b border-sage-light/20 transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Logo -->
+                <a href="#home" onclick="navNavigate('home')" class="flex items-center space-x-3 group">
+                    <div class="w-11 h-11 rounded-2xl bg-sage flex items-center justify-center text-white shadow-md transform group-hover:rotate-6 transition-transform">
+                        <i class="fa-solid font-bold fa-utensils text-xl"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-heading text-2xl font-bold tracking-tight text-sage-dark group-hover:text-terracotta transition-colors">What's Cooking?</span>
+                        <span class="text-xs font-medium text-terracotta tracking-wide uppercase -mt-1">Easy Student Eats</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-1 lg:space-x-2 bg-cream-dark/60 p-1.5 rounded-full border border-sage-light/20">
+                    <button onclick="navNavigate('home')" id="nav-home" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-sage-dark bg-white shadow-sm">
+                        <i class="fa-solid fa-house mr-2 text-xs"></i>Home
+                    </button>
+                    <button onclick="navNavigate('recipes')" id="nav-recipes" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-gray-600 hover:text-sage-dark hover:bg-white/50">
+                        <i class="fa-solid fa-book-open mr-2 text-xs"></i>Find Recipes
+                    </button>
+                    <button onclick="navNavigate('pantry')" id="nav-pantry" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-gray-600 hover:text-sage-dark hover:bg-white/50">
+                        <i class="fa-solid fa-carrot mr-2 text-xs"></i>Pantry Finder
+                    </button>
+                    <button onclick="navNavigate('history')" id="nav-history" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-gray-600 hover:text-sage-dark hover:bg-white/50 relative">
+                        <i class="fa-solid fa-clock-rotate-left mr-2 text-xs"></i>Cooking History
+                        <span id="history-badge-nav" class="hidden ml-1 px-1.5 py-0.5 bg-terracotta text-white text-[10px] font-bold rounded-full">0</span>
+                    </button>
+                    <button onclick="navNavigate('explore')" id="nav-explore" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-gray-600 hover:text-sage-dark hover:bg-white/50">
+                        <i class="fa-solid fa-compass mr-2 text-xs"></i>Explore Categories
+                    </button>
+                    <button onclick="navNavigate('about')" id="nav-about" class="nav-btn px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 text-gray-600 hover:text-sage-dark hover:bg-white/50">
+                        <i class="fa-solid fa-heart mr-2 text-xs"></i>About Us
+                    </button>
+                </nav>
+
+                <!-- Quick Action Buttons -->
+                <div class="hidden md:flex items-center space-x-3">
+                    <button onclick="openRandomRecipe()" class="px-4 py-2.5 rounded-full bg-terracotta hover:bg-terracotta-dark text-white text-sm font-semibold shadow-sm hover:shadow-md transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-dice"></i>
+                        <span>Surprise Me!</span>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" class="p-2.5 rounded-xl text-sage-dark hover:bg-cream-dark focus:outline-none">
+                        <i class="fa-solid fa-bars text-2xl" id="menu-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-cream border-b border-sage-light/20 px-4 pt-2 pb-6 space-y-2 shadow-lg">
+            <button onclick="navNavigate('home')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-sage-dark hover:bg-cream-dark flex items-center">
+                <i class="fa-solid fa-house w-6 text-terracotta"></i>Home
+            </button>
+            <button onclick="navNavigate('recipes')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-cream-dark flex items-center">
+                <i class="fa-solid fa-book-open w-6 text-terracotta"></i>Find Recipes
+            </button>
+            <button onclick="navNavigate('pantry')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-cream-dark flex items-center">
+                <i class="fa-solid fa-carrot w-6 text-terracotta"></i>Ingredient Finder
+            </button>
+            <button onclick="navNavigate('history')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-cream-dark flex items-center justify-between">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-clock-rotate-left w-6 text-terracotta"></i>Cooking History
+                </div>
+                <span id="history-badge-mobile" class="hidden px-2 py-0.5 bg-terracotta text-white text-xs font-bold rounded-full">0</span>
+            </button>
+            <button onclick="navNavigate('explore')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-cream-dark flex items-center">
+                <i class="fa-solid fa-compass w-6 text-terracotta"></i>Explore Categories
+            </button>
+            <button onclick="navNavigate('about')" class="w-full text-left px-4 py-3 rounded-xl font-medium text-gray-700 hover:bg-cream-dark flex items-center">
+                <i class="fa-solid fa-heart w-6 text-terracotta"></i>About Us
+            </button>
+            <div class="pt-2 border-t border-sage-light/20">
+                <button onclick="openRandomRecipe()" class="w-full py-3 rounded-xl bg-terracotta text-white font-semibold flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-dice"></i>
+                    <span>Surprise Me with a Recipe!</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- ================= HERO SECTION ================= -->
+        <section id="home-section" class="relative py-12 md:py-20 overflow-hidden">
+            <!-- Decorative Background Elements -->
+            <div class="absolute top-10 left-10 w-72 h-72 bg-sage/10 rounded-full blur-3xl -z-10"></div>
+            <div class="absolute bottom-5 right-10 w-96 h-96 bg-terracotta/10 rounded-full blur-3xl -z-10"></div>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                    
+                    <!-- Hero Content -->
+                    <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+                        <div class="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-terracotta/10 text-terracotta border border-terracotta/20 text-xs sm:text-sm font-semibold">
+                            <i class="fa-solid fa-sparkles"></i>
+                            <span>Zero stress. Budget friendly. Delicious outcomes.</span>
+                        </div>
+                        
+                        <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-sage-deep tracking-tight leading-tight">
+                            Not sure what to <span class="text-terracotta underline decoration-sage/40 decoration-wavy decoration-2">cook today?</span>
+                        </h1>
+                        
+                        <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                            No fancy culinary skills required! Simple, delicious recipes designed specifically for teens, college students, and kitchen beginners.
+                        </p>
+
+                        <!-- Search Box in Hero -->
+                        <div class="pt-2 max-w-xl mx-auto lg:mx-0">
+                            <form onsubmit="handleSearchSubmit(event)" class="relative flex items-center">
+                                <div class="relative w-full">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-sage">
+                                        <i class="fa-solid fa-magnifying-glass text-lg"></i>
+                                    </div>
+                                    <input type="text" id="hero-search" oninput="liveSearch(this.value)" placeholder="Search recipes (e.g. Pasta, Tacos, Pancakes)..." 
+                                        class="w-full pl-12 pr-28 py-4 bg-white rounded-2xl border-2 border-sage-light/30 focus:border-sage focus:outline-none focus:ring-4 focus:ring-sage/10 text-gray-800 placeholder-gray-400 font-medium shadow-md transition-all text-base">
+                                    <button type="submit" class="absolute right-2 top-2 bottom-2 px-5 bg-sage hover:bg-sage-dark text-white rounded-xl font-medium transition-all shadow flex items-center space-x-1">
+                                        <span>Find</span>
+                                    </button>
+                                </div>
+                            </form>
+                            <!-- Search Quick Tags -->
+                            <div class="flex flex-wrap items-center gap-2 mt-3 text-xs text-gray-500 justify-center lg:justify-start">
+                                <span class="font-semibold text-sage-dark">Try searching:</span>
+                                <button onclick="quickSearch('Quick')" class="px-2.5 py-1 rounded-md bg-white hover:bg-sage-light/20 border border-sage-light/30 text-gray-600 transition">⚡ Quick & Easy</button>
+                                <button onclick="quickSearch('Pasta')" class="px-2.5 py-1 rounded-md bg-white hover:bg-sage-light/20 border border-sage-light/30 text-gray-600 transition">🍝 Pasta</button>
+                                <button onclick="quickSearch('Budget')" class="px-2.5 py-1 rounded-md bg-white hover:bg-sage-light/20 border border-sage-light/30 text-gray-600 transition">💰 Cheap Eats</button>
+                            </div>
+                        </div>
+
+                        <!-- Stats / Features Pills -->
+                        <div class="pt-6 grid grid-cols-3 gap-3 border-t border-sage-light/20">
+                            <div class="text-center lg:text-left">
+                                <span class="block text-2xl font-bold text-sage-dark">15 Min</span>
+                                <span class="text-xs text-gray-500 font-medium">Average prep time</span>
+                            </div>
+                            <div class="text-center lg:text-left">
+                                <span class="block text-2xl font-bold text-terracotta">&lt; 7 Ingredients</span>
+                                <span class="text-xs text-gray-500 font-medium">Pantry friendly</span>
+                            </div>
+                            <div class="text-center lg:text-left">
+                                <span class="block text-2xl font-bold text-sage-dark">100% Easy</span>
+                                <span class="text-xs text-gray-500 font-medium">No experience needed</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hero Visual Card Stack -->
+                    <div class="lg:col-span-5 relative">
+                        <div class="relative mx-auto max-w-md lg:max-w-none">
+                            <div class="absolute -top-4 -left-4 w-full h-full bg-sage-light/30 rounded-3xl transform -rotate-3"></div>
+                            <div class="relative bg-white p-4 sm:p-5 rounded-3xl shadow-xl border border-sage-light/20">
+                                <div class="relative rounded-2xl overflow-hidden aspect-[4/3] group">
+                                    <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800" alt="Fresh Healthy Meal Bowl" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-5 text-white">
+                                        <span class="px-2.5 py-1 bg-terracotta text-xs font-bold rounded-full uppercase tracking-wider w-max mb-2">Featured Recipe</span>
+                                        <h3 class="text-xl font-bold">10-Minute Rainbow Grain Bowl</h3>
+                                        <p class="text-xs text-gray-200 mt-1"><i class="fa-regular fa-clock mr-1"></i> 10 mins • Easy • Vegetarian</p>
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex items-center justify-between px-2">
+                                    <div class="flex items-center space-x-2 text-xs font-medium text-gray-600">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+                                        <span>Student Favorite Pick</span>
+                                    </div>
+                                    <button onclick="openRecipeModal(1)" class="text-xs font-bold text-terracotta hover:underline flex items-center">
+                                        <span>Cook This Now</span>
+                                        <i class="fa-solid fa-arrow-right ml-1"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= INGREDIENT FINDER SECTION ================= -->
+        <section id="pantry-section" class="py-16 bg-white border-b border-sage-light/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-10">
+                    <div class="inline-flex items-center space-x-1.5 text-terracotta font-bold text-xs uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Cook With What You Have</span>
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-bold text-sage-deep">Pantry Ingredient Finder</h2>
+                    <p class="text-gray-600 mt-2 text-sm sm:text-base">Select the ingredients sitting in your fridge or pantry to find meals you can make right now!</p>
+                </div>
+
+                <div class="bg-cream rounded-3xl p-6 sm:p-8 border border-sage-light/30 shadow-sm max-w-4xl mx-auto">
+                    <!-- Search & Filter Bar for Ingredients -->
+                    <div class="relative mb-6">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-sage">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </div>
+                        <input type="text" id="ingredient-search-input" oninput="filterIngredientChips(this.value)" placeholder="Search ingredients (e.g. egg, chicken, rice, cheese)..." 
+                            class="w-full pl-11 pr-4 py-3 bg-white rounded-2xl border border-sage-light/40 focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/20 text-gray-800 text-sm font-medium transition shadow-sm">
+                    </div>
+
+                    <!-- Selected Ingredients Active Tags Container -->
+                    <div class="mb-6 pb-5 border-b border-sage-light/30">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-sage-dark flex items-center">
+                                <i class="fa-solid fa-basket-shopping mr-2 text-terracotta"></i> Selected Ingredients (<span id="selected-count">0</span>)
+                            </span>
+                            <button id="clear-ingredients-btn" onclick="clearSelectedIngredients()" class="hidden text-xs font-semibold text-terracotta hover:underline">
+                                Clear All
+                            </button>
+                        </div>
+                        <div id="selected-ingredients-tags" class="flex flex-wrap gap-2 min-h-[36px] items-center">
+                            <span class="text-xs text-gray-400 italic">No ingredients selected yet. Click from the list below!</span>
+                        </div>
+                    </div>
+
+                    <!-- Common Ingredient Chips Picker -->
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-bold uppercase tracking-wider text-sage-dark">Common Ingredients</span>
+                        </div>
+                        <div id="ingredient-chips-grid" class="flex flex-wrap gap-2 max-h-48 overflow-y-auto pr-1">
+                            <!-- Dynamic ingredient chips inserted by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Match Trigger Action Button -->
+                    <div class="mt-8 pt-4 border-t border-sage-light/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <span class="text-xs text-gray-500 italic">Select ingredients above to calculate instant matches across all recipes.</span>
+                        <button onclick="findRecipesByPantry()" class="w-full sm:w-auto px-6 py-3 bg-terracotta hover:bg-terracotta-dark text-white rounded-2xl font-bold text-sm transition shadow-md flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Find Matching Recipes</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pantry Match Results Grid -->
+                <div id="pantry-results-container" class="mt-12 hidden">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-2xl font-bold text-sage-deep flex items-center">
+                            <i class="fa-solid fa-utensils text-terracotta mr-2"></i>
+                            Recommended Recipes
+                        </h3>
+                        <span id="pantry-matches-count" class="text-xs font-bold px-3 py-1 bg-sage/10 text-sage-dark rounded-full"></span>
+                    </div>
+                    <div id="pantry-results-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Dynamic Pantry Result Cards -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= COOKING HISTORY SECTION ================= -->
+        <section id="history-section" class="py-16 bg-cream border-b border-sage-light/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                        <div class="inline-flex items-center space-x-1.5 text-terracotta font-bold text-xs uppercase tracking-wider mb-1">
+                            <i class="fa-solid fa-award"></i>
+                            <span>Your Kitchen Accomplishments</span>
+                        </div>
+                        <h2 class="text-3xl sm:text-4xl font-bold text-sage-deep">My Cooking History</h2>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs font-semibold text-gray-500">Completed Recipes: <strong id="history-total-count" class="text-terracotta font-bold">0</strong></span>
+                        <button id="clear-history-btn" onclick="clearAllHistory()" class="hidden px-3.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold transition">
+                            Clear History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- History Grid -->
+                <div id="history-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Dynamic Completed Recipe Cards -->
+                </div>
+
+                <!-- Empty History State -->
+                <div id="history-empty" class="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-sage-light/40 my-4">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-sage/10 text-sage-dark flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">No completed recipes yet</h3>
+                    <p class="text-gray-500 mt-1 max-w-md mx-auto text-sm">When you cook a recipe, mark it as completed to track your culinary journey here!</p>
+                    <button onclick="navNavigate('recipes')" class="mt-5 px-5 py-2.5 bg-terracotta hover:bg-terracotta-dark text-white font-semibold text-sm rounded-xl transition shadow">
+                        Find a Recipe to Cook
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= BROWSE BY CATEGORY ================= -->
+        <section id="explore-section" class="py-12 bg-cream-dark/50 border-y border-sage-light/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-2xl mx-auto mb-10">
+                    <h2 class="text-3xl font-bold text-sage-deep">Browse by Meal Type</h2>
+                    <p class="text-gray-600 mt-2 text-sm sm:text-base">What are you in the mood for? Pick a category to jump right in.</p>
+                </div>
+
+                <!-- Category Cards Grid -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+                    <!-- Breakfast -->
+                    <button onclick="filterByCategory('Breakfast')" class="category-card group bg-white p-5 rounded-2xl border border-sage-light/20 text-center hover:border-terracotta hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:bg-terracotta group-hover:text-white transition-all">
+                            🍳
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-terracotta transition-colors">Breakfast</h3>
+                        <span class="text-xs text-gray-500 mt-1">Quick mornings</span>
+                    </button>
+
+                    <!-- Lunch -->
+                    <button onclick="filterByCategory('Lunch')" class="category-card group bg-white p-5 rounded-2xl border border-sage-light/20 text-center hover:border-terracotta hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:bg-terracotta group-hover:text-white transition-all">
+                            🥪
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-terracotta transition-colors">Lunch</h3>
+                        <span class="text-xs text-gray-500 mt-1">Between classes</span>
+                    </button>
+
+                    <!-- Dinner -->
+                    <button onclick="filterByCategory('Dinner')" class="category-card group bg-white p-5 rounded-2xl border border-sage-light/20 text-center hover:border-terracotta hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:bg-terracotta group-hover:text-white transition-all">
+                            🍝
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-terracotta transition-colors">Dinner</h3>
+                        <span class="text-xs text-gray-500 mt-1">Hearty & easy</span>
+                    </button>
+
+                    <!-- Snacks -->
+                    <button onclick="filterByCategory('Snacks')" class="category-card group bg-white p-5 rounded-2xl border border-sage-light/20 text-center hover:border-terracotta hover:shadow-lg transition-all duration-300 flex flex-col items-center">
+                        <div class="w-14 h-14 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:bg-terracotta group-hover:text-white transition-all">
+                            🍿
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-terracotta transition-colors">Snacks</h3>
+                        <span class="text-xs text-gray-500 mt-1">Study bites</span>
+                    </button>
+
+                    <!-- Desserts -->
+                    <button onclick="filterByCategory('Desserts')" class="category-card group bg-white p-5 rounded-2xl border border-sage-light/20 text-center hover:border-terracotta hover:shadow-lg transition-all duration-300 flex flex-col items-center col-span-2 sm:col-span-1">
+                        <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-600 flex items-center justify-center text-2xl mb-3 group-hover:scale-110 group-hover:bg-terracotta group-hover:text-white transition-all">
+                            🍩
+                        </div>
+                        <h3 class="font-bold text-gray-800 group-hover:text-terracotta transition-colors">Desserts</h3>
+                        <span class="text-xs text-gray-500 mt-1">Sweet cravings</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= RECIPE CATALOG / SEARCH RESULTS ================= -->
+        <section id="recipes-section" class="py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <!-- Section Header with Filters -->
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+                    <div>
+                        <div class="inline-flex items-center space-x-1.5 text-terracotta font-bold text-xs uppercase tracking-wider mb-1">
+                            <i class="fa-solid fa-fire"></i>
+                            <span>Handpicked Recipes</span>
+                        </div>
+                        <h2 id="catalog-title" class="text-3xl sm:text-4xl font-bold text-sage-deep">Popular Recipes</h2>
+                    </div>
+
+                    <!-- Category Filter Pills -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                        <button onclick="filterByCategory('All')" id="filter-all" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-sage text-white shadow-sm whitespace-nowrap">
+                            All Recipes
+                        </button>
+                        <button onclick="filterByCategory('Breakfast')" id="filter-breakfast" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap">
+                            Breakfast
+                        </button>
+                        <button onclick="filterByCategory('Lunch')" id="filter-lunch" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap">
+                            Lunch
+                        </button>
+                        <button onclick="filterByCategory('Dinner')" id="filter-dinner" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap">
+                            Dinner
+                        </button>
+                        <button onclick="filterByCategory('Snacks')" id="filter-snacks" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap">
+                            Snacks
+                        </button>
+                        <button onclick="filterByCategory('Desserts')" id="filter-desserts" class="filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap">
+                            Desserts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recipe Grid -->
+                <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Dynamic Recipe Cards Inserted via JS -->
+                </div>
+
+                <!-- Empty Search Result State -->
+                <div id="no-results" class="hidden text-center py-16 bg-white rounded-3xl border-2 border-dashed border-sage-light/40 my-8">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-terracotta/10 text-terracotta flex items-center justify-center text-2xl">
+                        <i class="fa-solid fa-cookie-bite"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">No matching recipes found</h3>
+                    <p class="text-gray-500 mt-1 max-w-md mx-auto text-sm">We couldn't find anything matching your query. Try searching for broader terms like "pasta", "eggs", or "easy".</p>
+                    <button onclick="resetFilters()" class="mt-5 px-5 py-2.5 bg-sage hover:bg-sage-dark text-white font-semibold text-sm rounded-xl transition shadow">
+                        Reset All Filters
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= ABOUT SECTION ================= -->
+        <section id="about-section" class="py-16 bg-cream-dark/60 border-t border-sage-light/20">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="bg-white rounded-3xl p-8 sm:p-12 border border-sage-light/30 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-10 -bottom-10 w-64 h-64 bg-sage/10 rounded-full blur-2xl"></div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative">
+                        <div class="lg:col-span-7 space-y-4">
+                            <span class="px-3 py-1 rounded-full bg-sage/10 text-sage-dark text-xs font-bold uppercase tracking-wider">
+                                Our Mission
+                            </span>
+                            <h2 class="text-3xl sm:text-4xl font-bold text-sage-deep">Made for beginners, by people who get it.</h2>
+                            <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
+                                Learning to cook shouldn't require culinary degrees, expensive gadgets, or hard-to-find ingredients. <strong>What's Cooking?</strong> was designed specifically for teenagers, college students, and kitchen beginners who want fast, healthy, and budget-friendly meals.
+                            </p>
+                            
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-terracotta/10 text-terracotta flex items-center justify-center shrink-0 mt-1">
+                                        <i class="fa-solid fa-dollar-sign font-bold"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm">Budget Conscious</h4>
+                                        <p class="text-xs text-gray-500">Every recipe is designed to keep grocery costs low.</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="w-8 h-8 rounded-lg bg-sage/10 text-sage-dark flex items-center justify-center shrink-0 mt-1">
+                                        <i class="fa-solid fa-clock font-bold"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800 text-sm">Fast Prep Times</h4>
+                                        <p class="text-xs text-gray-500">Most meals take 15 to 20 minutes maximum.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5 flex justify-center">
+                            <div class="bg-cream p-6 rounded-2xl border border-sage-light/30 max-w-sm w-full space-y-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-12 h-12 rounded-full bg-terracotta flex items-center justify-center text-white text-xl font-bold">
+                                        🎓
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-gray-800">Student Kitchen Tip</h4>
+                                        <span class="text-xs text-terracotta font-semibold">Pro Hack #1</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-600 italic">
+                                    "Keep basic pantry staples on hand: olive oil, soy sauce, garlic powder, salt, pepper, and canned tomatoes. With these, you can turn almost any ingredient into a meal!"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="bg-sage-deep text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <!-- Brand Info -->
+                <div class="md:col-span-2 space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-terracotta flex items-center justify-center text-white">
+                            <i class="fa-solid fa-utensils text-sm"></i>
+                        </div>
+                        <span class="font-heading text-xl font-bold">What's Cooking?</span>
+                    </div>
+                    <p class="text-sage-light text-xs sm:text-sm max-w-sm leading-relaxed">
+                        Helping beginner cooks, students, and busy teens make delicious home-cooked meals with confidence and zero hassle.
+                    </p>
+                </div>
+
+                <!-- Navigation Quick Links -->
+                <div>
+                    <h4 class="font-bold text-white text-sm mb-3 uppercase tracking-wider">Quick Links</h4>
+                    <ul class="space-y-2 text-xs text-sage-light">
+                        <li><a href="#home" onclick="navNavigate('home')" class="hover:text-white transition">Home</a></li>
+                        <li><a href="#recipes" onclick="navNavigate('recipes')" class="hover:text-white transition">Find Recipes</a></li>
+                        <li><a href="#explore" onclick="navNavigate('explore')" class="hover:text-white transition">Explore Categories</a></li>
+                        <li><a href="#about" onclick="navNavigate('about')" class="hover:text-white transition">About Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Categories -->
+                <div>
+                    <h4 class="font-bold text-white text-sm mb-3 uppercase tracking-wider">Categories</h4>
+                    <ul class="space-y-2 text-xs text-sage-light">
+                        <li><button onclick="filterByCategory('Breakfast')" class="hover:text-white transition">Quick Breakfasts</button></li>
+                        <li><button onclick="filterByCategory('Lunch')" class="hover:text-white transition">Easy Lunches</button></li>
+                        <li><button onclick="filterByCategory('Dinner')" class="hover:text-white transition">Simple Dinners</button></li>
+                        <li><button onclick="filterByCategory('Desserts')" class="hover:text-white transition">Sweet Treats</button></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-sage-dark flex flex-col sm:flex-row items-center justify-between text-xs text-sage-light gap-4">
+                <p>&copy; 2026 What's Cooking? All rights reserved. Created for beginner cooks everywhere.</p>
+                <div class="flex space-x-4">
+                    <a href="#" class="hover:text-white transition"><i class="fa-brands fa-instagram text-base"></i></a>
+                    <a href="#" class="hover:text-white transition"><i class="fa-brands fa-tiktok text-base"></i></a>
+                    <a href="#" class="hover:text-white transition"><i class="fa-brands fa-youtube text-base"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= RECIPE DETAIL MODAL ================= -->
+    <div id="recipe-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-sage-light/30 relative transform transition-all duration-300 scale-95 opacity-0" id="modal-container">
+            
+            <!-- Modal Close Button -->
+            <button onclick="closeRecipeModal()" class="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/80 hover:bg-white text-gray-700 hover:text-black flex items-center justify-center shadow-md transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Modal Header Image -->
+            <div class="relative h-64 sm:h-72 w-full">
+                <img id="modal-img" src="" alt="Recipe Detail" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                
+                <div class="absolute bottom-4 left-6 right-6 text-white">
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span id="modal-category" class="px-2.5 py-1 bg-terracotta text-white text-xs font-bold rounded-full uppercase tracking-wider"></span>
+                        <span id="modal-difficulty" class="px-2.5 py-1 bg-sage text-white text-xs font-bold rounded-full uppercase tracking-wider"></span>
+                    </div>
+                    <h2 id="modal-title" class="text-2xl sm:text-3xl font-bold font-heading"></h2>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 sm:p-8 space-y-6">
+                
+                <!-- Recipe Specs Bar & Serving Size Adjuster -->
+                <div class="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-cream text-center border border-sage-light/20">
+                    <div class="border-r border-sage-light/30">
+                        <span class="block text-xs text-gray-500 font-medium">Prep Time</span>
+                        <span id="modal-prep" class="font-bold text-gray-800 text-sm sm:text-base"></span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center">
+                        <span class="block text-xs text-gray-500 font-medium mb-0.5">Servings</span>
+                        <div class="inline-flex items-center space-x-2 bg-white px-2 py-0.5 rounded-xl border border-sage-light/40 shadow-sm">
+                            <button onclick="adjustServingSize(-1)" class="w-6 h-6 rounded-lg bg-cream hover:bg-sage hover:text-white text-sage-dark font-bold text-sm flex items-center justify-center transition">
+                                −
+                            </button>
+                            <span id="modal-servings" class="font-extrabold text-gray-800 text-sm sm:text-base min-w-[20px] text-center"></span>
+                            <button onclick="adjustServingSize(1)" class="w-6 h-6 rounded-lg bg-cream hover:bg-sage hover:text-white text-sage-dark font-bold text-sm flex items-center justify-center transition">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description & Completed Toggle -->
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3.5 bg-cream-dark/40 rounded-2xl border border-sage-light/20">
+                    <p id="modal-desc" class="text-gray-600 text-sm leading-relaxed italic flex-grow"></p>
+                    <button id="modal-completed-toggle" onclick="toggleCompletedCurrentRecipe()" class="shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 border">
+                        <!-- Dynamic completed state button -->
+                    </button>
+                </div>
+
+                <!-- Ingredients & Steps Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    
+                    <!-- Ingredients List -->
+                    <div class="md:col-span-5 space-y-3">
+                        <h3 class="font-bold text-sage-deep text-lg flex items-center">
+                            <i class="fa-solid fa-basket-shopping text-terracotta mr-2"></i>Ingredients
+                        </h3>
+                        <ul id="modal-ingredients" class="space-y-2 text-xs sm:text-sm text-gray-700">
+                            <!-- Dynamic checklist -->
+                        </ul>
+                    </div>
+
+                    <!-- Cooking Instructions -->
+                    <div class="md:col-span-7 space-y-3">
+                        <h3 class="font-bold text-sage-deep text-lg flex items-center">
+                            <i class="fa-solid fa-list-check text-terracotta mr-2"></i>Step-by-Step
+                        </h3>
+                        <ol id="modal-steps" class="space-y-3 text-xs sm:text-sm text-gray-700">
+                            <!-- Dynamic instructions -->
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Footer Action -->
+                <div class="pt-4 border-t border-sage-light/20 flex items-center justify-between gap-3">
+                    <button onclick="startCookingModeFromModal()" class="px-5 py-2.5 bg-terracotta hover:bg-terracotta-dark text-white rounded-xl font-bold text-sm transition shadow flex items-center space-x-2">
+                        <i class="fa-solid fa-play"></i>
+                        <span>Start Cooking Mode</span>
+                    </button>
+                    <button onclick="closeRecipeModal()" class="px-6 py-2.5 bg-sage hover:bg-sage-dark text-white rounded-xl font-semibold text-sm transition">
+                        Done Cooking
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ================= COOKING MODE MODAL ================= -->
+    <div id="cooking-mode-modal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div class="bg-cream rounded-3xl max-w-3xl w-full min-h-[500px] flex flex-col justify-between shadow-2xl border-2 border-sage-light/40 relative overflow-hidden p-6 sm:p-10">
+            
+            <!-- Top Bar: Exit + Title + Progress -->
+            <div>
+                <div class="flex items-center justify-between pb-4 border-b border-sage-light/30">
+                    <div class="flex items-center space-x-3">
+                        <span class="w-3 h-3 rounded-full bg-terracotta animate-pulse"></span>
+                        <h3 id="cooking-mode-title" class="font-heading font-bold text-lg sm:text-xl text-sage-deep truncate max-w-xs sm:max-w-md"></h3>
+                    </div>
+                    <button onclick="exitCookingMode()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl font-bold text-xs sm:text-sm transition flex items-center space-x-1">
+                        <i class="fa-solid fa-arrow-left"></i>
+                        <span>Exit Cooking Mode</span>
+                    </button>
+                </div>
+
+                <!-- Step Progress Bar -->
+                <div class="mt-4">
+                    <div class="flex justify-between items-center text-xs font-bold text-sage-dark mb-1.5">
+                        <span id="cooking-step-count">Step 1 of 5</span>
+                        <span id="cooking-progress-pct">20% Completed</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div id="cooking-progress-bar" class="bg-sage h-3 rounded-full transition-all duration-300" style="width: 20%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Section: Step Content & Timer Side-by-Side/Stacked -->
+            <div class="my-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                
+                <!-- Main Instruction View -->
+                <div class="lg:col-span-8 bg-white p-6 sm:p-8 rounded-3xl border border-sage-light/30 shadow-sm flex flex-col justify-between min-h-[220px]">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span id="cooking-step-badge" class="px-3 py-1 bg-sage/10 text-sage-dark text-xs font-bold rounded-full uppercase tracking-wider">Step 1</span>
+                            <span class="text-xs text-gray-400 font-medium"><i class="fa-solid fa-hand-pointer mr-1"></i> Tap Next when ready</span>
+                        </div>
+                        <p id="cooking-step-text" class="text-lg sm:text-2xl font-medium text-gray-800 leading-relaxed font-sans">
+                            Instruction text will load here...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Kitchen Timer Widget -->
+                <div class="lg:col-span-4 bg-white p-5 rounded-3xl border border-sage-light/30 shadow-sm text-center flex flex-col justify-center">
+                    <div class="flex items-center justify-center space-x-1.5 text-terracotta font-bold text-xs uppercase tracking-wider mb-2">
+                        <i class="fa-solid fa-stopwatch"></i>
+                        <span>Kitchen Timer</span>
+                    </div>
+                    
+                    <!-- Digital Display / Custom Input Toggle -->
+                    <div id="timer-display-container" class="my-1">
+                        <div id="timer-display" class="font-heading text-4xl sm:text-5xl font-extrabold text-sage-deep tracking-wider">
+                            00:00
+                        </div>
+                        
+                        <!-- Custom Input Fields -->
+                        <div class="flex items-center justify-center space-x-1 mt-2">
+                            <input type="number" id="timer-min-input" min="0" max="99" placeholder="00" onchange="updateTimerFromInput()" class="w-14 text-center py-1 bg-cream border border-sage-light/40 rounded-lg text-sm font-bold text-sage-deep focus:outline-none focus:ring-2 focus:ring-sage/40">
+                            <span class="text-xs font-bold text-gray-500">m</span>
+                            <input type="number" id="timer-sec-input" min="0" max="59" placeholder="00" onchange="updateTimerFromInput()" class="w-14 text-center py-1 bg-cream border border-sage-light/40 rounded-lg text-sm font-bold text-sage-deep focus:outline-none focus:ring-2 focus:ring-sage/40">
+                            <span class="text-xs font-bold text-gray-500">s</span>
+                            <button onclick="applyCustomTimerInput()" class="px-2.5 py-1 bg-sage text-white rounded-lg text-xs font-bold hover:bg-sage-dark transition ml-1">Set</button>
+                        </div>
+                    </div>
+
+                    <!-- Preset Quick Buttons -->
+                    <div class="flex items-center justify-center gap-1.5 my-3">
+                        <button onclick="setTimerPreset(60)" class="px-2.5 py-1 bg-cream-dark hover:bg-sage-light/30 text-sage-dark rounded-lg text-xs font-semibold">1m</button>
+                        <button onclick="setTimerPreset(300)" class="px-2.5 py-1 bg-cream-dark hover:bg-sage-light/30 text-sage-dark rounded-lg text-xs font-semibold">5m</button>
+                        <button onclick="setTimerPreset(600)" class="px-2.5 py-1 bg-cream-dark hover:bg-sage-light/30 text-sage-dark rounded-lg text-xs font-semibold">10m</button>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center justify-center space-x-2">
+                        <button id="timer-start-btn" onclick="toggleTimer()" class="px-4 py-2 bg-sage hover:bg-sage-dark text-white rounded-xl text-xs font-bold shadow transition flex items-center space-x-1">
+                            <i class="fa-solid fa-play text-[10px]" id="timer-icon"></i>
+                            <span id="timer-btn-text">Start</span>
+                        </button>
+                        <button onclick="resetTimer()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation Controls -->
+            <div class="pt-4 border-t border-sage-light/30 flex items-center justify-between gap-4">
+                <button id="prev-step-btn" onclick="changeCookingStep(-1)" class="flex-1 py-4 sm:py-5 bg-white border border-sage-light/40 hover:bg-sage-light/10 text-sage-dark rounded-2xl font-bold text-base sm:text-lg shadow-sm transition flex items-center justify-center space-x-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left"></i>
+                    <span>Previous Step</span>
+                </button>
+                <button id="next-step-btn" onclick="changeCookingStep(1)" class="flex-1 py-4 sm:py-5 bg-terracotta hover:bg-terracotta-dark text-white rounded-2xl font-bold text-base sm:text-lg shadow-md transition flex items-center justify-center space-x-2 disabled:opacity-40">
+                    <span>Next Step</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Timer Alert Modal Notification -->
+    <div id="timer-alert-modal" class="fixed inset-0 z-[60] hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border-2 border-terracotta animate-bounce">
+            <div class="w-16 h-16 bg-terracotta text-white rounded-full flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-800">Timer Done!</h3>
+            <p class="text-sm text-gray-600 mt-1">Your timer has finished counting down. Check your food!</p>
+            <button onclick="dismissTimerAlert()" class="mt-5 w-full py-3 bg-terracotta hover:bg-terracotta-dark text-white font-bold rounded-xl shadow transition">
+                Got it, Thanks!
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT ================= -->
+    <script>
+        // Recipe Database (Full Collection - Exactly 10 per category)
+        const recipes = [
+            // ================= BREAKFAST RECIPES (10) =================
+            {
+                id: 1,
+                title: "10-Minute Rainbow Grain Bowl",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "A colorful, nutrient-packed bowl made with quinoa, avocado, tomatoes, chickpeas, and a squeeze of fresh lime.",
+                ingredients: ["1 cup cooked quinoa or brown rice", "1/2 ripe avocado, sliced", "1/2 cup canned chickpeas, rinsed", "1/2 cup cherry tomatoes, halved", "1 cup baby spinach", "1 tbsp olive oil", "1/2 lime, juiced", "Salt and pepper to taste"],
+                steps: ["Place cooked quinoa or rice in a serving bowl.", "Arrange spinach, chickpeas, cherry tomatoes, and avocado slices on top.", "Drizzle with olive oil and fresh lime juice.", "Season with salt and pepper and enjoy immediately!"]
+            },
+            {
+                id: 2,
+                title: "Fluffy Banana Oat Pancakes",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Blender-made flourless pancakes sweetened naturally with ripe bananas. Wholesome and fast for busy mornings.",
+                ingredients: ["1 cup rolled oats", "1 ripe banana", "1 egg", "1/2 cup milk", "1/2 tsp cinnamon", "1 tsp baking powder", "Butter or oil for pan", "Maple syrup for serving"],
+                steps: ["Add oats, banana, egg, milk, cinnamon, and baking powder to a blender. Blend until smooth.", "Heat butter or oil in a skillet over medium heat.", "Pour 1/4 cup batter for each pancake. Cook until bubbles form, then flip and cook for 1-2 minutes.", "Serve warm with maple syrup or fresh berries."]
+            },
+            {
+                id: 3,
+                title: "Avocado & Egg Breakfast Toast",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&q=80&w=800",
+                prepTime: "8 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Creamy smashed avocado on crisp toasted bread topped with a soft-boiled or fried egg.",
+                ingredients: ["2 slices whole grain bread", "1 ripe avocado", "2 eggs", "1/2 tsp red pepper flakes", "Salt and pepper to taste", "1 tsp lemon juice"],
+                steps: ["Toast the bread slices until golden brown.", "In a small bowl, mash the avocado with lemon juice, salt, and pepper.", "Fry or boil eggs to your liking.", "Spread smashed avocado onto toast and top with eggs and red pepper flakes."]
+            },
+            {
+                id: 4,
+                title: "Berry & Yogurt Parfait",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Layered Greek yogurt, crunchy granola, and fresh mixed berries with a drizzle of honey.",
+                ingredients: ["1 cup Greek yogurt", "1/2 cup granola", "1/2 cup fresh berries (strawberries, blueberries)", "1 tbsp honey"],
+                steps: ["In a glass or cup, layer 1/3 of the yogurt, granola, and berries.", "Repeat layers until glass is filled.", "Drizzle honey on top and serve immediately."]
+            },
+            {
+                id: 5,
+                title: "Cheesy Scrambled Eggs in a Mug",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1510693206972-df098062cb71?auto=format&fit=crop&q=80&w=800",
+                prepTime: "3 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Micro-cooked eggs mixed with shredded cheddar cheese and chives. Perfect for dorm rooms!",
+                ingredients: ["2 eggs", "1 tbsp milk", "2 tbsp shredded cheddar cheese", "1 tbsp chopped chives or green onion", "Salt and pepper"],
+                steps: ["Whisk eggs, milk, salt, and pepper inside a microwave-safe mug.", "Microwave on high for 45 seconds. Stir gently.", "Microwave for another 30-45 seconds until eggs are set.", "Top with cheddar cheese and chives."]
+            },
+            {
+                id: 6,
+                title: "Classic Cinnamon French Toast",
+                category: "Breakfast",
+                image: "https://www.dessertnowdinnerlater.com/wp-content/uploads/2020/12/Classic-French-Toast-Recipe-2.jpg",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Golden brown sliced bread dipped in cinnamon egg custard, fried in butter.",
+                ingredients: ["4 slices bread", "2 eggs", "1/4 cup milk", "1/2 tsp cinnamon", "1 tsp vanilla extract", "1 tbsp butter"],
+                steps: ["Whisk eggs, milk, cinnamon, and vanilla in a shallow dish.", "Dip bread slices into mixture, soaking both sides.", "Melt butter in a pan over medium heat. Fry slices for 2-3 minutes per side.", "Serve dusted with powdered sugar or maple syrup."]
+            },
+            {
+                id: 7,
+                title: "Overnight Chocolate Peanut Butter Oats",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1517673400267-0251440c45dc?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Prep before sleep and wake up to rich, chocolatey oats packed with peanut butter protein.",
+                ingredients: ["1/2 cup rolled oats", "1/2 cup milk", "1 tbsp cocoa powder", "1 tbsp peanut butter", "1 tbsp maple syrup or honey", "1 tbsp chia seeds"],
+                steps: ["Combine all ingredients in a jar or container and stir thoroughly.", "Cover and refrigerate overnight (at least 6 hours).", "Enjoy chilled straight from the jar in the morning!"]
+            },
+            {
+                id: 8,
+                title: "Breakfast Burrito Wrap",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1626700051175-6818013e1d4f?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Warm flour tortilla packed with scrambled eggs, black beans, salsa, and melted cheese.",
+                ingredients: ["1 large flour tortilla", "2 scrambled eggs", "1/4 cup canned black beans, rinsed", "1/4 cup shredded cheese", "2 tbsp salsa"],
+                steps: ["Scramble the eggs in a pan until fluffy.", "Warm the tortilla in microwave for 15 seconds.", "Fill tortilla with scrambled eggs, beans, cheese, and salsa.", "Fold sides in and roll tightly into a burrito."]
+            },
+            {
+                id: 31,
+                title: "Crispy Egg & Cheese Breakfast Bagel",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Toasted bagel stuffed with a fried egg, melted cheddar, and crisp spinach.",
+                ingredients: ["1 bagel, split and toasted", "1 egg", "1 slice cheddar cheese", "1/2 cup fresh spinach", "1 tsp butter", "Salt and pepper"],
+                steps: ["Fry the egg in butter until whites are set.", "Place cheese on top of hot egg to melt.", "Assemble bagel with spinach, egg, and cheese.", "Serve hot."]
+            },
+            {
+                id: 32,
+                title: "Tropical Mango Spinach Smoothie",
+                category: "Breakfast",
+                image: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Energizing green smoothie packed with sweet mango, banana, and baby spinach.",
+                ingredients: ["1 cup frozen mango chunks", "1 banana", "1 cup baby spinach", "1 cup almond or oat milk", "1 tbsp chia seeds"],
+                steps: ["Add all ingredients into a blender.", "Blend on high speed for 60 seconds until smooth.", "Pour into a glass and enjoy instantly."]
+            },
+
+            // ================= LUNCH RECIPES (10) =================
+            {
+                id: 9,
+                title: "Caprese Grilled Cheese Toastie",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Gourmet melt with fresh mozzarella, sliced tomato, pesto spread, and crispy golden sourdough.",
+                ingredients: ["2 slices sourdough bread", "1 tbsp basil pesto", "2 oz fresh mozzarella, sliced", "1 small tomato, sliced", "1 tbsp butter"],
+                steps: ["Spread pesto on one side of each bread slice.", "Layer mozzarella and tomato slices between bread.", "Butter outside of sandwich.", "Grill in a pan over medium heat for 3-4 minutes per side until golden and cheese melts."]
+            },
+            {
+                id: 10,
+                title: "Crispy Chickpea Caesar Wrap",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1509722747041-616f39b57569?auto=format&fit=crop&q=80&w=800",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Protein-rich roasted chickpeas, romaine lettuce, parmesan, and Caesar dressing wrapped tightly.",
+                ingredients: ["1 large tortilla", "1 cup canned chickpeas, drained & rinsed", "1 cup chopped romaine lettuce", "2 tbsp Caesar dressing", "2 tbsp grated parmesan cheese", "1/2 tsp garlic powder"],
+                steps: ["Pan-fry chickpeas in a drop of oil with garlic powder for 5 minutes until crispy.", "Toss lettuce, chickpeas, dressing, and parmesan together in a bowl.", "Pile onto tortilla and roll tightly.", "Slice in half and serve."]
+            },
+            {
+                id: 11,
+                title: "15-Minute Loaded Veggie Ramen",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Upgrade instant noodles with fresh veggies, soft-boiled egg, soy sauce, and sesame oil broth.",
+                ingredients: ["1 pack instant ramen noodles", "1 soft-boiled egg", "1/2 cup spinach", "1/4 cup shredded carrots", "1 tbsp soy sauce", "1 tsp sesame oil", "1 green onion, sliced"],
+                steps: ["Boil ramen noodles according to package instructions in 2 cups water.", "Stir in soy sauce and sesame oil into the broth.", "Add spinach and carrots during the last minute of cooking.", "Pour into bowl and top with soft-boiled egg and green onions."]
+            },
+            {
+                id: 12,
+                title: "Classic Tuna Melt Toast",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Savory tuna salad loaded onto crisp bread topped with melted cheddar cheese.",
+                ingredients: ["1 canned tuna, drained", "1 tbsp mayo", "1 tsp mustard", "1 tbsp diced celery or onion", "2 slices bread", "2 slices cheddar cheese"],
+                steps: ["Mix tuna, mayo, mustard, and celery in a bowl.", "Spread tuna salad onto bread slices.", "Top each with a slice of cheddar cheese.", "Toast under broiler or in pan until cheese is bubbly."]
+            },
+            {
+                id: 13,
+                title: "Mediterranean Pita Pockets",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=800",
+                prepTime: "8 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Warm pita stuffed with hummus, diced cucumber, tomatoes, feta cheese, and olives.",
+                ingredients: ["1 pita bread, halved", "3 tbsp hummus", "1/2 cup diced cucumber", "1/2 cup diced tomato", "2 tbsp crumbled feta cheese", "4 kalamata olives, pitted"],
+                steps: ["Warm pita bread gently in microwave or toaster.", "Spread hummus generously inside pita pockets.", "Stuff pockets with cucumber, tomato, feta, and olives.", "Serve cold or at room temperature."]
+            },
+            {
+                id: 14,
+                title: "Easy Chicken Quesadilla",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Crispy tortilla stuffed with pre-cooked chicken, melted cheese, and taco spices.",
+                ingredients: ["1 flour tortilla", "1/2 cup cooked shredded chicken", "1/2 cup shredded Mexican blend cheese", "1/2 tsp taco seasoning", "Salsa and sour cream for dipping"],
+                steps: ["Mix chicken with taco seasoning.", "Place tortilla in pan, sprinkle half with cheese and shredded chicken, then fold over.", "Cook on medium heat 3 mins per side until crispy and cheese melts.", "Slice into triangles and serve with salsa."]
+            },
+            {
+                id: 15,
+                title: "Sesame Peanut Cold Noodles",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1612927601601-6638404737ce?auto=format&fit=crop&q=80&w=800",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Noodles tossed in a creamy peanut butter, soy sauce, and garlic sauce topped with cucumber.",
+                ingredients: ["6 oz spaghetti or ramen noodles", "2 tbsp peanut butter", "1 tbsp soy sauce", "1 tbsp warm water", "1 tsp honey", "1/2 cup cucumber, julienned"],
+                steps: ["Cook noodles according to package, rinse under cold water.", "Whisk peanut butter, soy sauce, warm water, and honey together until smooth.", "Toss noodles with peanut sauce.", "Top with fresh cucumber slices and serve chilled."]
+            },
+            {
+                id: 33,
+                title: "Turkey & Swiss Club Sandwich",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1553909489-cd47e0907980?auto=format&fit=crop&q=80&w=800",
+                prepTime: "7 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Classic multi-layer deli sandwich with turkey slices, Swiss cheese, lettuce, and mayo.",
+                ingredients: ["2 slices whole wheat bread", "3 oz sliced deli turkey", "1 slice Swiss cheese", "1/2 cup crisp lettuce", "1 tbsp mayonnaise", "1 tsp mustard"],
+                steps: ["Spread mayo and mustard over one side of each bread slice.", "Layer turkey, Swiss cheese, and lettuce between slices.", "Cut diagonally in half and serve."]
+            },
+            {
+                id: 34,
+                title: "Creamy Tomato Basil Soup",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Silky, warm tomato soup made in minutes with canned tomatoes, garlic, and cream.",
+                ingredients: ["1 can (14oz) crushed tomatoes", "1/2 cup vegetable broth", "1/4 cup heavy cream or milk", "1 tsp dried basil", "1 clove garlic, minced", "1 tbsp olive oil"],
+                steps: ["Sauté garlic in olive oil in a small pot for 1 minute.", "Pour in crushed tomatoes, broth, and dried basil. Simmer for 8 minutes.", "Stir in cream, season with salt and pepper, and serve warm."]
+            },
+            {
+                id: 35,
+                title: "Crunchy Veggie Spring Rice Paper Rolls",
+                category: "Lunch",
+                image: "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Fresh rice paper wraps loaded with crisp carrots, cucumber, lettuce, and sweet chili dip.",
+                ingredients: ["4 rice paper wrappers", "1/2 cup shredded carrots", "1/2 cup cucumber matchsticks", "1 cup shredded lettuce", "2 tbsp sweet chili sauce"],
+                steps: ["Dip rice paper in warm water for 10 seconds to soften.", "Place carrots, cucumber, and lettuce in the center.", "Fold sides in and roll up tightly.", "Serve cold with sweet chili sauce for dipping."]
+            },
+
+            // ================= DINNER RECIPES (10) =================
+            {
+                id: 16,
+                title: "Creamy Garlic Parmesan Pasta",
+                category: "Dinner",
+                image: "https://www.eatingwell.com/thmb/EQl3mnX6FPUS0WqIlZmanZ0ZQPI=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/EWL-creamy-garlic-parmesan-chicken-and-spinach-pasta-bake-beauty-551_preview_maxWidth_4000_maxHeight_4000_ppi_300_quality_100-b697a9cc28ad4c34a286ceea9c37f858.jpg",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Comfort food classic in 15 minutes! Penne pasta tossed in garlic, cream, and parmesan cheese sauce.",
+                ingredients: ["8 oz penne pasta", "2 tbsp butter", "2 cloves garlic, minced", "1/2 cup heavy cream or milk", "1/2 cup grated parmesan cheese", "Salt, pepper, and parsley"],
+                steps: ["Boil pasta in salted water until al dente.", "In a pan, melt butter and sauté garlic for 1 minute.", "Pour in heavy cream and bring to a simmer. Stir in parmesan cheese.", "Toss cooked pasta into sauce, garnish with parsley and serve hot."]
+            },
+            {
+                id: 17,
+                title: "Sheet Pan Chicken & Veggies",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1532550907401-a500c9a57435?auto=format&fit=crop&q=80&w=800",
+                prepTime: "25 mins",
+                difficulty: "Medium",
+                servings: 2,
+                description: "Minimal cleanup! Chicken breast, broccoli florets, and sweet potato baked together on one tray.",
+                ingredients: ["2 chicken breasts, diced", "1 head broccoli, chopped", "1 sweet potato, diced", "2 tbsp olive oil", "1 tsp Italian seasoning", "1/2 tsp garlic powder", "Salt and pepper"],
+                steps: ["Preheat oven to 400°F (200°C).", "Place chicken, broccoli, and sweet potato on a baking sheet.", "Drizzle with olive oil, Italian seasoning, garlic powder, salt, and pepper. Toss well.", "Bake for 20-25 minutes until chicken is cooked through."]
+            },
+            {
+                id: 18,
+                title: "Cheesy Garlic Bread",
+                category: "Dinner",
+                image: "https://therecipecritic.com/wp-content/uploads/2020/02/cheesy_garlic_bread.jpg",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Warm, gooey, garlic butter French bread loaded with melted mozzarella.",
+                ingredients: ["1 French baguette, halved", "3 tbsp melted butter", "2 cloves garlic, minced", "1 cup shredded mozzarella cheese", "1 tbsp chopped parsley"],
+                steps: ["Mix butter and minced garlic together.", "Brush garlic butter evenly over halved bread.", "Top generously with mozzarella cheese.", "Bake at 375°F (190°C) for 8-10 minutes until cheese is bubbly and golden."]
+            },
+            {
+                id: 19,
+                title: "10-Minute Black Bean Tacos",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&q=80&w=800",
+                prepTime: "10 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Fast weeknight dinner! Warm tortillas stuffed with seasoned black beans, corn, and toppings.",
+                ingredients: ["4 small corn or flour tortillas", "1 can black beans, drained", "1/2 cup canned corn", "1 tsp cumin", "1/2 cup shredded lettuce", "1/4 cup salsa"],
+                steps: ["Heat black beans and corn in a skillet with cumin for 4 minutes.", "Warm tortillas in microwave or skillet.", "Spoon bean mixture into tortillas and top with lettuce and salsa."]
+            },
+            {
+                id: 20,
+                title: "Teriyaki Veggie Stir-Fry",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&q=80&w=800",
+                prepTime: "18 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Crispy bell peppers, snap peas, and tofu tossed in sweet teriyaki sauce over rice.",
+                ingredients: ["1 cup cooked rice", "1 bell pepper, sliced", "1 cup snap peas", "1/2 cup cubed tofu or chicken", "3 tbsp teriyaki sauce", "1 tbsp oil"],
+                steps: ["Heat oil in skillet and fry tofu/chicken until golden.", "Add bell peppers and snap peas, stir-fry for 4 minutes.", "Pour teriyaki sauce over skillet and coat ingredients well.", "Serve hot over steamed rice."]
+            },
+            {
+                id: 21,
+                title: "One-Pot Tomato Spinach Pasta",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&q=80&w=800",
+                prepTime: "20 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Cook pasta directly in canned tomato broth with fresh spinach for effortless cleanup.",
+                ingredients: ["8 oz spaghetti", "1 can diced tomatoes", "2 cups vegetable broth", "2 cups fresh spinach", "1 tsp dried basil", "1/4 cup parmesan cheese"],
+                steps: ["Combine spaghetti, diced tomatoes, dried basil, and broth in a large pot.", "Bring to boil, then simmer for 10-12 minutes until pasta is tender.", "Stir in fresh spinach until wilted.", "Serve topped with grated parmesan cheese."]
+            },
+            {
+                id: 22,
+                title: "Easy Beef or Bean Nachos",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Crispy tortilla chips smothered in melted cheese, beans, jalapenos, and sour cream.",
+                ingredients: ["1 bag tortilla chips", "1 cup shredded cheddar cheese", "1/2 cup canned refried beans", "2 tbsp sliced jalapenos", "1/4 cup sour cream"],
+                steps: ["Spread tortilla chips onto a baking tray.", "Spoon refried beans over chips and cover with cheese.", "Bake at 400°F (200°C) for 7 minutes until cheese melts.", "Garnish with jalapenos and sour cream."]
+            },
+            {
+                id: 36,
+                title: "Simple Lemon Herb Baked Salmon",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "18 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Tender salmon fillet baked with lemon slices, olive oil, and fragrant Italian herbs.",
+                ingredients: ["2 salmon fillets", "1 lemon, sliced", "1 tbsp olive oil", "1/2 tsp garlic powder", "1 tsp dried oregano", "Salt and pepper"],
+                steps: ["Preheat oven to 375°F (190°C).", "Place salmon fillets on foil-lined baking sheet.", "Drizzle olive oil and season with garlic powder, oregano, salt, and pepper.", "Top with lemon slices and bake for 12-15 minutes until flaky."]
+            },
+            {
+                id: 37,
+                title: "Quick Fried Rice with Veggies & Egg",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&q=80&w=800",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Turn leftover cooked rice into savory fried rice with eggs, frozen peas, carrots, and soy sauce.",
+                ingredients: ["2 cups cooked white or brown rice (chilled)", "2 eggs, beaten", "1/2 cup frozen peas and carrots", "2 tbsp soy sauce", "1 tbsp oil", "1 green onion, chopped"],
+                steps: ["Heat oil in a large skillet. Scramble eggs and remove from pan.", "Add peas, carrots, and cold rice to skillet, frying on high for 3-4 minutes.", "Stir in soy sauce, scrambled eggs, and green onion.", "Serve piping hot."]
+            },
+            {
+                id: 38,
+                title: "Classic Margherita Personal Pizza",
+                category: "Dinner",
+                image: "https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Individual flatbread pizza topped with rich tomato sauce, mozzarella, and fresh basil.",
+                ingredients: ["1 flatbread or pita", "3 tbsp marinara or pizza sauce", "1/2 cup shredded mozzarella", "4 fresh basil leaves", "1 tsp olive oil"],
+                steps: ["Spread pizza sauce evenly over flatbread.", "Cover with shredded mozzarella cheese.", "Bake at 425°F (220°C) for 8-10 minutes until crust is crisp and cheese is bubbly.", "Top with fresh basil leaves before serving."]
+            },
+
+            // ================= SNACKS RECIPES (10) =================
+            {
+                id: 23,
+                title: "Air Fryer Pita Chips & Hummus",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1577906096429-f73c2c312435?auto=format&fit=crop&q=80&w=800",
+                prepTime: "8 mins",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Crispy spiced pita triangles toasted in minutes, served with creamy hummus.",
+                ingredients: ["2 pita breads, cut into triangles", "1 tbsp olive oil", "1/2 tsp garlic powder", "1/2 tsp paprika", "1/2 cup store-bought hummus"],
+                steps: ["Toss pita triangles with olive oil, garlic powder, and paprika.", "Air fry or bake at 375°F (190°C) for 5-6 minutes until crunchy.", "Serve alongside hummus for dipping."]
+            },
+            {
+                id: 24,
+                title: "Peanut Butter Banana Toast",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1588137378633-dea1336ce1e2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "3 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Crispy toast layered with creamy peanut butter, fresh banana slices, and chia seeds.",
+                ingredients: ["1 slice toasted bread", "2 tbsp peanut butter", "1/2 banana, sliced", "1 tsp chia seeds or cinnamon"],
+                steps: ["Spread peanut butter over toasted bread slice.", "Arrange banana slices evenly on top.", "Sprinkle with chia seeds or cinnamon."]
+            },
+            {
+                id: 25,
+                title: "Crispy Microwave Popcorn",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&q=80&w=800",
+                prepTime: "4 mins",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Fresh homemade popcorn seasoned with melted butter and nutritional yeast or salt.",
+                ingredients: ["1/4 cup popcorn kernels", "1 brown paper bag", "1 tbsp melted butter", "1/2 tsp salt or seasoning"],
+                steps: ["Pour popcorn kernels into brown paper bag and fold top over twice.", "Microwave on high for 2 to 2.5 minutes until popping slows down.", "Pour into bowl, drizzle melted butter and sprinkle salt."]
+            },
+            {
+                id: 26,
+                title: "Crispy Roasted Edamame",
+                category: "Snacks",
+                image: "https://www.shelikesfood.com/wp-content/uploads/2025/04/Crispy-Roasted-Edamame-7232.jpg",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Crunchy, high-protein roasted soy beans seasoned with soy sauce and garlic powder.",
+                ingredients: ["1 cup frozen shelled edamame, thawed", "1 tsp olive oil", "1/2 tsp garlic powder", "1 tsp soy sauce"],
+                steps: ["Pat edamame dry with paper towels.", "Toss with olive oil, garlic powder, and soy sauce.", "Bake at 400°F (200°C) for 15 minutes until crispy."]
+            },
+            {
+                id: 39,
+                title: "Cheesy Garlic Herb Popcorn",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1512149177596-f817c7ef5d4c?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Warm popped corn tossed in melted butter, garlic powder, and parmesan cheese.",
+                ingredients: ["4 cups popped popcorn", "2 tbsp melted butter", "2 tbsp grated parmesan cheese", "1/2 tsp garlic powder", "1/2 tsp dried parsley"],
+                steps: ["Place fresh popcorn in a large bowl.", "Drizzle melted butter evenly over popcorn.", "Sprinkle parmesan, garlic powder, and parsley while tossing gently."]
+            },
+            {
+                id: 40,
+                title: "Crispy Tortilla Guacamole Roll-ups",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=800",
+                prepTime: "6 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Flour tortilla spread with guacamole, rolled tightly and sliced into bite-sized pinwheels.",
+                ingredients: ["1 flour tortilla", "1/3 cup guacamole", "2 tbsp salsa", "1 tbsp shredded cheese"],
+                steps: ["Spread guacamole across entire surface of tortilla.", "Drizzle salsa and sprinkle cheese over guacamole.", "Roll up tightly and slice into 1-inch pinwheel bites."]
+            },
+            {
+                id: 41,
+                title: "Frozen Yogurt Berry Bites",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins (+ freezing)",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Fresh blueberries dipped in vanilla Greek yogurt and frozen into healthy bite-sized snacks.",
+                ingredients: ["1 cup fresh blueberries or raspberries", "1/2 cup vanilla Greek yogurt", "1 tbsp honey"],
+                steps: ["Stir Greek yogurt and honey together in a small bowl.", "Dip individual berries into yogurt mixture using a toothpick.", "Place on lined tray and freeze for 1 hour until firm."]
+            },
+            {
+                id: 42,
+                title: "Sweet & Salty Trail Mix",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&q=80&w=800",
+                prepTime: "3 mins",
+                difficulty: "Super Easy",
+                servings: 3,
+                description: "Energy-packed snack mix made with almonds, pretzels, raisins, and chocolate chips.",
+                ingredients: ["1/2 cup roasted almonds", "1/2 cup mini pretzel twists", "1/4 cup raisins or dried cranberries", "1/4 cup chocolate chips"],
+                steps: ["Combine all ingredients in a sealable bag or jar.", "Shake well to distribute evenly.", "Store in pantry for a quick study break snack."]
+            },
+            {
+                id: 43,
+                title: "Crispy Parmesan Zucchini Bites",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&q=80&w=800",
+                prepTime: "12 mins",
+                difficulty: "Easy",
+                servings: 2,
+                description: "Thin sliced zucchini coins baked with garlic, olive oil, and crisp parmesan cheese crust.",
+                ingredients: ["1 medium zucchini, sliced into coins", "1 tbsp olive oil", "3 tbsp grated parmesan", "1/2 tsp garlic powder", "Salt and pepper"],
+                steps: ["Arrange zucchini slices in a single layer on a baking sheet.", "Brush with olive oil and sprinkle garlic powder and parmesan on each slice.", "Bake at 400°F (200°C) for 10-12 minutes until golden brown."]
+            },
+            {
+                id: 44,
+                title: "Apple Slices with Honey Peanut Butter",
+                category: "Snacks",
+                image: "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "4 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Crisp apple wedges paired with warm, honey-swirled peanut butter dip.",
+                ingredients: ["1 crisp apple, cored and wedged", "2 tbsp creamy peanut butter", "1 tsp honey", "Dash of cinnamon"],
+                steps: ["Warm peanut butter in microwave for 10 seconds to loosen.", "Drizzle honey into peanut butter and sprinkle with cinnamon.", "Serve as a dip alongside fresh apple wedges."]
+            },
+
+            // ================= DESSERTS RECIPES (10) =================
+            {
+                id: 27,
+                title: "5-Minute Chocolate Mug Cake",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Warm, gooey chocolate cake cooked in a coffee mug inside the microwave!",
+                ingredients: ["3 tbsp flour", "2 tbsp sugar", "1 tbsp cocoa powder", "1/4 tsp baking powder", "3 tbsp milk", "1 tbsp melted butter", "1 tbsp chocolate chips"],
+                steps: ["Whisk flour, sugar, cocoa powder, and baking powder inside mug.", "Add milk and melted butter, stir with fork until smooth.", "Drop chocolate chips into center.", "Microwave on high for 60-70 seconds. Let cool 1 min before eating."]
+            },
+            {
+                id: 28,
+                title: "Chilled Chocolate Chia Pudding",
+                category: "Desserts",
+                image: "https://www.nourishandtempt.com/wp-content/uploads/2024/10/DAC4CA1A-AF3D-4959-9D87-580C99429A7C-scaled.jpg",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Creamy, naturally sweet chia pudding made with milk, cocoa, and maple syrup.",
+                ingredients: ["3 tbsp chia seeds", "1 cup almond or regular milk", "1 tbsp cocoa powder", "1 tbsp maple syrup", "1/2 tsp vanilla extract"],
+                steps: ["Whisk chia seeds, milk, cocoa powder, maple syrup, and vanilla in a glass.", "Let sit 10 mins, whisk again to prevent clumping.", "Refrigerate for at least 2 hours until thick.", "Serve topped with fresh berries."]
+            },
+            {
+                id: 29,
+                title: "Quick Chocolate Dip Fondue",
+                category: "Desserts",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRetZ64TQLUMxTDqso-DG_2PSxYBwPjlknIvkko3izKSA&s=10",
+                prepTime: "6 mins",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Melted dark chocolate dip served warm with banana slices, marshmallows, and strawberries.",
+                ingredients: ["1/2 cup chocolate chips", "2 tbsp heavy cream or milk", "Sliced strawberries and bananas", "Marshmallows for dipping"],
+                steps: ["Combine chocolate chips and cream in microwave-safe bowl.", "Microwave in 20-second intervals, stirring until smooth and melted.", "Serve warm alongside fruit and marshmallows."]
+            },
+            {
+                id: 30,
+                title: "Cinnamon Sugar Apple Slices",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Warm sliced apples cooked in butter and cinnamon sugar. Tastes like apple pie fill!",
+                ingredients: ["1 apple, cored & sliced", "1 tbsp butter", "1 tbsp brown sugar", "1/2 tsp cinnamon"],
+                steps: ["Melt butter in a small pan over medium heat.", "Add sliced apples, brown sugar, and cinnamon.", "Cook for 4-5 minutes until apples are soft and caramelized."]
+            },
+            {
+                id: 45,
+                title: "3-Ingredient Peanut Butter Cookies",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Super Easy",
+                servings: 3,
+                description: "Naturally gluten-free soft peanut butter cookies baked in under 12 minutes.",
+                ingredients: ["1 cup peanut butter", "1/2 cup sugar", "1 egg"],
+                steps: ["Preheat oven to 350°F (175°C).", "Mix peanut butter, sugar, and egg together in a bowl until smooth dough forms.", "Roll into balls, press down with a fork in a criss-cross pattern.", "Bake for 10-12 minutes until edges are set."]
+            },
+            {
+                id: 46,
+                title: "Fudgy Microwave Brownie in a Bowl",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&q=80&w=800",
+                prepTime: "5 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Single-serving rich chocolate brownie made right inside a small microwave bowl.",
+                ingredients: ["2 tbsp flour", "2 tbsp sugar", "1 tbsp cocoa powder", "1 tbsp vegetable oil", "2 tbsp water", "1 tbsp chocolate chips"],
+                steps: ["Mix flour, sugar, and cocoa powder inside bowl.", "Add water and oil, stirring with a spoon until combined.", "Top with chocolate chips and microwave on high for 50-60 seconds."]
+            },
+            {
+                id: 47,
+                title: "No-Bake Strawberry Cheesecake Cup",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=800",
+                prepTime: "8 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Layered crushed graham crackers, sweetened cream cheese, and fresh strawberries in a glass.",
+                ingredients: ["2 graham crackers, crushed", "2 oz cream cheese, softened", "1 tbsp powdered sugar", "1 tsp milk", "1/3 cup diced strawberries"],
+                steps: ["Beat cream cheese, powdered sugar, and milk together until smooth.", "In a glass, layer crushed graham crackers, cream cheese filling, and diced strawberries.", "Chill in fridge or serve immediately."]
+            },
+            {
+                id: 48,
+                title: "Banana Chocolate Frozen Pops",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&q=80&w=800",
+                prepTime: "6 mins (+ freezing)",
+                difficulty: "Super Easy",
+                servings: 2,
+                description: "Frozen banana halves dipped in melted dark chocolate and topped with crushed nuts.",
+                ingredients: ["1 banana, halved", "1/2 cup chocolate chips, melted", "2 tbsp chopped peanuts or sprinkles"],
+                steps: ["Insert a popsicle stick into each banana half.", "Dip bananas into melted dark chocolate to coat.", "Sprinkle chopped peanuts on top and freeze for 1 hour until chocolate shell hardens."]
+            },
+            {
+                id: 49,
+                title: "Warm Cinnamon Baked Pear",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1568571780765-9276ac8b75a2?auto=format&fit=crop&q=80&w=800",
+                prepTime: "15 mins",
+                difficulty: "Easy",
+                servings: 1,
+                description: "Juicy ripe pear halved, core removed, and baked with honey, cinnamon, and walnuts.",
+                ingredients: ["1 ripe pear, halved & cored", "1 tsp honey", "1/2 tsp cinnamon", "1 tbsp chopped walnuts"],
+                steps: ["Place pear halves cut-side up on a baking dish.", "Drizzle honey and sprinkle cinnamon and walnuts into the center core.", "Bake at 375°F (190°C) for 15 minutes until tender."]
+            },
+            {
+                id: 50,
+                title: "Vanilla Ice Cream Cookie Sandwich",
+                category: "Desserts",
+                image: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&q=80&w=800",
+                prepTime: "3 mins",
+                difficulty: "Super Easy",
+                servings: 1,
+                description: "Classic treat made by sandwiching a scoop of vanilla ice cream between two chocolate chip cookies.",
+                ingredients: ["2 chocolate chip cookies", "1 scoop vanilla ice cream", "1 tbsp rainbow sprinkles"],
+                steps: ["Place one scoop of vanilla ice cream onto flat side of one cookie.", "Top with second cookie and gently press together.", "Roll edges in sprinkles and serve immediately."]
+            }
+        ];
+
+        let activeCategory = 'All';
+        let searchQuery = '';
+        let selectedIngredients = new Set();
+        
+        // Cooking History State (Persisted in LocalStorage)
+        let completedRecipeIds = new Set(JSON.parse(localStorage.getItem('whats_cooking_completed_recipes') || '[]'));
+
+        // Serving Adjuster State
+        let currentModalRecipe = null;
+        let currentServingsCount = 1;
+
+        // Cooking Mode State
+        let currentRecipeForCooking = null;
+        let currentStepIndex = 0;
+        let timerSecondsLeft = 0;
+        let timerInterval = null;
+        let isTimerRunning = false;
+
+        // Pantry Match Finder logic
+        function findRecipesByPantry() {
+            const resultsContainer = document.getElementById('pantry-results-container');
+            const resultsGrid = document.getElementById('pantry-results-grid');
+            const countEl = document.getElementById('pantry-matches-count');
+
+            if (!resultsContainer || !resultsGrid) return;
+
+            if (selectedIngredients.size === 0) {
+                alert("Please select at least one ingredient first!");
+                return;
+            }
+
+            const userSel = Array.from(selectedIngredients).map(i => i.toLowerCase());
+
+            // Score recipes by ingredient count matches
+            const scored = recipes.map(recipe => {
+                let matchCount = 0;
+                recipe.ingredients.forEach(ing => {
+                    if (userSel.some(sel => ing.toLowerCase().includes(sel))) {
+                        matchCount++;
+                    }
+                });
+                return { recipe, matchCount };
+            }).filter(item => item.matchCount > 0);
+
+            // Sort descending by highest match count
+            scored.sort((a, b) => b.matchCount - a.matchCount);
+
+            resultsContainer.classList.remove('hidden');
+            resultsGrid.innerHTML = '';
+
+            if (scored.length === 0) {
+                countEl.textContent = "0 matches found";
+                resultsGrid.innerHTML = `
+                    <div class="col-span-full text-center py-10 bg-white rounded-2xl border border-sage-light/20">
+                        <p class="text-gray-500 font-medium">No direct matches found for your exact ingredient selection. Try selecting fewer or more common staples like Egg, Bread, Rice, or Butter!</p>
+                    </div>
+                `;
+            } else {
+                countEl.textContent = `${scored.length} matching recipe${scored.length > 1 ? 's' : ''}`;
+                scored.forEach(({ recipe, matchCount }) => {
+                    const isCompleted = completedRecipeIds.has(recipe.id);
+                    const card = document.createElement('div');
+                    card.className = "recipe-card-shadow bg-white rounded-3xl overflow-hidden border border-sage-light/20 flex flex-col justify-between transition-all duration-300";
+                    card.innerHTML = `
+                        <div>
+                            <div class="relative h-44 overflow-hidden group cursor-pointer" onclick="openRecipeModal(${recipe.id})">
+                                <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute top-3 left-3 bg-terracotta text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center space-x-1">
+                                    <i class="fa-solid fa-fire"></i>
+                                    <span>${matchCount} Match${matchCount > 1 ? 'es' : ''}</span>
+                                </div>
+                                ${isCompleted ? `
+                                    <div class="absolute bottom-3 left-3 bg-emerald-600/90 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center space-x-1">
+                                        <i class="fa-solid fa-circle-check"></i>
+                                        <span>Cooked</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="p-5">
+                                <h3 class="font-bold text-lg text-gray-800 hover:text-terracotta cursor-pointer transition-colors" onclick="openRecipeModal(${recipe.id})">${recipe.title}</h3>
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-2">${recipe.description}</p>
+                            </div>
+                        </div>
+                        <div class="p-5 pt-0 flex items-center justify-between border-t border-sage-light/20 mt-2">
+                            <span class="text-xs text-gray-500 font-medium"><i class="fa-regular fa-clock text-terracotta mr-1"></i> ${recipe.prepTime}</span>
+                            <button onclick="openRecipeModal(${recipe.id})" class="px-3.5 py-1.5 rounded-xl bg-sage/10 text-sage-dark hover:bg-sage hover:text-white font-bold text-xs transition">
+                                View Recipe
+                            </button>
+                        </div>
+                    `;
+                    resultsGrid.appendChild(card);
+                });
+            }
+
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ================= SEARCH & NAVIGATION FUNCTIONS =================
+        function liveSearch(query) {
+            searchQuery = query;
+            renderRecipes();
+        }
+
+        function handleSearchSubmit(event) {
+            event.preventDefault();
+            navNavigate('recipes');
+        }
+
+        function quickSearch(tag) {
+            const searchInput = document.getElementById('hero-search');
+            if (searchInput) {
+                searchInput.value = tag;
+            }
+            searchQuery = tag;
+            renderRecipes();
+            navNavigate('recipes');
+        }
+
+        function filterByCategory(cat) {
+            activeCategory = cat;
+
+            // Update title
+            const titleEl = document.getElementById('catalog-title');
+            if (titleEl) {
+                titleEl.textContent = cat === 'All' ? 'Popular Recipes' : `${cat} Recipes`;
+            }
+
+            // Update active pill styling
+            const buttons = document.querySelectorAll('.filter-btn');
+            buttons.forEach(btn => {
+                if (btn.id === `filter-${cat.toLowerCase()}`) {
+                    btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-sage text-white shadow-sm whitespace-nowrap";
+                } else {
+                    btn.className = "filter-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white hover:bg-sage-light/20 text-gray-600 border border-sage-light/30 whitespace-nowrap";
+                }
+            });
+
+            renderRecipes();
+            navNavigate('recipes');
+        }
+
+        function resetFilters() {
+            searchQuery = '';
+            activeCategory = 'All';
+            const heroSearch = document.getElementById('hero-search');
+            if (heroSearch) heroSearch.value = '';
+            filterByCategory('All');
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            if (menu) {
+                menu.classList.toggle('hidden');
+            }
+        }
+
+        function openRandomRecipe() {
+            const randomIndex = Math.floor(Math.random() * recipes.length);
+            const randomRecipe = recipes[randomIndex];
+            if (randomRecipe) {
+                openRecipeModal(randomRecipe.id);
+            }
+        }
+
+        // Helper to save history to LocalStorage
+        function saveCompletedHistory() {
+            localStorage.setItem('whats_cooking_completed_recipes', JSON.stringify(Array.from(completedRecipeIds)));
+            updateHistoryUI();
+            renderRecipes(); // Refresh cards with ticks
+        }
+
+        function toggleCompletedRecipe(id) {
+            if (completedRecipeIds.has(id)) {
+                completedRecipeIds.delete(id);
+            } else {
+                completedRecipeIds.add(id);
+            }
+            saveCompletedHistory();
+            if (currentModalRecipe && currentModalRecipe.id === id) {
+                updateModalCompletedBtn();
+            }
+        }
+
+        function toggleCompletedCurrentRecipe() {
+            if (currentModalRecipe) {
+                toggleCompletedRecipe(currentModalRecipe.id);
+            }
+        }
+
+        function clearAllHistory() {
+            completedRecipeIds.clear();
+            localStorage.removeItem('whats_cooking_completed_recipes');
+            updateHistoryUI();
+            renderRecipes();
+        }
+
+        function updateHistoryUI() {
+            const grid = document.getElementById('history-grid');
+            const emptyState = document.getElementById('history-empty');
+            const totalCountEl = document.getElementById('history-total-count');
+            const navBadge = document.getElementById('history-badge-nav');
+            const mobileBadge = document.getElementById('history-badge-mobile');
+            const clearBtn = document.getElementById('clear-history-btn');
+
+            const completedRecipes = recipes.filter(r => completedRecipeIds.has(r.id));
+            const count = completedRecipes.length;
+
+            totalCountEl.textContent = count;
+
+            if (count > 0) {
+                navBadge.textContent = count;
+                navBadge.classList.remove('hidden');
+                mobileBadge.textContent = count;
+                mobileBadge.classList.remove('hidden');
+                clearBtn.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+            } else {
+                navBadge.classList.add('hidden');
+                mobileBadge.classList.add('hidden');
+                clearBtn.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+
+            grid.innerHTML = '';
+            completedRecipes.forEach(recipe => {
+                const card = document.createElement('div');
+                card.className = "recipe-card-shadow bg-white rounded-3xl overflow-hidden border border-sage-light/20 flex flex-col justify-between transition-all duration-300";
+                card.innerHTML = `
+                    <div>
+                        <div class="relative h-44 overflow-hidden group cursor-pointer" onclick="openRecipeModal(${recipe.id})">
+                            <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute top-3 left-3 bg-emerald-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center space-x-1">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>Completed</span>
+                            </div>
+                            <div class="absolute top-3 right-3 bg-white/90 text-sage-dark px-2 py-1 rounded-full text-xs font-bold">
+                                ${recipe.category}
+                            </div>
+                        </div>
+                        <div class="p-5">
+                            <h3 class="font-bold text-lg text-gray-800 hover:text-terracotta cursor-pointer transition-colors" onclick="openRecipeModal(${recipe.id})">${recipe.title}</h3>
+                            <p class="text-xs text-gray-500 mt-1 line-clamp-2">${recipe.description}</p>
+                        </div>
+                    </div>
+                    <div class="p-5 pt-0 flex items-center justify-between border-t border-sage-light/20 mt-2">
+                        <span class="text-xs text-gray-500 font-medium"><i class="fa-regular fa-clock text-terracotta mr-1"></i> ${recipe.prepTime}</span>
+                        <button onclick="toggleCompletedRecipe(${recipe.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-semibold transition flex items-center space-x-1">
+                            <i class="fa-solid fa-trash-can text-[11px]"></i>
+                            <span>Remove</span>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // ================= SERVING ADJUSTER LOGIC =================
+        function adjustServingSize(delta) {
+            if (!currentModalRecipe) return;
+            const newServings = Math.max(1, currentServingsCount + delta);
+            currentServingsCount = newServings;
+            document.getElementById('modal-servings').textContent = currentServingsCount;
+            renderScaledIngredients();
+        }
+
+        // Accurately parse & recalculate ingredient quantities
+        function parseAndScaleQuantity(ingredientStr, originalServings, targetServings) {
+            const scaleFactor = targetServings / originalServings;
+
+            // Regex matches numbers, decimals, and simple fractions like 1/2, 1/4, 1.5, 2
+            const qtyRegex = /^((?:\d+\s+)?\d+\/\d+|\d+(?:\.\d+)?)\s*(.*)$/;
+            const match = ingredientStr.trim().match(qtyRegex);
+
+            if (!match) return ingredientStr; // If no leading quantity found, return as is
+
+            let rawQtyStr = match[1];
+            let restOfIng = match[2];
+            let numericVal = 0;
+
+            // Handle mixed fractions e.g., "1 1/2"
+            if (rawQtyStr.includes('/')) {
+                const parts = rawQtyStr.split(' ');
+                if (parts.length === 2) {
+                    const fracParts = parts[1].split('/');
+                    numericVal = parseFloat(parts[0]) + (parseFloat(fracParts[0]) / parseFloat(fracParts[1]));
+                } else {
+                    const fracParts = parts[0].split('/');
+                    numericVal = parseFloat(fracParts[0]) / parseFloat(fracParts[1]);
+                }
+            } else {
+                numericVal = parseFloat(rawQtyStr);
+            }
+
+            if (isNaN(numericVal)) return ingredientStr;
+
+            const scaledVal = numericVal * scaleFactor;
+
+            // Format scaled quantity into clean readable string
+            let formattedQty = '';
+            if (scaledVal % 1 === 0) {
+                formattedQty = scaledVal.toFixed(0);
+            } else if (Math.abs(scaledVal - 0.25) < 0.05) {
+                formattedQty = '1/4';
+            } else if (Math.abs(scaledVal - 0.33) < 0.05) {
+                formattedQty = '1/3';
+            } else if (Math.abs(scaledVal - 0.5) < 0.05) {
+                formattedQty = '1/2';
+            } else if (Math.abs(scaledVal - 0.75) < 0.05) {
+                formattedQty = '3/4';
+            } else {
+                formattedQty = scaledVal.toFixed(1).replace(/\.0$/, '');
+            }
+
+            return `${formattedQty} ${restOfIng}`;
+        }
+
+        function renderScaledIngredients() {
+            if (!currentModalRecipe) return;
+
+            const origServings = parseInt(currentModalRecipe.servings) || 1;
+            const ingContainer = document.getElementById('modal-ingredients');
+
+            ingContainer.innerHTML = currentModalRecipe.ingredients.map(ing => {
+                const scaledIng = parseAndScaleQuantity(ing, origServings, currentServingsCount);
+                return `
+                    <li class="flex items-start space-x-2">
+                        <input type="checkbox" class="mt-1 rounded text-sage focus:ring-sage accent-sage">
+                        <span class="font-medium text-gray-800">${scaledIng}</span>
+                    </li>
+                `;
+            }).join('');
+        }
+
+        function updateModalCompletedBtn() {
+            if (!currentModalRecipe) return;
+            const btn = document.getElementById('modal-completed-toggle');
+            const isCompleted = completedRecipeIds.has(currentModalRecipe.id);
+
+            if (isCompleted) {
+                btn.className = "shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 bg-emerald-600 text-white border-emerald-600 shadow-sm";
+                btn.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>Marked as Cooked</span>`;
+            } else {
+                btn.className = "shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-2 bg-white hover:bg-sage-light/20 text-gray-700 border-gray-300";
+                btn.innerHTML = `<i class="fa-regular fa-circle-check text-sage"></i><span>Mark as Cooked</span>`;
+            }
+        }
+
+        // Render Recipe Cards
+        function renderRecipes() {
+            const grid = document.getElementById('recipe-grid');
+            const noResults = document.getElementById('no-results');
+            grid.innerHTML = '';
+
+            const filtered = recipes.filter(recipe => {
+                const matchesCategory = activeCategory === 'All' || recipe.category.toLowerCase() === activeCategory.toLowerCase();
+                const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      recipe.ingredients.some(ing => ing.toLowerCase().includes(searchQuery.toLowerCase()));
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            filtered.forEach(recipe => {
+                const isCompleted = completedRecipeIds.has(recipe.id);
+                const card = document.createElement('div');
+                card.className = "recipe-card-shadow bg-white rounded-3xl overflow-hidden border border-sage-light/20 flex flex-col transition-all duration-300 transform hover:-translate-y-1 relative";
+                card.innerHTML = `
+                    <div class="relative h-48 overflow-hidden group cursor-pointer" onclick="openRecipeModal(${recipe.id})">
+                        <img src="${recipe.image}" alt="${recipe.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-sage-dark shadow-sm">
+                            ${recipe.category}
+                        </div>
+                        <div class="absolute top-3 right-3 bg-terracotta text-white px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm">
+                            ${recipe.difficulty}
+                        </div>
+                        ${isCompleted ? `
+                            <div class="absolute bottom-3 left-3 bg-emerald-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold shadow-md flex items-center space-x-1">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>Cooked</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="p-6 flex flex-col flex-grow justify-between space-y-4">
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <h3 class="font-bold text-xl text-gray-800 hover:text-terracotta cursor-pointer transition-colors" onclick="openRecipeModal(${recipe.id})">${recipe.title}</h3>
+                                <button onclick="toggleCompletedRecipe(${recipe.id})" title="${isCompleted ? 'Mark as uncooked' : 'Mark as cooked'}" class="text-gray-300 hover:text-emerald-600 transition ml-2">
+                                    <i class="fa-solid fa-circle-check text-xl ${isCompleted ? 'text-emerald-600' : ''}"></i>
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2 line-clamp-2">${recipe.description}</p>
+                        </div>
+                        <div class="pt-4 border-t border-sage-light/20 flex items-center justify-between text-xs text-gray-500 font-medium">
+                            <span class="flex items-center"><i class="fa-regular fa-clock mr-1 text-terracotta"></i> ${recipe.prepTime}</span>
+                            <button onclick="openRecipeModal(${recipe.id})" class="px-3.5 py-1.5 rounded-xl bg-sage/10 text-sage-dark hover:bg-sage hover:text-white font-bold transition">
+                                View Recipe
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Modal Operations
+        function openRecipeModal(id) {
+            const recipe = recipes.find(r => r.id === id);
+            if (!recipe) return;
+
+            currentModalRecipe = recipe;
+            currentServingsCount = parseInt(recipe.servings) || 1;
+
+            document.getElementById('modal-img').src = recipe.image;
+            document.getElementById('modal-title').textContent = recipe.title;
+            document.getElementById('modal-category').textContent = recipe.category;
+            document.getElementById('modal-difficulty').textContent = recipe.difficulty;
+            document.getElementById('modal-prep').textContent = recipe.prepTime;
+            document.getElementById('modal-servings').textContent = currentServingsCount;
+            document.getElementById('modal-desc').textContent = `"${recipe.description}"`;
+
+            updateModalCompletedBtn();
+            renderScaledIngredients();
+
+            // Populate steps
+            const stepsContainer = document.getElementById('modal-steps');
+            stepsContainer.innerHTML = recipe.steps.map((step, idx) => `
+                <li class="flex items-start space-x-3">
+                    <span class="w-6 h-6 rounded-full bg-terracotta/10 text-terracotta font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                    <span class="leading-relaxed">${step}</span>
+                </li>
+            `).join('');
+
+            // Display modal
+            const modal = document.getElementById('recipe-modal');
+            const container = document.getElementById('modal-container');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                container.classList.remove('scale-95', 'opacity-0');
+                container.classList.add('scale-100', 'opacity-100');
+            }, 10);
+
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeRecipeModal() {
+            const modal = document.getElementById('recipe-modal');
+            const container = document.getElementById('modal-container');
+            if (container) {
+                container.classList.remove('scale-100', 'opacity-100');
+                container.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                if (modal) modal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }, 200);
+        }
+
+        // ================= PANTRY / INGREDIENT FINDER =================
+        const commonIngredientsList = [
+            "Egg", "Milk", "Butter", "Cheese", "Avocado", "Chicken", "Pork", "Ground Beef",
+            "Canned Tuna", "Rice", "Quinoa", "Oats", "Flour", "Pasta", "Spaghetti", "Bread",
+            "Pita", "Tortilla", "Tomato", "Cherry Tomatoes", "Spinach", "Broccoli", "Sweet Potato",
+            "Cucumber", "Carrots", "Chickpeas", "Black Beans", "Refried Beans", "Corn", "Peanut Butter",
+            "Chia Seeds", "Honey", "Maple Syrup", "Soy Sauce", "Pesto", "Hummus", "Cocoa Powder",
+            "Chocolate Chips", "Popcorn Kernels"
+        ];
+
+        function renderIngredientChips(filterText = '') {
+            const container = document.getElementById('ingredient-chips-grid');
+            if (!container) return;
+
+            const filteredList = commonIngredientsList.filter(ing => 
+                ing.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            container.innerHTML = filteredList.map(ing => {
+                const isSelected = selectedIngredients.has(ing);
+                return `
+                    <button onclick="toggleIngredientSelection('${ing}')" 
+                        class="px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center space-x-1.5 ${
+                            isSelected 
+                                ? 'bg-sage text-white shadow-sm ring-2 ring-sage/30' 
+                                : 'bg-white hover:bg-sage-light/20 text-gray-700 border border-sage-light/30'
+                        }">
+                        <span>${ing}</span>
+                        ${isSelected ? '<i class="fa-solid fa-check text-[10px]"></i>' : '<i class="fa-solid fa-plus text-[10px] text-sage"></i>'}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function filterIngredientChips(query) {
+            renderIngredientChips(query);
+        }
+
+        function toggleIngredientSelection(ing) {
+            if (selectedIngredients.has(ing)) {
+                selectedIngredients.delete(ing);
+            } else {
+                selectedIngredients.add(ing);
+            }
+            updateSelectedTags();
+            renderIngredientChips(document.getElementById('ingredient-search-input')?.value || '');
+        }
+
+        function clearSelectedIngredients() {
+            selectedIngredients.clear();
+            updateSelectedTags();
+            renderIngredientChips();
+        }
+
+        function updateSelectedTags() {
+            const tagContainer = document.getElementById('selected-ingredients-tags');
+            const countEl = document.getElementById('selected-count');
+            const clearBtn = document.getElementById('clear-ingredients-btn');
+
+            if (!tagContainer) return;
+
+            countEl.textContent = selectedIngredients.size;
+
+            if (selectedIngredients.size === 0) {
+                tagContainer.innerHTML = `<span class="text-xs text-gray-400 italic">No ingredients selected yet. Click from the list below!</span>`;
+                clearBtn.classList.add('hidden');
+                return;
+            }
+
+            clearBtn.classList.remove('hidden');
+            tagContainer.innerHTML = Array.from(selectedIngredients).map(ing => `
+                <span class="inline-flex items-center px-3 py-1 bg-terracotta/10 text-terracotta border border-terracotta/20 rounded-xl text-xs font-bold">
+                    <span>${ing}</span>
+                    <button onclick="toggleIngredientSelection('${ing}')" class="ml-1.5 text-terracotta hover:text-terracotta-dark">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </span>
+            `).join('');
+        }
+
+        // ================= COOKING MODE LOGIC =================
+        function startCookingModeFromModal() {
+            if (!currentModalRecipe) return;
+            currentRecipeForCooking = currentModalRecipe;
+            currentStepIndex = 0;
+            closeRecipeModal();
+
+            document.getElementById('cooking-mode-title').textContent = currentRecipeForCooking.title;
+            renderCookingStep();
+
+            const cookingModal = document.getElementById('cooking-mode-modal');
+            if (cookingModal) cookingModal.classList.remove('hidden');
+        }
+
+        function renderCookingStep() {
+            if (!currentRecipeForCooking) return;
+            const totalSteps = currentRecipeForCooking.steps.length;
+            const stepText = currentRecipeForCooking.steps[currentStepIndex];
+
+            document.getElementById('cooking-step-count').textContent = `Step ${currentStepIndex + 1} of ${totalSteps}`;
+            
+            const pct = Math.round(((currentStepIndex + 1) / totalSteps) * 100);
+            document.getElementById('cooking-progress-pct').textContent = `${pct}% Completed`;
+            document.getElementById('cooking-progress-bar').style.width = `${pct}%`;
+
+            document.getElementById('cooking-step-badge').textContent = `Step ${currentStepIndex + 1}`;
+            document.getElementById('cooking-step-text').textContent = stepText;
+
+            // Update buttons
+            const prevBtn = document.getElementById('prev-step-btn');
+            const nextBtn = document.getElementById('next-step-btn');
+
+            if (prevBtn) prevBtn.disabled = currentStepIndex === 0;
+            if (nextBtn) {
+                if (currentStepIndex === totalSteps - 1) {
+                    nextBtn.innerHTML = `<span>Finish Cooking!</span> <i class="fa-solid fa-check"></i>`;
+                } else {
+                    nextBtn.innerHTML = `<span>Next Step</span> <i class="fa-solid fa-chevron-right"></i>`;
+                }
+            }
+        }
+
+        function changeCookingStep(direction) {
+            if (!currentRecipeForCooking) return;
+            const totalSteps = currentRecipeForCooking.steps.length;
+
+            if (direction === 1 && currentStepIndex === totalSteps - 1) {
+                // Completed all steps - automatically mark as cooked!
+                completedRecipeIds.add(currentRecipeForCooking.id);
+                saveCompletedHistory();
+                exitCookingMode();
+                return;
+            }
+
+            currentStepIndex = Math.max(0, Math.min(totalSteps - 1, currentStepIndex + direction));
+            renderCookingStep();
+        }
+
+        function exitCookingMode() {
+            const cookingModal = document.getElementById('cooking-mode-modal');
+            if (cookingModal) cookingModal.classList.add('hidden');
+            resetTimer();
+        }
+
+        // Kitchen Timer
+        function setTimerPreset(seconds) {
+            resetTimer();
+            timerSecondsLeft = seconds;
+            updateTimerDisplay();
+        }
+
+        function applyCustomTimerInput() {
+            const mins = parseInt(document.getElementById('timer-min-input').value) || 0;
+            const secs = parseInt(document.getElementById('timer-sec-input').value) || 0;
+            resetTimer();
+            timerSecondsLeft = (mins * 60) + secs;
+            updateTimerDisplay();
+        }
+
+        function updateTimerFromInput() {
+            applyCustomTimerInput();
+        }
+
+        function toggleTimer() {
+            if (isTimerRunning) {
+                pauseTimer();
+            } else {
+                if (timerSecondsLeft <= 0) return;
+                isTimerRunning = true;
+                document.getElementById('timer-btn-text').textContent = 'Pause';
+                document.getElementById('timer-icon').className = 'fa-solid fa-pause text-[10px]';
+
+                timerInterval = setInterval(() => {
+                    if (timerSecondsLeft > 0) {
+                        timerSecondsLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        pauseTimer();
+                        playAlarmSound();
+                        const alertModal = document.getElementById('timer-alert-modal');
+                        if (alertModal) alertModal.classList.remove('hidden');
+                    }
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            isTimerRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('timer-btn-text').textContent = 'Start';
+            document.getElementById('timer-icon').className = 'fa-solid fa-play text-[10px]';
+        }
+
+        function resetTimer() {
+            pauseTimer();
+            timerSecondsLeft = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timerSecondsLeft / 60);
+            const s = timerSecondsLeft % 60;
+            const display = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            const timerEl = document.getElementById('timer-display');
+            if (timerEl) timerEl.textContent = display;
+        }
+
+        function dismissTimerAlert() {
+            const alertModal = document.getElementById('timer-alert-modal');
+            if (alertModal) alertModal.classList.add('hidden');
+        }
+
+        function playAlarmSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                function beep(freq, duration, delay) {
+                    setTimeout(() => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.value = freq;
+                        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start();
+                        osc.stop(ctx.currentTime + duration);
+                    }, delay);
+                }
+
+                beep(880, 0.15, 0);
+                beep(880, 0.15, 200);
+                beep(880, 0.25, 400);
+            } catch (e) {
+                console.log("Audio play prevented or unsupported", e);
+            }
+        }
+
+        // Navigation Highlight Switch
+        function navNavigate(section) {
+            const sections = {
+                'home': 'home-section',
+                'recipes': 'recipes-section',
+                'pantry': 'pantry-section',
+                'history': 'history-section',
+                'explore': 'explore-section',
+                'about': 'about-section'
+            };
+
+            const target = document.getElementById(sections[section]);
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Mobile menu collapse
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenu) mobileMenu.classList.add('hidden');
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            renderRecipes();
+            renderIngredientChips();
+            updateHistoryUI();
+        };
+    </script>
+</body>
+</html>

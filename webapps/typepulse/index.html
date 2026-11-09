@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypePulse | Next-Gen Typing Speed & Accuracy Trainer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: 'var(--bg-main)',
+                        cardBg: 'var(--bg-card)',
+                        cardBorder: 'var(--border-card)',
+                        neonCyan: 'var(--accent-primary)',
+                        neonPink: 'var(--accent-secondary)',
+                        neonGreen: 'var(--accent-success)',
+                        neonYellow: 'var(--accent-warning)',
+                        subtext: 'var(--text-sub)',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Theme Definitions */
+        :root, :root[data-theme="cyber"] {
+            --bg-main: #0d0f17;
+            --bg-card: #161926;
+            --border-card: #23283b;
+            --accent-primary: #00f0ff;
+            --accent-secondary: #ff007f;
+            --accent-success: #00ff66;
+            --accent-warning: #ffe600;
+            --text-sub: #6272a4;
+            --text-main: #f8f8f2;
+        }
+
+        :root[data-theme="synthwave"] {
+            --bg-main: #120024;
+            --bg-card: #1e0536;
+            --border-card: #3a115c;
+            --accent-primary: #ff71ce;
+            --accent-secondary: #01cdfe;
+            --accent-success: #05ffa1;
+            --accent-warning: #fffb96;
+            --text-sub: #9a65bd;
+            --text-main: #ffedff;
+        }
+
+        :root[data-theme="matrix"] {
+            --bg-main: #020b05;
+            --bg-card: #081a0e;
+            --border-card: #12331c;
+            --accent-primary: #00ff66;
+            --accent-secondary: #00b348;
+            --accent-success: #33ff88;
+            --accent-warning: #ccff00;
+            --text-sub: #2d7345;
+            --text-main: #e6ffe8;
+        }
+
+        :root[data-theme="carbon"] {
+            --bg-main: #161616;
+            --bg-card: #222222;
+            --border-card: #333333;
+            --accent-primary: #f4f4f4;
+            --accent-secondary: #8d8d8d;
+            --accent-success: #42be65;
+            --accent-warning: #f1c21b;
+            --text-sub: #6f6f6f;
+            --text-main: #ffffff;
+        }
+
+        :root[data-theme="deepspace"] {
+            --bg-main: #080d1a;
+            --bg-card: #0f172a;
+            --border-card: #1e293b;
+            --accent-primary: #38bdf8;
+            --accent-secondary: #818cf8;
+            --accent-success: #34d399;
+            --accent-warning: #fbbf24;
+            --text-sub: #64748b;
+            --text-main: #f1f5f9;
+        }
+
+        :root[data-theme="colorblind"] {
+            --bg-main: #0a0e1a;
+            --bg-card: #151c2e;
+            --border-card: #2e3a59;
+            --accent-primary: #00d2ff;
+            --accent-secondary: #d55e00;
+            --accent-success: #f0e442;
+            --accent-warning: #e69f00;
+            --text-sub: #8ca0cc;
+            --text-main: #ffffff;
+        }
+
+        :root[data-theme="hyperlight"] {
+            --bg-main: #f5f7fa;
+            --bg-card: #ffffff;
+            --border-card: #dcdfe6;
+            --accent-primary: #6200ee;
+            --accent-secondary: #d8004c;
+            --accent-success: #00875a;
+            --accent-warning: #ff8800;
+            --text-sub: #5a6275;
+            --text-main: #090a0f;
+        }
+
+        body {
+            background-color: var(--bg-main) !important;
+            color: var(--text-main) !important;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+        .bg-cardBg { background-color: var(--bg-card) !important; }
+        .border-cardBorder { border-color: var(--border-card) !important; }
+        .text-neonCyan { color: var(--accent-primary) !important; }
+        .text-neonPink { color: var(--accent-secondary) !important; }
+        .text-neonGreen { color: var(--accent-success) !important; }
+        .text-neonYellow { color: var(--accent-warning) !important; }
+        .text-subtext { color: var(--text-sub) !important; }
+
+        /* Particle Canvas Overlay */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Typing display cursor */
+        .caret {
+            position: absolute;
+            width: 2.5px;
+            height: 1.6em;
+            background-color: var(--accent-primary);
+            transition: all 0.08s cubic-bezier(0.1, 0.9, 0.2, 1);
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            50% { opacity: 0.3; }
+        }
+
+        .word {
+            display: inline-block;
+            margin: 0.2rem 0.4rem;
+            font-size: 1.6rem;
+            line-height: 2rem;
+            transition: color 0.15s ease;
+            position: relative;
+        }
+
+        .char-correct { color: var(--accent-primary); }
+        .char-incorrect { color: var(--accent-secondary); text-decoration: underline; background-color: rgba(255, 0, 127, 0.15); border-radius: 2px; }
+        .char-extra { color: var(--accent-warning); }
+        .char-untyped { color: var(--text-sub); opacity: 0.55; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans overflow-x-hidden">
+    <!-- Canvas for Particle Effects -->
+    <canvas id="particle-canvas"></canvas>
+
+    <div id="app" class="flex-1 flex flex-col max-w-6xl w-full mx-auto px-4 py-6">
+        <!-- Header / Navigation Bar -->
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-6 pb-4 border-b border-cardBorder">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-neonCyan/10 border border-neonCyan flex items-center justify-center text-neonCyan font-black text-xl">
+                    ⚡
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                        TypePulse
+                        <span class="text-xs font-mono px-2 py-0.5 rounded-full bg-neonCyan/20 text-neonCyan border border-neonCyan/30">GRADES 6-8</span>
+                    </h1>
+                    <p class="text-xs text-subtext font-mono">Speed & Accuracy Performance Suite</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <!-- Mode Switcher -->
+                <div class="flex p-1 bg-cardBg border border-cardBorder rounded-xl">
+                    <button onclick="app.switchMode('practice')" id="mode-btn-practice" class="px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-neonCyan bg-neonCyan/10">
+                        <i class="fa-solid fa-stopwatch mr-1"></i> Practice
+                    </button>
+                    <button onclick="app.switchMode('bot')" id="mode-btn-bot" class="px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-subtext hover:text-white">
+                        <i class="fa-solid fa-robot mr-1"></i> VS Bot
+                    </button>
+                </div>
+
+                <!-- Personal Best Display -->
+                <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-cardBg border border-cardBorder rounded-xl">
+                    <i class="fa-solid fa-trophy text-neonYellow text-sm"></i>
+                    <span class="text-xs font-mono text-subtext">PB:</span>
+                    <span id="pb-display" class="text-xs font-mono font-bold text-neonYellow">0 WPM</span>
+                </div>
+
+                <!-- Theme Selector -->
+                <div class="relative">
+                    <select id="theme-select" onchange="app && app.setTheme(this.value)" class="bg-cardBg border border-cardBorder text-subtext text-xs font-mono font-bold py-2 px-3 rounded-xl focus:outline-none focus:border-neonCyan cursor-pointer transition-all">
+                        <option value="cyber">⚡ Cyber Neon</option>
+                        <option value="synthwave">🌅 Synthwave Sunset</option>
+                        <option value="matrix">01 Emerald Matrix</option>
+                        <option value="carbon">🖤 Minimal Carbon</option>
+                        <option value="deepspace">🌌 Deep Space</option>
+                        <option value="colorblind">👁️ Colorblind Safe</option>
+                        <option value="hyperlight">☀️ Hyper Light</option>
+                    </select>
+                </div>
+
+                <!-- Audio Switch -->
+                <button id="sound-toggle" onclick="app.toggleSound()" class="p-2 rounded-xl bg-cardBg border border-cardBorder text-subtext hover:text-neonCyan transition-all" title="Toggle Sound">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard View -->
+        <main class="flex-1 flex flex-col gap-6">
+            <!-- Test Mode Settings Bar -->
+            <div id="controls-bar" class="flex flex-wrap items-center justify-between gap-4 p-4 bg-cardBg border border-cardBorder rounded-2xl">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-mono text-subtext">Type:</span>
+                        <button onclick="app.setTestType('time')" id="type-time" class="px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan">Time</button>
+                        <button onclick="app.setTestType('words')" id="type-words" class="px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">Words</button>
+                    </div>
+
+                    <div id="config-options" class="flex items-center gap-2 border-l border-cardBorder pl-4">
+                        <button onclick="app.setConfigValue(15)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">15s</button>
+                        <button onclick="app.setConfigValue(30)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan">30s</button>
+                        <button onclick="app.setConfigValue(60)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">60s</button>
+                    </div>
+
+                    <!-- Live Progress Counter (Seconds remaining / Words progress) -->
+                    <div class="flex items-center gap-2 border-l border-cardBorder pl-4">
+                        <span class="text-xs font-mono text-subtext">PROGRESS:</span>
+                        <span id="live-timer" class="text-sm font-mono font-black text-neonCyan">30s</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 text-xs font-mono text-subtext cursor-pointer">
+                        <input type="checkbox" id="weak-words-toggle" onchange="app.toggleWeakWordTargeting(this.checked)" class="rounded bg-cardBg border-cardBorder text-neonCyan focus:ring-0">
+                        Target Weak Words
+                    </label>
+                    <button onclick="app.resetTest()" class="px-3 py-1.5 rounded-xl bg-cardBg border border-cardBorder text-xs font-mono font-bold text-subtext hover:text-neonCyan hover:border-neonCyan transition-all">
+                        <i class="fa-solid fa-rotate-right mr-1"></i> Restart
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bot / Opponents Dynamic Arena Panel (Visible in Bot / PvP mode) -->
+            <div id="race-arena" class="hidden p-4 bg-cardBg border border-cardBorder rounded-2xl flex-col gap-3">
+                <div class="flex justify-between items-center font-mono text-xs text-subtext">
+                    <span>RACE PROGRESS</span>
+                    <span id="race-status" class="text-neonCyan font-bold">VS CyberBot</span>
+                </div>
+                <div id="racers-container" class="flex flex-col gap-3">
+                    <!-- Dynamic Racer Bars injected by JS -->
+                </div>
+            </div>
+
+            <!-- Main Typing Box -->
+            <div id="typing-area" class="relative p-8 bg-cardBg border border-cardBorder rounded-3xl min-h-[220px] flex flex-col justify-start cursor-text transition-all" onclick="document.getElementById('hidden-input').focus()">
+                <input type="text" id="hidden-input" class="absolute opacity-0 pointer-events-none" autocomplete="off" capitalize="off" spellcheck="false">
+
+                <!-- Floating Caret Cursor -->
+                <div id="caret" class="caret hidden"></div>
+
+                <!-- Words Container -->
+                <div id="words-wrapper" class="relative flex flex-wrap max-h-[160px] overflow-hidden select-none font-mono text-left items-start">
+                    <!-- Dynamic Words injected by JS -->
+                </div>
+
+                <!-- Restart Prompt Tooltip -->
+                <div id="click-prompt" class="absolute inset-0 flex items-center justify-center bg-cardBg/90 backdrop-blur-sm rounded-3xl text-subtext font-mono text-sm pointer-events-none">
+                    <i class="fa-solid fa-keyboard mr-2 text-neonCyan"></i> Click or press any key to focus typing
+                </div>
+            </div>
+
+            <!-- Post-Test Results Dashboard -->
+            <div id="results-view" class="hidden flex-col gap-6">
+                <!-- Summary Metrics Bar -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div class="p-4 bg-cardBg border border-cardBorder rounded-2xl flex flex-col items-center">
+                        <span class="text-xs font-mono text-subtext">WPM</span>
+                        <span id="res-wpm" class="text-3xl font-black text-neonCyan font-mono">0</span>
+                    </div>
+                    <div class="p-4 bg-cardBg border border-cardBorder rounded-2xl flex flex-col items-center">
+                        <span class="text-xs font-mono text-subtext">ACCURACY</span>
+                        <span id="res-acc" class="text-3xl font-black text-neonGreen font-mono">100%</span>
+                    </div>
+                    <div class="p-4 bg-cardBg border border-cardBorder rounded-2xl flex flex-col items-center">
+                        <span class="text-xs font-mono text-subtext">RAW WPM</span>
+                        <span id="res-raw" class="text-3xl font-black text-subtext font-mono">0</span>
+                    </div>
+                    <div class="p-4 bg-cardBg border border-cardBorder rounded-2xl flex flex-col items-center">
+                        <span class="text-xs font-mono text-subtext">CONSISTENCY</span>
+                        <span id="res-consistency" class="text-3xl font-black text-neonYellow font-mono">0%</span>
+                    </div>
+                    <div class="p-4 bg-cardBg border border-cardBorder rounded-2xl flex flex-col items-center col-span-2 sm:col-span-1">
+                        <span class="text-xs font-mono text-subtext">TIME</span>
+                        <span id="res-time" class="text-3xl font-black text-neonPink font-mono">0s</span>
+                    </div>
+                </div>
+
+                <!-- Speed Performance Graph -->
+                <div class="p-6 bg-cardBg border border-cardBorder rounded-3xl">
+                    <h3 class="text-sm font-mono font-bold text-subtext mb-4"><i class="fa-solid fa-chart-line mr-2"></i>Speed & Raw WPM Curve</h3>
+                    <div class="h-64">
+                        <canvas id="results-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Detailed Per-Word Speed Breakdown Table -->
+                <div class="p-6 bg-cardBg border border-cardBorder rounded-3xl">
+                    <h3 class="text-sm font-mono font-bold text-subtext mb-4"><i class="fa-solid fa-list-check mr-2"></i>Per-Word Speed & Accuracy Recap</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left font-mono text-xs">
+                            <thead>
+                                <tr class="border-b border-cardBorder text-subtext">
+                                    <th class="pb-2">WORD</th>
+                                    <th class="pb-2">SPEED (WPM)</th>
+                                    <th class="pb-2">TIME</th>
+                                    <th class="pb-2">STATUS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="word-recap-table" class="divide-y divide-cardBorder/50">
+                                <!-- Dynamic breakdown rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Restart Button -->
+                <div class="flex justify-center">
+                    <button onclick="app.resetTest()" class="px-8 py-3 rounded-2xl bg-neonCyan text-darkBg font-mono font-extrabold text-sm hover:opacity-90 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> Start Next Test
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script>
+        // --- Sound Synthesizer Engine ---
+        class SoundEngine {
+            constructor() {
+                this.audioCtx = null;
+                this.enabled = true;
+            }
+            init() {
+                if (!this.audioCtx) {
+                    this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playKeyClick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300 + Math.random() * 150, this.audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.04, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.04);
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.04);
+            }
+            playErrorClick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.audioCtx.createOscillator();
+                const gain = this.audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, this.audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.08, this.audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(this.audioCtx.destination);
+                osc.start();
+                osc.stop(this.audioCtx.currentTime + 0.08);
+            }
+        }
+
+        // --- Particle Burst System ---
+        class ParticleSystem {
+            constructor() {
+                this.canvas = document.getElementById('particle-canvas');
+                if (!this.canvas) {
+                    this.canvas = document.createElement('canvas');
+                    this.canvas.id = 'particle-canvas';
+                    document.body.appendChild(this.canvas);
+                }
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.animate();
+            }
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            burst(x, y, color = '#00f0ff') {
+                for (let i = 0; i < 24; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2 + Math.random() * 6;
+                    this.particles.push({
+                        x, y,
+                        vx: Math.cos(angle) * speed,
+                        vy: Math.sin(angle) * speed,
+                        alpha: 1,
+                        color,
+                        size: 3 + Math.random() * 3
+                    });
+                }
+            }
+            animate() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.02;
+                    if (p.alpha <= 0) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+                    this.ctx.save();
+                    this.ctx.globalAlpha = p.alpha;
+                    this.ctx.fillStyle = p.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.restore();
+                }
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // --- Vocabulary Word Bank ---
+        const STANDARD_WORD_BANK = [
+            "a", "i", "to", "in", "is", "it", "be", "on", "at", "by", "or", "an", "do", "if", "my", "we",
+            "the", "and", "code", "fast", "type", "keyboard", "neon", "pulse", "cyber", "screen", "bot",
+            "speed", "focus", "skill", "hero", "game", "rank", "matrix", "synth", "drive", "power", "grid",
+            "circuit", "data", "swift", "light", "shadow", "future", "laser", "hyper", "digital", "orbit",
+            "rocket", "streak", "turbo", "ultra", "vector", "spark", "surge", "vision", "quest", "climb"
+        ];
+
+        // --- Core Typing Application Class ---
+        class TypingApp {
+            constructor() {
+                this.sound = new SoundEngine();
+                this.particles = new ParticleSystem();
+
+                this.mode = 'practice'; // practice, bot
+                this.testType = 'time'; // time, words
+                this.configValue = 30; // seconds or count
+                this.currentTheme = localStorage.getItem('typepulse_theme') || 'cyber';
+                this.targetWeakWords = false;
+
+                this.words = [];
+                this.currentWordIdx = 0;
+                this.currentCharIdx = 0;
+                this.typedHistory = []; // array of { word, typed, correct, time }
+
+                this.startTime = null;
+                this.timer = null;
+                this.timeElapsed = 0;
+                this.isActive = false;
+
+                // VS Bot Race state
+                this.botTimer = null;
+                this.botProgress = 0;
+
+                this.weakWordMap = JSON.parse(localStorage.getItem('typepulse_weak_words') || '{}');
+                this.pbWpm = parseInt(localStorage.getItem('typepulse_pb') || '0', 10);
+
+                this.chart = null;
+                this.wpmHistory = [];
+
+                this.initUI();
+                this.setTheme(this.currentTheme);
+                this.updatePBDisplay();
+                this.resetTest();
+            }
+
+            initUI() {
+                this.hiddenInput = document.getElementById('hidden-input');
+                this.wordsWrapper = document.getElementById('words-wrapper');
+                this.caret = document.getElementById('caret');
+                this.clickPrompt = document.getElementById('click-prompt');
+
+                // Input handling
+                this.hiddenInput.addEventListener('input', (e) => this.handleInput(e));
+                this.hiddenInput.addEventListener('keydown', (e) => this.handleKeyDown(e));
+                this.hiddenInput.addEventListener('blur', () => this.clickPrompt.classList.remove('hidden'));
+                this.hiddenInput.addEventListener('focus', () => this.clickPrompt.classList.add('hidden'));
+
+                document.getElementById('typing-area').addEventListener('click', () => {
+                    this.hiddenInput.focus();
+                });
+            }
+
+            setTheme(theme) {
+                this.currentTheme = theme;
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('typepulse_theme', theme);
+                const themeSelect = document.getElementById('theme-select');
+                if (themeSelect) themeSelect.value = theme;
+            }
+
+            toggleSound() {
+                this.sound.enabled = !this.sound.enabled;
+                const btn = document.getElementById('sound-toggle');
+                btn.innerHTML = this.sound.enabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark"></i>';
+            }
+
+            toggleWeakWordTargeting(enabled) {
+                this.targetWeakWords = enabled;
+                this.resetTest();
+            }
+
+            switchMode(mode) {
+                this.mode = mode;
+                document.querySelectorAll('[id^="mode-btn-"]').forEach(btn => {
+                    btn.className = "px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-subtext hover:text-white";
+                });
+                const activeBtn = document.getElementById(`mode-btn-${mode}`);
+                if (activeBtn) {
+                    activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all text-neonCyan bg-neonCyan/10";
+                }
+
+                const arena = document.getElementById('race-arena');
+                if (arena) {
+                    if (mode === 'practice') {
+                        arena.classList.add('hidden');
+                        arena.classList.remove('flex');
+                    } else {
+                        arena.classList.remove('hidden');
+                        arena.classList.add('flex');
+                        this.setupArenaRacers();
+                    }
+                }
+                this.resetTest();
+            }
+
+            setTestType(type) {
+                this.testType = type;
+                document.getElementById('type-time').className = type === 'time' ? 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan' : 'px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white';
+                document.getElementById('type-words').className = type === 'words' ? 'px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan' : 'px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white';
+
+                // Update dynamic config options bar for time vs words
+                const configContainer = document.getElementById('config-options');
+                if (configContainer) {
+                    if (type === 'time') {
+                        this.configValue = 30;
+                        configContainer.innerHTML = `
+                            <button onclick="app.setConfigValue(15)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">15s</button>
+                            <button onclick="app.setConfigValue(30)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan">30s</button>
+                            <button onclick="app.setConfigValue(60)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">60s</button>
+                        `;
+                    } else {
+                        this.configValue = 25;
+                        configContainer.innerHTML = `
+                            <button onclick="app.setConfigValue(10)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">10</button>
+                            <button onclick="app.setConfigValue(25)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan">25</button>
+                            <button onclick="app.setConfigValue(50)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">50</button>
+                            <button onclick="app.setConfigValue(100)" class="config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white">100</button>
+                        `;
+                    }
+                }
+                this.resetTest();
+            }
+
+            setConfigValue(val) {
+                this.configValue = val;
+                const container = document.getElementById('config-options');
+                if (container) {
+                    container.querySelectorAll('.config-btn').forEach(btn => {
+                        const targetText = this.testType === 'time' ? `${val}s` : `${val}`;
+                        if (btn.innerText.trim() === targetText) {
+                            btn.className = "config-btn px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-neonCyan/20 text-neonCyan";
+                        } else {
+                            btn.className = "config-btn px-2.5 py-1 rounded-lg text-xs font-mono text-subtext hover:text-white";
+                        }
+                    });
+                }
+                this.resetTest();
+            }
+
+            updatePBDisplay() {
+                const pbDisplay = document.getElementById('pb-display');
+                if (pbDisplay) pbDisplay.innerText = `${this.pbWpm} WPM`;
+            }
+
+            generateWords() {
+                const wordCount = this.testType === 'words' ? this.configValue : 100;
+                let pool = [...STANDARD_WORD_BANK];
+
+                if (this.targetWeakWords && Object.keys(this.weakWordMap).length > 0) {
+                    const weakWords = Object.keys(this.weakWordMap);
+                    pool = [...weakWords, ...pool];
+                }
+
+                this.words = [];
+                for (let i = 0; i < wordCount; i++) {
+                    const randIndex = Math.floor(Math.random() * pool.length);
+                    this.words.push(pool[randIndex]);
+                }
+            }
+
+            resetTest() {
+                clearInterval(this.timer);
+                clearInterval(this.botTimer);
+                this.isActive = false;
+                this.timeElapsed = 0;
+                this.currentWordIdx = 0;
+                this.currentCharIdx = 0;
+                this.typedHistory = [];
+                this.wpmHistory = [];
+
+                if (this.hiddenInput) this.hiddenInput.value = '';
+
+                const typingArea = document.getElementById('typing-area');
+                const controlsBar = document.getElementById('controls-bar');
+                const resultsView = document.getElementById('results-view');
+
+                if (typingArea) typingArea.classList.remove('hidden');
+                if (controlsBar) controlsBar.classList.remove('hidden');
+                if (resultsView) {
+                    resultsView.classList.add('hidden');
+                    resultsView.classList.remove('flex');
+                }
+
+                this.generateWords();
+                this.renderWords();
+                this.updateCaretPosition();
+                this.updateRaceProgress();
+                this.updateTimerDisplay();
+            }
+
+            updateTimerDisplay() {
+                const timerEl = document.getElementById('live-timer');
+                if (!timerEl) return;
+                if (this.testType === 'time') {
+                    const remaining = Math.max(0, this.configValue - this.timeElapsed);
+                    timerEl.innerText = `${remaining}s`;
+                    timerEl.className = remaining <= 5 ? "text-sm font-mono font-black text-neonPink animate-pulse" : "text-sm font-mono font-black text-neonCyan";
+                } else {
+                    timerEl.innerText = `${this.currentWordIdx}/${this.configValue}`;
+                    timerEl.className = "text-sm font-mono font-black text-neonCyan";
+                }
+            }
+
+            handleInput(e) {
+                if (!this.isActive) this.startTest();
+
+                const typed = this.hiddenInput.value;
+                const targetWord = this.words[this.currentWordIdx];
+                if (!targetWord) return;
+
+                const wordSpan = document.getElementById(`word-${this.currentWordIdx}`);
+                if (!wordSpan) return;
+
+                this.currentCharIdx = typed.length;
+                const charSpans = wordSpan.querySelectorAll('span:not(.char-extra)');
+
+                // Clear previous extra character elements
+                const extraSpans = wordSpan.querySelectorAll('.char-extra');
+                extraSpans.forEach(el => el.remove());
+
+                // Update typed character styling
+                for (let i = 0; i < targetWord.length; i++) {
+                    const charSpan = charSpans[i];
+                    if (!charSpan) continue;
+
+                    if (i < typed.length) {
+                        if (typed[i] === targetWord[i]) {
+                            charSpan.className = 'char-correct';
+                        } else {
+                            charSpan.className = 'char-incorrect';
+                        }
+                    } else {
+                        charSpan.className = 'char-untyped';
+                    }
+                }
+
+                // Add extra character markers if typed string exceeds target word length
+                if (typed.length > targetWord.length) {
+                    for (let i = targetWord.length; i < typed.length; i++) {
+                        const extraSpan = document.createElement('span');
+                        extraSpan.className = 'char-extra';
+                        extraSpan.innerText = typed[i];
+                        wordSpan.appendChild(extraSpan);
+                    }
+                }
+
+                this.sound.playKeyClick();
+                this.updateCaretPosition();
+            }
+
+            handleKeyDown(e) {
+                if (e.key === ' ' || e.code === 'Space') {
+                    e.preventDefault();
+                    if (!this.isActive) this.startTest();
+
+                    const typed = this.hiddenInput.value.trim();
+                    const targetWord = this.words[this.currentWordIdx];
+                    if (!targetWord) return;
+
+                    const now = Date.now();
+                    const wordTimeMs = now - (this.lastWordTime || this.startTime || now);
+                    this.lastWordTime = now;
+
+                    const isCorrect = typed === targetWord;
+                    const elapsedMin = Math.max(0.001, wordTimeMs / 60000);
+                    const wordWpm = Math.round((targetWord.length / 5) / elapsedMin);
+
+                    this.typedHistory.push({
+                        word: targetWord,
+                        typed: typed,
+                        correct: isCorrect,
+                        timeMs: wordTimeMs,
+                        wpm: wordWpm
+                    });
+
+                    // Track weak word frequencies if missed
+                    if (!isCorrect) {
+                        this.sound.playErrorClick();
+                        this.weakWordMap[targetWord] = (this.weakWordMap[targetWord] || 0) + 1;
+                        localStorage.setItem('typepulse_weak_words', JSON.stringify(this.weakWordMap));
+                    }
+
+                    // Advance word index
+                    this.currentWordIdx++;
+                    this.currentCharIdx = 0;
+                    this.hiddenInput.value = '';
+
+                    this.updateRaceProgress();
+
+                    // Check for test completion condition
+                    if (this.testType === 'words' && this.currentWordIdx >= this.configValue) {
+                        this.endTest('You');
+                    } else if (this.currentWordIdx >= this.words.length) {
+                        this.endTest('You');
+                    } else {
+                        this.renderWordsState();
+                        this.updateCaretPosition();
+                    }
+                }
+            }
+
+            renderWordsState() {
+                // Ensure typed words remain marked correctly
+                for (let i = 0; i < this.currentWordIdx; i++) {
+                    const wordSpan = document.getElementById(`word-${i}`);
+                    if (wordSpan && !wordSpan.classList.contains('opacity-40')) {
+                        wordSpan.classList.add('opacity-40');
+                    }
+                }
+            }
+
+            renderWords() {
+                if (!this.wordsWrapper) return;
+                this.wordsWrapper.innerHTML = '';
+                this.words.forEach((word, wordIdx) => {
+                    const wordSpan = document.createElement('div');
+                    wordSpan.id = `word-${wordIdx}`;
+                    wordSpan.className = 'word';
+
+                    word.split('').forEach(char => {
+                        const charSpan = document.createElement('span');
+                        charSpan.className = 'char-untyped';
+                        charSpan.innerText = char;
+                        wordSpan.appendChild(charSpan);
+                    });
+
+                    this.wordsWrapper.appendChild(wordSpan);
+                });
+            }
+
+            updateCaretPosition() {
+                const caret = document.getElementById('caret');
+                const activeWordSpan = document.getElementById(`word-${this.currentWordIdx}`);
+                if (!caret || !activeWordSpan || !this.wordsWrapper) return;
+
+                caret.classList.remove('hidden');
+
+                const wrapperRect = this.wordsWrapper.getBoundingClientRect();
+                const allCharSpans = activeWordSpan.querySelectorAll('span');
+
+                let targetLeft = 0;
+                let targetTop = 0;
+                let caretHeight = 28;
+
+                if (allCharSpans.length > 0) {
+                    if (this.currentCharIdx < allCharSpans.length) {
+                        const charRect = allCharSpans[this.currentCharIdx].getBoundingClientRect();
+                        targetLeft = charRect.left - wrapperRect.left;
+                        targetTop = charRect.top - wrapperRect.top;
+                        caretHeight = charRect.height || 28;
+                    } else {
+                        const lastChar = allCharSpans[allCharSpans.length - 1];
+                        const charRect = lastChar.getBoundingClientRect();
+                        targetLeft = charRect.right - wrapperRect.left;
+                        targetTop = charRect.top - wrapperRect.top;
+                        caretHeight = charRect.height || 28;
+                    }
+                } else {
+                    const wordRect = activeWordSpan.getBoundingClientRect();
+                    targetLeft = wordRect.left - wrapperRect.left;
+                    targetTop = wordRect.top - wrapperRect.top;
+                }
+
+                caret.style.transform = `translate(${targetLeft}px, ${targetTop}px)`;
+                caret.style.height = `${caretHeight}px`;
+
+                // Scroll box if lines advance
+                const wordRect = activeWordSpan.getBoundingClientRect();
+                if (wordRect.top - wrapperRect.top > 60) {
+                    this.wordsWrapper.scrollTop += (wordRect.top - wrapperRect.top - 20);
+                }
+            }
+
+            recordSnapshot() {
+                const elapsedMin = Math.max(0.01, this.timeElapsed / 60);
+                let correctChars = 0;
+                let totalTypedChars = 0;
+
+                this.typedHistory.forEach(item => {
+                    totalTypedChars += item.typed.length;
+                    if (item.correct) correctChars += item.word.length;
+                });
+
+                const currentWpm = Math.round((correctChars / 5) / elapsedMin) || 0;
+                const currentRaw = Math.round((totalTypedChars / 5) / elapsedMin) || 0;
+
+                this.wpmHistory.push({
+                    time: this.timeElapsed,
+                    wpm: currentWpm,
+                    rawWpm: currentRaw
+                });
+            }
+
+            startTest() {
+                if (this.isActive) return;
+                this.isActive = true;
+                this.startTime = Date.now();
+
+                // Target WPM for bot (randomized around standard performance)
+                this.targetBotWpm = 35 + Math.floor(Math.random() * 30);
+
+                // Start WPM timer loop
+                this.timer = setInterval(() => {
+                    this.timeElapsed++;
+                    this.recordSnapshot();
+                    this.updateTimerDisplay();
+
+                    if (this.testType === 'time' && this.timeElapsed >= this.configValue) {
+                        this.endTest('Time');
+                    }
+                }, 1000);
+
+                // Start Bot race animation loop if in Bot mode
+                if (this.mode === 'bot') {
+                    this.botProgress = 0;
+                    this.botTimer = setInterval(() => {
+                        const increment = (this.targetBotWpm * 5 / 60) / (this.words.length * 5) * 100 * 0.3;
+                        this.botProgress += increment + (Math.random() * 0.4 - 0.2);
+
+                        if (this.botProgress >= 100) {
+                            this.botProgress = 100;
+                            this.updateRaceProgress();
+                            this.endTest('Bot');
+                        } else {
+                            this.updateRaceProgress();
+                        }
+                    }, 300);
+                }
+            }
+
+            setupArenaRacers() {
+                const container = document.getElementById('racers-container');
+                if (!container) return;
+
+                container.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-neonCyan font-bold">You</span>
+                            <span id="user-race-wpm" class="text-neonCyan font-bold">0 WPM</span>
+                        </div>
+                        <div class="w-full h-3 bg-darkBg border border-cardBorder rounded-full overflow-hidden">
+                            <div id="user-progress-bar" class="h-full bg-neonCyan transition-all duration-150" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-xs font-mono">
+                            <span class="text-neonPink font-bold">CyberBot v1.0</span>
+                            <span id="bot-race-wpm" class="text-neonPink font-bold">0 WPM</span>
+                        </div>
+                        <div class="w-full h-3 bg-darkBg border border-cardBorder rounded-full overflow-hidden">
+                            <div id="bot-progress-bar" class="h-full bg-neonPink transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            updateRaceProgress() {
+                if (this.mode !== 'bot') return;
+
+                const elapsedMin = Math.max(0.01, (Date.now() - (this.startTime || Date.now())) / 60000);
+
+                // Calculate live WPM for player
+                let correctChars = 0;
+                this.typedHistory.forEach(item => {
+                    if (item.correct) correctChars += item.word.length;
+                });
+                const liveWpm = Math.round((correctChars / 5) / elapsedMin) || 0;
+
+                const userPct = Math.min(100, Math.round((this.currentWordIdx / this.words.length) * 100));
+
+                const userBar = document.getElementById('user-progress-bar');
+                if (userBar) userBar.style.width = `${userPct}%`;
+
+                const userWpmEl = document.getElementById('user-race-wpm');
+                if (userWpmEl) userWpmEl.innerText = `${liveWpm} WPM (${userPct}%)`;
+
+                // Update Bot UI
+                const botBar = document.getElementById('bot-progress-bar');
+                if (botBar) botBar.style.width = `${Math.round(this.botProgress)}%`;
+
+                const botWpmEl = document.getElementById('bot-race-wpm');
+                if (botWpmEl) botWpmEl.innerText = `${this.isActive ? this.targetBotWpm : 0} WPM (${Math.round(this.botProgress)}%)`;
+            }
+
+            endTest(winner = 'You') {
+                clearInterval(this.timer);
+                clearInterval(this.botTimer);
+                this.isActive = false;
+
+                const elapsedMin = Math.max(0.01, this.timeElapsed / 60);
+                let correctChars = 0;
+                let totalTypedChars = 0;
+
+                this.typedHistory.forEach(item => {
+                    totalTypedChars += item.typed.length;
+                    if (item.correct) {
+                        correctChars += item.word.length;
+                    }
+                });
+
+                const wpm = Math.round((correctChars / 5) / elapsedMin);
+                const rawWpm = Math.round((totalTypedChars / 5) / elapsedMin);
+                const accuracy = totalTypedChars > 0 ? Math.round((correctChars / totalTypedChars) * 100) : 100;
+
+                // Consistency metric calculated from WPM variance
+                let consistency = 100;
+                if (this.wpmHistory.length > 1) {
+                    const wpms = this.wpmHistory.map(h => h.wpm);
+                    const avg = wpms.reduce((a, b) => a + b, 0) / wpms.length;
+                    const variance = wpms.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / wpms.length;
+                    const stdDev = Math.sqrt(variance);
+                    consistency = Math.max(0, Math.round(100 - (stdDev / (avg || 1)) * 100));
+                }
+
+                // Check for Personal Best (PB) update
+                if (wpm > this.pbWpm) {
+                    this.pbWpm = wpm;
+                    localStorage.setItem('typepulse_pb', wpm.toString());
+                    this.updatePBDisplay();
+                    this.particles.burst(window.innerWidth / 2, window.innerHeight / 2, '#ffe600');
+                }
+
+                // Switch to results dashboard
+                document.getElementById('typing-area').classList.add('hidden');
+                document.getElementById('controls-bar').classList.add('hidden');
+
+                const resultsView = document.getElementById('results-view');
+                resultsView.classList.remove('hidden');
+                resultsView.classList.add('flex');
+
+                document.getElementById('res-wpm').innerText = wpm;
+                document.getElementById('res-acc').innerText = `${accuracy}%`;
+                document.getElementById('res-raw').innerText = rawWpm;
+                document.getElementById('res-consistency').innerText = `${consistency}%`;
+                document.getElementById('res-time').innerText = `${this.timeElapsed}s`;
+
+                this.renderRecapTable();
+                this.renderChart();
+            }
+
+            renderRecapTable() {
+                const tbody = document.getElementById('word-recap-table');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+                this.typedHistory.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-cardBorder/30 transition-colors';
+                    tr.innerHTML = `
+                        <td class="py-2.5 font-bold ${item.correct ? 'text-neonCyan' : 'text-neonPink'}">${item.word}</td>
+                        <td class="py-2.5">${item.wpm} WPM</td>
+                        <td class="py-2.5">${(item.timeMs / 1000).toFixed(2)}s</td>
+                        <td class="py-2.5">
+                            ${item.correct
+                                ? '<span class="px-2 py-0.5 rounded bg-neonGreen/20 text-neonGreen text-[10px]">CORRECT</span>'
+                                : `<span class="px-2 py-0.5 rounded bg-neonPink/20 text-neonPink text-[10px]">MISSED (${item.typed})</span>`
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            renderChart() {
+                const ctx = document.getElementById('results-chart');
+                if (!ctx) return;
+
+                if (this.chart) this.chart.destroy();
+
+                const labels = this.wpmHistory.map(h => `${h.time}s`);
+                const wpmData = this.wpmHistory.map(h => h.wpm);
+                const rawData = this.wpmHistory.map(h => h.rawWpm);
+
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'WPM',
+                                data: wpmData,
+                                borderColor: '#00f0ff',
+                                backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Raw WPM',
+                                data: rawData,
+                                borderColor: '#6272a4',
+                                borderWidth: 1.5,
+                                borderDash: [4, 4],
+                                fill: false,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { labels: { color: '#6272a4', font: { family: 'Fira Code' } } }
+                        },
+                        scales: {
+                            x: { grid: { color: '#23283b' }, ticks: { color: '#6272a4', font: { family: 'Fira Code' } } },
+                            y: { grid: { color: '#23283b' }, ticks: { color: '#6272a4', font: { family: 'Fira Code' } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Initialize application on window load
+        window.onload = () => {
+            window.app = new TypingApp();
+            window.addEventListener('resize', () => {
+                if (window.app && window.app.updateCaretPosition) {
+                    window.app.updateCaretPosition();
+                }
+            });
+        };
+    </script>
+</body>
+</html>

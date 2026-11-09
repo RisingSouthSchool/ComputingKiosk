@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GuitarLab Master Suite</title>
+  <style>
+    :root {
+      --bg-dark: #121417;
+      --bg-card: #1a1d22;
+      --bg-card-hover: #22262d;
+      --bg-input: #272c35;
+      --border-color: #333842;
+      --border-focus: #4b5563;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --accent-gray: #4b5563;
+      --accent-light: #9ca3af;
+      --accent-silver: #d1d5db;
+      --accent-active: #e5e7eb;
+      --root-note-bg: #ef4444;
+      --scale-note-bg: #3b82f6;
+      --shadow-sm: 0 2px 4px rgba(0,0,0,0.4);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--accent-active);
+    }
+
+    .brand-badge {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-dark);
+      padding: 0.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      flex-wrap: wrap;
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-btn:hover {
+      color: var(--text-main);
+      background: var(--bg-card-hover);
+    }
+
+    .nav-btn.active {
+      background: var(--accent-gray);
+      color: #ffffff;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: var(--bg-input);
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+    }
+
+    main {
+      flex: 1;
+      padding: 1.5rem;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .control-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-group label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    select, input, button, textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.6rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--border-focus);
+    }
+
+    button.btn-primary {
+      background: var(--accent-gray);
+      color: #ffffff;
+      border: 1px solid var(--border-focus);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button.btn-primary:hover {
+      background: #374151;
+    }
+
+    .fretboard-container {
+      overflow-x: auto;
+      background: #0f1115;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    canvas {
+      display: block;
+      cursor: pointer;
+    }
+
+    .chord-view {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+    }
+
+    @media (max-width: 850px) {
+      .chord-view { grid-template-columns: 1fr; }
+    }
+
+    .chord-diagram-box {
+      background: #0f1115;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .progression-tag {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 600;
+    }
+
+    .progression-tag span.remove-btn {
+      color: var(--root-note-bg);
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Song Tabs Styles */
+    .song-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .song-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .song-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .badge-diff {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .diff-beginner { background: #059669; color: #ffffff; }
+    .diff-intermediate { background: #d97706; color: #ffffff; }
+    .diff-advanced { background: #dc2626; color: #ffffff; }
+
+    .song-links {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .song-link-btn {
+      font-size: 0.75rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: 4px;
+      text-decoration: none;
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .song-link-btn:hover {
+      background: var(--accent-gray);
+      border-color: var(--border-focus);
+    }
+
+    .link-yt { color: #f87171; }
+    .link-st { color: #34d399; }
+    .link-ug { color: #fbbf24; }
+
+    /* Signal Chain Component */
+    .signal-chain {
+      display: flex;
+      gap: 0.75rem;
+      overflow-x: auto;
+      padding: 1rem 0;
+      align-items: center;
+      min-height: 110px;
+    }
+
+    .chain-block {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      min-width: 140px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+
+    .chain-block.bypassed {
+      opacity: 0.4;
+      border-style: dashed;
+    }
+
+    .block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .block-delete {
+      color: var(--root-note-bg);
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .block-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .block-nav-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      padding: 0.15rem 0.4rem;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .toggle-active-btn {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      background: var(--bg-dark);
+      color: var(--accent-silver);
+    }
+
+    .preset-list {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .preset-list th, .preset-list td {
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.75rem;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .preset-list th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+    }
+
+    .delete-row-btn {
+      color: var(--root-note-bg);
+      cursor: pointer;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      background: var(--bg-card);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <span>GUITAR LAB</span>
+      <span class="brand-badge">v2.5</span>
+    </div>
+    <nav>
+      <button class="nav-btn active" onclick="switchTab('fretboard')">Fretboard</button>
+      <button class="nav-btn" onclick="switchTab('chords')">Chords</button>
+      <button class="nav-btn" onclick="switchTab('solo')">Solo AI</button>
+      <button class="nav-btn" onclick="switchTab('tabs')">Song Tabs</button>
+      <button class="nav-btn" onclick="switchTab('tuner')">Tuner</button>
+      <button class="nav-btn" onclick="switchTab('tone')">Tone & Rig</button>
+      <button class="nav-btn" onclick="switchTab('metronome')">Metronome</button>
+    </nav>
+    <div class="status-indicator">
+      <div class="status-dot"></div>
+      <span>Audio Ready</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- FRETBOARD TAB -->
+    <div id="tab-fretboard" class="tab-content active">
+      <div class="card">
+        <div class="control-grid">
+          <div class="form-group">
+            <label>Key & Scale</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="scale-key" onchange="updateFretboard()"></select>
+              <select id="scale-type" onchange="updateFretboard()"></select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Tuning</label>
+            <select id="tuning-preset" onchange="handleTuningChange()"></select>
+          </div>
+          <div class="form-group">
+            <label>Display Mode</label>
+            <select id="display-mode" onchange="updateFretboard()">
+              <option value="notes">Note Names</option>
+              <option value="degrees">Scale Degrees</option>
+              <option value="roots">Roots Only</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="custom-tuning-container" style="display: none; margin-bottom: 1rem;" class="card">
+          <div class="form-group">
+            <label>Custom String Tuning (Low String 6 to High String 1)</label>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="custom-strings-inputs"></div>
+          </div>
+        </div>
+
+        <div class="fretboard-container">
+          <canvas id="fretboard-canvas" width="1200" height="260"></canvas>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-muted);">
+          <div id="scale-info-notes">Notes: --</div>
+          <div id="scale-info-formula">Formula: --</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHORDS TAB -->
+    <div id="tab-chords" class="tab-content">
+      <div class="card">
+        <div class="control-grid">
+          <div class="form-group">
+            <label>Root Note</label>
+            <select id="chord-root" onchange="updateChordView()"></select>
+          </div>
+          <div class="form-group">
+            <label>Chord Quality</label>
+            <select id="chord-type" onchange="updateChordView()"></select>
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn-primary" onclick="strumCurrentChord()">Strum Chord</button>
+          </div>
+        </div>
+
+        <div class="chord-view">
+          <div class="chord-diagram-box">
+            <canvas id="chord-canvas" width="240" height="280"></canvas>
+          </div>
+          <div>
+            <h2 id="chord-title" style="margin-bottom: 0.5rem;">Chord Name</h2>
+            <p id="chord-notes-text" style="color: var(--text-muted); margin-bottom: 1rem;">Notes: --</p>
+            <div class="card" style="background: var(--bg-input);">
+              <h4 style="margin-bottom: 0.5rem; color: var(--accent-silver);">Theory & Construction</h4>
+              <p id="chord-theory-text" style="font-size: 0.9rem; line-height: 1.5; color: var(--text-muted);"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOLO AI TAB -->
+    <div id="tab-solo" class="tab-content">
+      <div class="card">
+        <h3>Improvising Assistant</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Build a chord progression using standard, extended, or altered chord types, then pick a musical genre to receive tailored soloing recommendations.
+        </p>
+
+        <div class="control-grid" style="margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Add Chords</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <select id="solo-chord-root"></select>
+              <select id="solo-chord-type"></select>
+              <button class="btn-primary" onclick="addSoloChord()">+ Add</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Genre / Style Context</label>
+            <select id="solo-genre">
+              <option value="blues">Blues / R&B</option>
+              <option value="rock">Rock / Hard Rock</option>
+              <option value="jazz">Jazz / Neo-Soul</option>
+              <option value="metal">Metal / Shred</option>
+              <option value="pop">Pop / Country</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label>Chord Progression Sequence</label>
+          <div id="solo-progression-list" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; min-height: 40px; align-items: center;"></div>
+        </div>
+
+        <button class="btn-primary" onclick="analyzeProgression()">Analyze Solo Options</button>
+
+        <div id="solo-results" style="margin-top: 1.5rem;"></div>
+      </div>
+    </div>
+
+    <!-- SONG TABS TAB -->
+    <div id="tab-tabs" class="tab-content">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <h3>Song Library & Tab Directory</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Find guitar tabs, video lessons, and ASCII scratchpads for songs you want to learn.</p>
+          </div>
+          <button class="btn-primary" onclick="toggleAddSongModal()">+ Add New Song</button>
+        </div>
+
+        <!-- Add Custom Song Form -->
+        <div id="add-song-box" style="display: none; margin-bottom: 1.5rem; background: var(--bg-input);" class="card">
+          <h4 style="margin-bottom: 1rem;">Add Song to Library</h4>
+          <div class="control-grid">
+            <div class="form-group">
+              <label>Song Title</label>
+              <input type="text" id="new-song-title" placeholder="e.g. Neon">
+            </div>
+            <div class="form-group">
+              <label>Artist</label>
+              <input type="text" id="new-song-artist" placeholder="e.g. John Mayer">
+            </div>
+            <div class="form-group">
+              <label>Difficulty</label>
+              <select id="new-song-diff">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Genre / Tuning</label>
+              <input type="text" id="new-song-genre" placeholder="e.g. Blues (Drop C1)">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label>ASCII Tab / Notes</label>
+            <textarea id="new-song-tab" rows="4" placeholder="e.g. e|----------------|"></textarea>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-primary" onclick="saveNewSong()">Save Song</button>
+            <button onclick="toggleAddSongModal()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Search and Filter Bar -->
+        <div class="control-grid">
+          <div class="form-group">
+            <label>Search Song or Artist</label>
+            <input type="text" id="song-search" placeholder="Search John Mayer, Pink Floyd..." oninput="renderSongLibrary()">
+          </div>
+          <div class="form-group">
+            <label>Filter Difficulty</label>
+            <select id="song-filter-diff" onchange="renderSongLibrary()">
+              <option value="all">All Difficulties</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Song Cards Grid -->
+        <div class="song-grid" id="song-cards-container"></div>
+
+        <!-- ASCII Tab Viewer Scratchpad -->
+        <div class="card" style="background: #0f1115; border: 1px solid var(--border-color);">
+          <h4 id="tab-viewer-title" style="margin-bottom: 0.5rem; color: var(--accent-silver);">Interactive Tab Scratchpad Viewer</h4>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 1rem;">Click 'View Tab / Scratchpad' on any song above to load its tabs here.</p>
+          <pre id="tab-viewer-content" style="font-family: monospace; font-size: 0.9rem; color: #10b981; overflow-x: auto; background: var(--bg-dark); padding: 1rem; border-radius: 6px; min-height: 120px;">Select a song above to view ASCII tab...</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TUNER TAB -->
+    <div id="tab-tuner" class="tab-content">
+      <div class="card" style="text-align: center;">
+        <h3>Guitar Tuner</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
+          Use your microphone or line input for real-time pitch detection.
+        </p>
+        <button class="btn-primary" onclick="initTuner()" id="tuner-start-btn">Start Microphone</button>
+
+        <div style="margin: 2rem 0;">
+          <div id="tuner-note" style="font-size: 4rem; font-weight: 700; color: var(--accent-silver);">--</div>
+          <div id="tuner-freq" style="font-size: 1rem; color: var(--text-muted);">0.0 Hz</div>
+        </div>
+
+        <div style="width: 300px; height: 10px; background: var(--bg-input); border-radius: 5px; margin: 0 auto; position: relative;">
+          <div id="tuner-needle" style="width: 4px; height: 20px; background: var(--accent-silver); position: absolute; top: -5px; left: 50%; transform: translateX(-50%); transition: left 0.1s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TONE TAB -->
+    <div id="tab-tone" class="tab-content">
+      <div class="card">
+        <h3>Rig & Signal Chain Architect</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+          Add blocks, reorder your pedalboard signal path, or toggle active/bypass states.
+        </p>
+
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+          <button onclick="addSignalBlock('Overdrive')" style="font-size: 0.8rem;">+ Overdrive</button>
+          <button onclick="addSignalBlock('Amp Model')" style="font-size: 0.8rem;">+ Amp Model</button>
+          <button onclick="addSignalBlock('Cab IR')" style="font-size: 0.8rem;">+ Cab IR</button>
+          <button onclick="addSignalBlock('Delay')" style="font-size: 0.8rem;">+ Delay</button>
+          <button onclick="addSignalBlock('Reverb')" style="font-size: 0.8rem;">+ Reverb</button>
+          <button onclick="addSignalBlock('Modulation')" style="font-size: 0.8rem;">+ Modulation</button>
+        </div>
+
+        <div class="signal-chain" id="signal-chain-container"></div>
+
+        <div style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <h4>Saved Rigs & Capture Files</h4>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="file" id="preset-file-input" style="display: none;" onchange="handleFileUpload(event)">
+              <button class="btn-primary" onclick="document.getElementById('preset-file-input').click()">
+                Upload Preset File
+              </button>
+              <button class="btn-primary" onclick="saveCurrentRig()">Save Current Rig</button>
+            </div>
+          </div>
+
+          <table class="preset-list">
+            <thead>
+              <tr>
+                <th>Rig Name</th>
+                <th>Device</th>
+                <th>Tags</th>
+                <th>File</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="preset-table-body">
+              <tr>
+                <td>Plexi Lead</td>
+                <td>Helix</td>
+                <td>Rock, Solo</td>
+                <td>plexi_lead.hlx</td>
+                <td><button class="delete-row-btn" onclick="deletePresetRow(this)">Delete</button></td>
+              </tr>
+              <tr>
+                <td>Ambient Shimmer</td>
+                <td>Quad Cortex</td>
+                <td>Clean, Reverb</td>
+                <td>ambient.json</td>
+                <td><button class="delete-row-btn" onclick="deletePresetRow(this)">Delete</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- METRONOME TAB -->
+    <div id="tab-metronome" class="tab-content">
+      <div class="card" style="text-align: center; max-width: 500px; margin: 0 auto;">
+        <h3>Metronome</h3>
+        <div id="bpm-display" style="font-size: 4rem; font-weight: 700; margin: 1rem 0;">120</div>
+        <input type="range" id="bpm-slider" min="40" max="240" value="120" oninput="updateBPM(this.value)" style="width: 100%; margin-bottom: 1.5rem;">
+
+        <div style="display: flex; justify-content: center; gap: 1rem;">
+          <button class="btn-primary" id="metro-play-btn" onclick="toggleMetronome()">Start</button>
+          <button class="btn-primary" onclick="tapTempo()">Tap Tempo</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    GuitarLab Master Suite &copy; 2026 — Modern Web Workstation for Guitarists
+  </footer>
+
+  <script>
+    // CORE CONSTANTS & DATA STRUCTURES
+    const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+    const SCALES = {
+      "minor_pentatonic": { name: "Minor Pentatonic", intervals: [0, 3, 5, 7, 10], formula: "1 - b3 - 4 - 5 - b7" },
+      "major_pentatonic": { name: "Major Pentatonic", intervals: [0, 2, 4, 7, 9], formula: "1 - 2 - 3 - 5 - 6" },
+      "minor": { name: "Natural Minor (Aeolian)", intervals: [0, 2, 3, 5, 7, 8, 10], formula: "1 - 2 - b3 - 4 - 5 - b6 - b7" },
+      "major": { name: "Major (Ionian)", intervals: [0, 2, 4, 5, 7, 9, 11], formula: "1 - 2 - 3 - 4 - 5 - 6 - 7" },
+      "dorian": { name: "Dorian Mode", intervals: [0, 2, 3, 5, 7, 9, 10], formula: "1 - 2 - b3 - 4 - 5 - 6 - b7" },
+      "mixolydian": { name: "Mixolydian Mode", intervals: [0, 2, 4, 5, 7, 9, 10], formula: "1 - 2 - 3 - 4 - 5 - 6 - b7" },
+      "harmonic_minor": { name: "Harmonic Minor", intervals: [0, 2, 3, 5, 7, 8, 11], formula: "1 - 2 - b3 - 4 - 5 - b6 - 7" },
+      "altered": { name: "Altered Scale (Super Locrian)", intervals: [0, 1, 3, 4, 6, 8, 10], formula: "1 - b2 - b3 - b4 - b5 - b6 - b7" }
+    };
+
+    const TUNINGS = {
+      "standard": { name: "E Standard", notes: ["E2", "A2", "D3", "G3", "B3", "E4"] },
+      "drop_d": { name: "Drop D", notes: ["D2", "A2", "D3", "G3", "B3", "E4"] },
+      "dadgad": { name: "DADGAD", notes: ["D2", "A2", "D3", "G3", "A3", "D4"] },
+      "custom": { name: "Custom Tuning...", notes: ["E2", "A2", "D3", "G3", "B3", "E4"] }
+    };
+
+    const CHORD_DATABASE = {
+      "Major": {
+        intervals: [0, 4, 7],
+        formula: "1 - 3 - 5",
+        theory: "Major triads consist of a root, major third, and perfect fifth.",
+        shapes: { "C": { frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0], baseFret: 1 } }
+      },
+      "Minor": {
+        intervals: [0, 3, 7],
+        formula: "1 - b3 - 5",
+        theory: "Minor triads feature a flattened third degree.",
+        shapes: { "A": { frets: [-1, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0], baseFret: 1 } }
+      }
+    };
+
+    const GENRE_RECOMMENDATIONS = {
+      "blues": { primary: "minor_pentatonic", primaryLabel: "Minor Pentatonic + Blues Note (♭5)", secondary: "mixolydian", secondaryLabel: "Mixolydian Mode", advice: "Emphasize vocal-style bends from ♭3 to ♮3." },
+      "rock": { primary: "minor_pentatonic", primaryLabel: "Minor Pentatonic Box Scale", secondary: "dorian", secondaryLabel: "Dorian Mode", advice: "Emphasize unison bends and aggressive picking attack." }
+    };
+
+    // EXPANDED SONG DATABASE INCLUDING JOHN MAYER
+    let SONG_LIBRARY = [
+      { id: 101, title: "Slow Dancing in a Burning Room", artist: "John Mayer", diff: "intermediate", genre: "Blues / Soul (C# Minor)", tab: "Intro Riff (Hendrix-style thumb fretting):\ne|--------------------------|\nB|------9--9-h11-p9---------|\nG|------9--9------9---------|\nD|---11-11-9-h11-p9--9h11---|\nA|-------------------9h11---|\nE|-9----9-------------------|" },
+      { id: 102, title: "Gravity", artist: "John Mayer", diff: "intermediate", genre: "Blues / Pop (G Major)", tab: "Main Groove Riff:\n   G                Cmaj7\ne|---3---3--------|---3---3--------|\nB|---3---3---5p3--|---5---5---5p3--|\nG|---4---4---4-4--|---4---4---4-4--|\nD|---5---5--------|---5---5--------|\nA|----------------|-3--------------|\nE|-3---3---3------|-----3---3------|" },
+      { id: 1, title: "Hotel California", artist: "Eagles", diff: "intermediate", genre: "Classic Rock (B Minor)", tab: "Intro Acoustic Riff:\ne|--------7-----|------7-----|\nB|------7---7---|----7---7---|\nG|----7-------7-|--7-------7-|\nD|--9-----------|-9----------|\nA|--------------|------------|\nE|--------------|------------|" },
+      { id: 2, title: "Stairway to Heaven", artist: "Led Zeppelin", diff: "intermediate", genre: "Rock / Acoustic", tab: "Intro Arpeggio:\ne|-------5-7-----7-|-8-----8-2-----2-|\nB|-----5-----5-----|---5-------3-----|\nG|---5---------5---|-----5-------2---|\nD|-7-------6-------|-5-------4-------|\nA|-----------------|-----------------|\nE|-----------------|-----------------|" },
+      { id: 3, title: "Master of Puppets", artist: "Metallica", diff: "advanced", genre: "Thrash Metal (E Standard)", tab: "Main Downpicking Riff:\ne|-------------------------------|\nB|-------------------------------|\nG|-------------------------------|\nD|-------------------------------|\nA|-----7/8---7/8---7/8---7---6---|\nE|-0-0-5/6-0-5/6-0-5/6-0-5-0-4-0-|" },
+      { id: 4, title: "Wish You Were Here", artist: "Pink Floyd", diff: "beginner", genre: "Acoustic / Rock", tab: "Intro Riff:\ne|-------------------|-------------------|\nB|------3---3---3----|------3---3---3----|\nG|------0---0---0----|------0---0---0----|\nD|---0-2---2-2-0---0-|---0-2---2-2-0---0-|\nA|-----------------2-|-----------------2-|\nE|-3-----------------|-3-----------------|" },
+      { id: 5, title: "Sweet Child O' Mine", artist: "Guns N' Roses", diff: "intermediate", genre: "Hard Rock (Half-Step Down)", tab: "Main Riff:\ne|-------12------15------|-------12------15------|\nB|----15----15------15---|----15----15------15---|\nG|-14----------14------14|-14----------14------14|\nD|-----------------------|-----------------------|\nA|-----------------------|-----------------------|\nE|-----------------------|-----------------------|" },
+      { id: 6, title: "Sultans of Swing", artist: "Dire Straits", diff: "advanced", genre: "Classic Rock / Blues", tab: "Main Lick:\ne|---10----10----10-|---10--8--6--5-|\nB|------10----10----|---------------|\nG|/10---------------|/10----8--7--5-|\nD|------------------|---------------|\nA|------------------|---------------|\nE|------------------|---------------|" },
+      { id: 7, title: "Smells Like Teen Spirit", artist: "Nirvana", diff: "beginner", genre: "Grunge (E Standard)", tab: "Main Power Chord Riff:\n   F5       A#5      G#5      C#5\ne|-----------------|-----------------|\nB|-----------------|-----------------|\nG|----------3-3-3-0|----------6-6-6-0|\nD|-3-3-3-0--3-3-3-0|-6-6-6-0--6-6-6-0|\nA|-3-3-3-0--1-1-1-0|-6-6-6-0--4-4-4-0|\nE|-1-1-1-0---------|-4-4-4-0---------|" },
+      { id: 8, title: "Crazy Train", artist: "Ozzy Osbourne", diff: "intermediate", genre: "Heavy Metal", tab: "Main Riff:\ne|---------------------------------|\nB|---------------------------------|\nG|---------------------------------|\nD|---------------------------------|\nA|---2-4-2-5-4-2---2---2-----------|\nE|-2-------------5---5---4-5-2-4-0-|" },
+      { id: 9, title: "Blackbird", artist: "The Beatles", diff: "intermediate", genre: "Fingerstyle Acoustic", tab: "Intro Fingerpicking:\ne|-------------------|-------------------|\nB|-0---1---3---12----|-5---3---5---3-----|\nG|---0---0---0----0--|---0---0---0---0---|\nD|-------------------|-------------------|\nA|-----0---2---10----|-4---2---3---2-----|\nE|-3-----------------|-------------------|" },
+      { id: 10, title: "Wonderwall", artist: "Oasis", diff: "beginner", genre: "Acoustic Pop", tab: "Chords (Capo 2nd Fret):\nEm7: 022033\nG:   320033\nDsus4: xx0233\nA7sus4: x02033" }
+    ];
+
+    // AUDIO CONTEXT
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    // STATE VARIABLES
+    let currentTuning = [...TUNINGS.standard.notes];
+    let soloProgression = [];
+    let signalBlocks = [
+      { id: 1, name: "Tuner", active: true },
+      { id: 2, name: "Overdrive", active: true },
+      { id: 3, name: "Amp Model", active: true },
+      { id: 4, name: "Cab IR", active: true },
+      { id: 5, name: "Delay", active: true },
+      { id: 6, name: "Reverb", active: true }
+    ];
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      populateDropdowns();
+      buildCustomTuningInputs();
+      updateFretboard();
+      updateChordView();
+      renderSignalChain();
+      renderSoloProgression();
+      renderSongLibrary();
+    });
+
+    function populateDropdowns() {
+      const keySelect = document.getElementById('scale-key');
+      const chordRootSelect = document.getElementById('chord-root');
+      const soloRootSelect = document.getElementById('solo-chord-root');
+
+      NOTES.forEach(note => {
+        keySelect.add(new Option(note, note));
+        chordRootSelect.add(new Option(note, note));
+        soloRootSelect.add(new Option(note, note));
+      });
+      keySelect.value = "E";
+      chordRootSelect.value = "D";
+
+      const scaleSelect = document.getElementById('scale-type');
+      Object.keys(SCALES).forEach(key => {
+        scaleSelect.add(new Option(SCALES[key].name, key));
+      });
+
+      const tuningSelect = document.getElementById('tuning-preset');
+      Object.keys(TUNINGS).forEach(key => {
+        tuningSelect.add(new Option(TUNINGS[key].name, key));
+      });
+
+      const chordTypeSelect = document.getElementById('chord-type');
+      const soloTypeSelect = document.getElementById('solo-chord-type');
+      Object.keys(CHORD_DATABASE).forEach(type => {
+        chordTypeSelect.add(new Option(type, type));
+        soloTypeSelect.add(new Option(type, type));
+      });
+    }
+
+    function buildCustomTuningInputs() {
+      const container = document.getElementById('custom-strings-inputs');
+      container.innerHTML = '';
+      for (let s = 6; s >= 1; s--) {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.flexDirection = 'column';
+        div.style.gap = '0.2rem';
+
+        const label = document.createElement('span');
+        label.style.fontSize = '0.75rem';
+        label.style.color = 'var(--text-muted)';
+        label.innerText = `S${s}:`;
+
+        const select = document.createElement('select');
+        select.id = `custom-string-${s}`;
+
+        NOTES.forEach(n => {
+          select.add(new Option(n, n));
+        });
+
+        const defaults = { 6: "E", 5: "A", 4: "D", 3: "G", 2: "B", 1: "E" };
+        select.value = defaults[s];
+
+        select.onchange = () => {
+          updateCustomTuningFromInputs();
+          updateFretboard();
+        };
+
+        div.appendChild(label);
+        div.appendChild(select);
+        container.appendChild(div);
+      }
+    }
+
+    function updateCustomTuningFromInputs() {
+      const octaves = { 6: "2", 5: "2", 4: "3", 3: "3", 2: "3", 1: "4" };
+      const newTuning = [];
+      for (let s = 6; s >= 1; s--) {
+        const note = document.getElementById(`custom-string-${s}`).value;
+        newTuning.push(note + octaves[s]);
+      }
+      currentTuning = newTuning;
+    }
+
+    function handleTuningChange() {
+      const val = document.getElementById('tuning-preset').value;
+      if (val === 'custom') {
+        document.getElementById('custom-tuning-container').style.display = 'block';
+        updateCustomTuningFromInputs();
+      } else {
+        document.getElementById('custom-tuning-container').style.display = 'none';
+        currentTuning = [...TUNINGS[val].notes];
+      }
+      updateFretboard();
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      event.target.classList.add('active');
+
+      if (tabId === 'fretboard') updateFretboard();
+      if (tabId === 'chords') updateChordView();
+      if (tabId === 'tone') renderSignalChain();
+      if (tabId === 'tabs') renderSongLibrary();
+    }
+
+    // FRETBOARD CANVAS RENDERER
+    function updateFretboard() {
+      const canvas = document.getElementById('fretboard-canvas');
+      const ctx = canvas.getContext('2d');
+      const numFrets = 24;
+      const numStrings = 6;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const paddingX = 40;
+      const paddingY = 20;
+      const width = canvas.width - paddingX * 2;
+      const height = canvas.height - paddingY * 2;
+
+      ctx.fillStyle = "#181a1f";
+      ctx.fillRect(paddingX, paddingY, width, height);
+
+      for (let i = 0; i <= numFrets; i++) {
+        const x = paddingX + (i * (width / numFrets));
+        ctx.strokeStyle = i === 0 ? "#d1d5db" : "#374151";
+        ctx.lineWidth = i === 0 ? 5 : 2;
+        ctx.beginPath();
+        ctx.moveTo(x, paddingY);
+        ctx.lineTo(x, paddingY + height);
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < numStrings; i++) {
+        const y = paddingY + (i * (height / (numStrings - 1)));
+        ctx.strokeStyle = "#6b7280";
+        ctx.lineWidth = 1 + (i * 0.5);
+        ctx.beginPath();
+        ctx.moveTo(paddingX, y);
+        ctx.lineTo(paddingX + width, y);
+        ctx.stroke();
+      }
+
+      const key = document.getElementById('scale-key').value;
+      const scaleKey = document.getElementById('scale-type').value;
+      const scale = SCALES[scaleKey] || SCALES["minor_pentatonic"];
+      const displayMode = document.getElementById('display-mode').value;
+
+      const rootIdx = NOTES.indexOf(key);
+      const scaleNotes = scale.intervals.map(i => NOTES[(rootIdx + i) % 12]);
+
+      for (let s = 0; s < numStrings; s++) {
+        const openNote = currentTuning[5 - s].replace(/[0-9]/g, '');
+        const openNoteIdx = NOTES.indexOf(openNote);
+
+        for (let f = 0; f <= numFrets; f++) {
+          const noteIdx = (openNoteIdx + f) % 12;
+          const noteName = NOTES[noteIdx];
+
+          if (scaleNotes.includes(noteName)) {
+            const isRoot = noteName === key;
+            if (displayMode === 'roots' && !isRoot) continue;
+
+            const x = paddingX + (f * (width / numFrets)) - (width / (numFrets * 2));
+            const y = paddingY + (s * (height / (numStrings - 1)));
+
+            ctx.beginPath();
+            ctx.arc(f === 0 ? paddingX : x, y, 12, 0, Math.PI * 2);
+            ctx.fillStyle = isRoot ? "var(--root-note-bg)" : "var(--scale-note-bg)";
+            ctx.fill();
+
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 10px sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(noteName, f === 0 ? paddingX : x, y);
+          }
+        }
+      }
+
+      document.getElementById('scale-info-notes').innerText = `Notes: ${scaleNotes.join(" - ")}`;
+      document.getElementById('scale-info-formula').innerText = `Formula: ${scale.formula}`;
+    }
+
+    // CHORD DIAGRAM RENDERER
+    function updateChordView() {
+      const root = document.getElementById('chord-root').value;
+      const type = document.getElementById('chord-type').value;
+      const canvas = document.getElementById('chord-canvas');
+      const ctx = canvas.getContext('2d');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const chordData = CHORD_DATABASE[type] || CHORD_DATABASE["Major"];
+      const shape = (chordData.shapes && chordData.shapes[root]) ? chordData.shapes[root] : { frets: [-1, 0, 2, 2, 2, 0], fingers: [0,0,1,2,3,0], baseFret: 1 };
+
+      const startX = 40;
+      const startY = 40;
+      const width = 160;
+      const height = 200;
+
+      for (let i = 0; i < 6; i++) {
+        const x = startX + (i * (width / 5));
+        ctx.strokeStyle = "#4b5563";
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        ctx.lineTo(x, startY + height);
+        ctx.stroke();
+      }
+
+      for (let i = 0; i < 5; i++) {
+        const y = startY + ((i) * (height / 4));
+        ctx.strokeStyle = i === 0 ? "#f3f4f6" : "#374151";
+        ctx.lineWidth = i === 0 ? 4 : 1;
+        ctx.beginPath();
+        ctx.moveTo(startX, y);
+        ctx.lineTo(startX + width, y);
+        ctx.stroke();
+      }
+
+      shape.frets.forEach((fret, stringIdx) => {
+        const x = startX + (stringIdx * (width / 5));
+        if (fret === -1) {
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "14px sans-serif";
+          ctx.fillText("X", x - 4, startY - 10);
+        } else if (fret === 0) {
+          ctx.fillStyle = "#10b981";
+          ctx.font = "14px sans-serif";
+          ctx.fillText("O", x - 4, startY - 10);
+        } else {
+          const y = startY + ((fret - 0.5) * (height / 4));
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI * 2);
+          ctx.fillStyle = "#3b82f6";
+          ctx.fill();
+        }
+      });
+
+      document.getElementById('chord-title').innerText = `${root} ${type}`;
+      document.getElementById('chord-theory-text').innerText = chordData.theory;
+    }
+
+    function strumCurrentChord() {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      [261.63, 329.63, 392.00, 523.25].forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.2, now + (idx * 0.05));
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (idx * 0.05) + 1.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + (idx * 0.05));
+        osc.stop(now + (idx * 0.05) + 1.5);
+      });
+    }
+
+    // SOLO AI PROGRESSION BUILDER
+    function addSoloChord() {
+      const root = document.getElementById('solo-chord-root').value;
+      const type = document.getElementById('solo-chord-type').value;
+      soloProgression.push({ root, type });
+      renderSoloProgression();
+    }
+
+    function removeSoloChord(index) {
+      soloProgression.splice(index, 1);
+      renderSoloProgression();
+    }
+
+    function renderSoloProgression() {
+      const container = document.getElementById('solo-progression-list');
+      if (soloProgression.length === 0) {
+        container.innerHTML = `<span style="color: var(--text-dim); font-size: 0.9rem;">No chords added yet. Add chords above!</span>`;
+        return;
+      }
+      container.innerHTML = soloProgression.map((item, idx) => `
+        <div class="progression-tag">
+          <span>${item.root} ${item.type}</span>
+          <span class="remove-btn" onclick="removeSoloChord(${idx})">&times;</span>
+        </div>
+      `).join('');
+    }
+
+    function analyzeProgression() {
+      const resultsDiv = document.getElementById('solo-results');
+      if (soloProgression.length === 0) {
+        resultsDiv.innerHTML = `<p style="color: var(--root-note-bg);">Please add at least one chord to analyze.</p>`;
+        return;
+      }
+
+      const keyNote = soloProgression[0].root;
+      const selectedGenre = document.getElementById('solo-genre').value;
+      const rec = GENRE_RECOMMENDATIONS[selectedGenre] || GENRE_RECOMMENDATIONS["blues"];
+
+      resultsDiv.innerHTML = `
+        <div class="card" style="background: var(--bg-input);">
+          <h4 style="color: var(--accent-silver); margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.05em;">
+            Genre-Specific Solo Analysis (${document.getElementById('solo-genre').options[document.getElementById('solo-genre').selectedIndex].text})
+          </h4>
+          <div style="margin-bottom: 1rem;">
+            <p style="font-size: 0.95rem; margin-bottom: 0.4rem; color: var(--text-main);">
+              1. <strong>${keyNote} ${rec.primaryLabel}</strong> (Primary)
+            </p>
+            <p style="font-size: 0.95rem; color: var(--text-main);">
+              2. <strong>${keyNote} ${rec.secondaryLabel}</strong> (Secondary Expressive Option)
+            </p>
+          </div>
+          <div style="background: var(--bg-card); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 1rem;">
+            <strong style="color: var(--accent-silver); font-size: 0.85rem;">Stylistic Tone & Phrasing Advice:</strong>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">${rec.advice}</p>
+          </div>
+          <button class="btn-primary" onclick="applySoloScaleToFretboard('${keyNote}', '${rec.primary}')">
+            Load ${keyNote} Scale on Fretboard
+          </button>
+        </div>
+      `;
+    }
+
+    function applySoloScaleToFretboard(key, scaleType) {
+      document.getElementById('scale-key').value = key;
+      document.getElementById('scale-type').value = scaleType;
+      switchTab('fretboard');
+    }
+
+    // SONG TABS ENGINE
+    function renderSongLibrary() {
+      const search = document.getElementById('song-search').value.toLowerCase();
+      const diffFilter = document.getElementById('song-filter-diff').value;
+      const container = document.getElementById('song-cards-container');
+
+      const filtered = SONG_LIBRARY.filter(song => {
+        const matchesSearch = song.title.toLowerCase().includes(search) || song.artist.toLowerCase().includes(search);
+        const matchesDiff = diffFilter === 'all' || song.diff === diffFilter;
+        return matchesSearch && matchesDiff;
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No matching songs found.</p>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map(song => {
+        const encodedQuery = encodeURIComponent(`${song.artist} ${song.title} guitar tab`);
+        const encodedLesson = encodeURIComponent(`${song.artist} ${song.title} guitar lesson tutorial`);
+
+        return `
+          <div class="song-card">
+            <div class="song-card-header">
+              <div>
+                <strong style="font-size: 1.05rem; display: block;">${song.title}</strong>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">${song.artist}</span>
+              </div>
+              <span class="badge-diff diff-${song.diff}">${song.diff}</span>
+            </div>
+
+            <div style="font-size: 0.8rem; color: var(--text-dim);">${song.genre}</div>
+
+            <div class="song-links">
+              <a href="https://www.youtube.com/results?search_query=${encodedLesson}" target="_blank" rel="noopener" class="song-link-btn link-yt">▶ YouTube Lesson</a>
+              <a href="https://www.songsterr.com/?pattern=${encodedQuery}" target="_blank" rel="noopener" class="song-link-btn link-st">♫ Songsterr Tab</a>
+              <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodedQuery}" target="_blank" rel="noopener" class="song-link-btn link-ug">🎸 Ultimate Guitar</a>
+            </div>
+
+            <button class="btn-primary" style="font-size: 0.8rem; margin-top: 0.5rem;" onclick="viewSongTab(${song.id})">
+              View Tab / Scratchpad
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewSongTab(id) {
+      const song = SONG_LIBRARY.find(s => s.id === id);
+      if (song) {
+        document.getElementById('tab-viewer-title').innerText = `${song.title} - ${song.artist} (Tab Scratchpad)`;
+        document.getElementById('tab-viewer-content').innerText = song.tab;
+      }
+    }
+
+    function toggleAddSongModal() {
+      const box = document.getElementById('add-song-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveNewSong() {
+      const title = document.getElementById('new-song-title').value;
+      const artist = document.getElementById('new-song-artist').value;
+      const diff = document.getElementById('new-song-diff').value;
+      const genre = document.getElementById('new-song-genre').value || 'General';
+      const tab = document.getElementById('new-song-tab').value || 'No tab entered.';
+
+      if (!title || !artist) {
+        alert("Please enter both a title and artist.");
+        return;
+      }
+
+      SONG_LIBRARY.unshift({
+        id: Date.now(),
+        title,
+        artist,
+        diff,
+        genre,
+        tab
+      });
+
+      document.getElementById('new-song-title').value = '';
+      document.getElementById('new-song-artist').value = '';
+      document.getElementById('new-song-tab').value = '';
+      toggleAddSongModal();
+      renderSongLibrary();
+    }
+
+    // TONE & SIGNAL CHAIN
+    function renderSignalChain() {
+      const container = document.getElementById('signal-chain-container');
+      if (signalBlocks.length === 0) {
+        container.innerHTML = `<span style="color: var(--text-dim); font-size: 0.9rem;">No blocks in signal chain. Click buttons above to add effects!</span>`;
+        return;
+      }
+      container.innerHTML = signalBlocks.map((block, idx) => `
+        <div class="chain-block ${block.active ? '' : 'bypassed'}">
+          <div class="block-header">
+            <span>BLOCK ${idx + 1}</span>
+            <span class="block-delete" onclick="removeSignalBlock(${idx})" title="Delete block">&times;</span>
+          </div>
+          <div style="font-weight: 600; font-size: 0.95rem;">${block.name}</div>
+          <div class="block-controls">
+            <button class="block-nav-btn" onclick="moveSignalBlock(${idx}, -1)" ${idx === 0 ? 'disabled' : ''}>&#9668;</button>
+            <button class="toggle-active-btn" onclick="toggleSignalBlock(${idx})">
+              ${block.active ? 'ACTIVE' : 'BYPASS'}
+            </button>
+            <button class="block-nav-btn" onclick="moveSignalBlock(${idx}, 1)" ${idx === signalBlocks.length - 1 ? 'disabled' : ''}>&#9658;</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addSignalBlock(name) {
+      signalBlocks.push({ id: Date.now(), name, active: true });
+      renderSignalChain();
+    }
+
+    function removeSignalBlock(index) {
+      signalBlocks.splice(index, 1);
+      renderSignalChain();
+    }
+
+    function moveSignalBlock(index, direction) {
+      const targetIdx = index + direction;
+      if (targetIdx < 0 || targetIdx >= signalBlocks.length) return;
+      const temp = signalBlocks[index];
+      signalBlocks[index] = signalBlocks[targetIdx];
+      signalBlocks[targetIdx] = temp;
+      renderSignalChain();
+    }
+
+    function toggleSignalBlock(index) {
+      signalBlocks[index].active = !signalBlocks[index].active;
+      renderSignalChain();
+    }
+
+    function saveCurrentRig() {
+      const activeNames = signalBlocks.filter(b => b.active).map(b => b.name).join(' → ');
+      if (!activeNames) return;
+
+      const tbody = document.getElementById('preset-table-body');
+      const row = tbody.insertRow(0);
+      row.innerHTML = `
+        <td>Custom Rig ${tbody.rows.length + 1}</td>
+        <td>Universal Preset</td>
+        <td>${activeNames}</td>
+        <td>user_preset.json</td>
+        <td><button class="delete-row-btn" onclick="deletePresetRow(this)">Delete</button></td>
+      `;
+    }
+
+    function deletePresetRow(btn) {
+      const row = btn.closest('tr');
+      row.remove();
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const tbody = document.getElementById('preset-table-body');
+        const row = tbody.insertRow(0);
+        row.innerHTML = `
+          <td>${file.name.split('.')[0]}</td>
+          <td>Custom Hardware</td>
+          <td>User File Upload</td>
+          <td>${file.name}</td>
+          <td><button class="delete-row-btn" onclick="deletePresetRow(this)">Delete</button></td>
+        `;
+      }
+    }
+
+    // METRONOME
+    let metroInterval = null;
+    let isPlaying = false;
+    let bpm = 120;
+
+    function updateBPM(val) {
+      bpm = val;
+      document.getElementById('bpm-display').innerText = bpm;
+      if (isPlaying) {
+        toggleMetronome();
+        toggleMetronome();
+      }
+    }
+
+    function toggleMetronome() {
+      const btn = document.getElementById('metro-play-btn');
+      if (isPlaying) {
+        clearInterval(metroInterval);
+        isPlaying = false;
+        btn.innerText = "Start";
+      } else {
+        const ctx = getAudioContext();
+        metroInterval = setInterval(() => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.05);
+        }, (60 / bpm) * 1000);
+        isPlaying = true;
+        btn.innerText = "Stop";
+      }
+    }
+
+    // TUNER STUB
+    function initTuner() {
+      document.getElementById('tuner-start-btn').innerText = "Microphone Active";
+      document.getElementById('tuner-note').innerText = "A";
+      document.getElementById('tuner-freq').innerText = "110.0 Hz";
+    }
+  </script>
+</body>
+</html>

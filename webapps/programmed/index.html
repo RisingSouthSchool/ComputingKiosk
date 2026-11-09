@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programmed</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for 3D Graphics -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Fengari Web Lua Engine -->
+  <script src="https://cdn.jsdelivr.net/npm/fengari-web@0.1.4/dist/fengari-web.min.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    canvas { display: block; width: 100%; height: 100%; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="bg-gray-800 border-b border-gray-700 px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+      <h1 class="font-bold text-lg tracking-wide">Programmed</h1>
+    </div>
+    <div class="flex space-x-2">
+      <button id="runBtn" class="bg-green-600 hover:bg-green-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1 shadow">
+        ▶ Run Code
+      </button>
+      <button id="designerBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1 shadow">
+        🎨 Instance Designer
+      </button>
+      <button id="docBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition flex items-center gap-1 shadow">
+        📖 Docs
+      </button>
+      <button id="clearBtn" class="bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-1.5 rounded-lg text-sm transition">
+        Clear Output
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport & Editor Layout -->
+  <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Code Editor Section -->
+    <div class="w-full md:w-1/2 flex flex-col border-r border-gray-800 bg-gray-950 relative">
+      <div class="bg-gray-900 px-4 py-2 border-b border-gray-800 text-xs text-gray-400 font-mono flex justify-between items-center">
+        <span>main.lua</span>
+        <span class="text-[10px] text-purple-400">Press Tab or Enter for Autocomplete</span>
+      </div>
+      <textarea id="codeEditor" class="w-full flex-1 bg-gray-950 text-emerald-400 font-mono p-4 text-sm resize-none focus:outline-none focus:ring-0 leading-relaxed" spellcheck="false">-- Interactive Lua 3D Script Example
+print("Initializing 3D World...")
+
+-- Spawn a prebuilt Robot Car instance at (0, 0, 0)
+local car = Instance.spawn("RobotCar", 0, 0, 0)
+print("Spawned vehicle: " .. tostring(car.id))
+
+-- Helper function to position camera behind car relative to its CFrame (orientation)
+local function updateCamera()
+    local cx, cy, cz = car:getPosition()
+    local rx, ry, rz = car:getRotation() -- Heading angle in degrees
+    local radY = math.rad(ry)
+
+    local dist = 10   -- Distance behind car
+    local height = 5  -- Height above car
+
+    -- Calculate offset vector in local orientation space (CFrame)
+    local camX = cx + dist * math.sin(radY)
+    local camY = cy + height
+    local camZ = cz + dist * math.cos(radY)
+
+    Camera:setPosition(camX, camY, camZ)
+    Camera:lookAt(cx, cy + 1.2, cz)
+end
+
+-- Set initial camera position
+updateCamera()
+
+-- Get vehicle position and sub-part data
+local vx, vy, vz = car:getPosition()
+print("Vehicle Position:", vx, vy, vz)
+
+local cabin = car:GetPart("Cabin")
+if cabin then
+    local cx, cy, cz = cabin:getPosition()
+    local cData = cabin:getData()
+    print("Cabin Local Pos:", cx, cy, cz)
+    print("Cabin Color:", cData.color)
+end
+
+-- Click detection event
+car.OnClicked:Connect(function()
+    print("Vehicle clicked! Performing a 360 spin...")
+    for i = 1, 36 do
+        car:rotate(0, 10, 0)
+        updateCamera()
+        task.wait(0.02)
+    end
+end)
+
+print("Controls:")
+print("- Vehicle Controls: W/A/S/D or Arrow Keys")
+print("- Camera automatically follows vehicle orientation (CFrame)")
+
+-- Game loop for real-time controls
+while true do
+    task.wait(0.03)
+
+    -- Keyboard Movement Controls for Vehicle
+    if UserInputService.isKeyDown("w") or UserInputService.isKeyDown("ArrowUp") then
+        car:move(0, 0, -0.2)
+    end
+    if UserInputService.isKeyDown("s") or UserInputService.isKeyDown("ArrowDown") then
+        car:move(0, 0, 0.2)
+    end
+    if UserInputService.isKeyDown("a") or UserInputService.isKeyDown("ArrowLeft") then
+        car:rotate(0, 3, 0)
+    end
+    if UserInputService.isKeyDown("d") or UserInputService.isKeyDown("ArrowRight") then
+        car:rotate(0, -3, 0)
+    end
+
+    -- Keep camera locked behind vehicle CFrame
+    updateCamera()
+end
+</textarea>
+
+      <!-- Autocomplete Dropdown Popup -->
+      <div id="autocompleteBox" class="hidden absolute z-40 bg-gray-900 border border-purple-500/60 rounded-lg shadow-2xl max-h-52 w-72 overflow-y-auto font-mono text-xs divide-y divide-gray-800/60">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </div>
+
+    <!-- 3D Canvas & Output Terminal -->
+    <div class="w-full md:w-1/2 flex flex-col bg-gray-900">
+
+      <!-- 3D Viewport -->
+      <div class="relative flex-1 bg-black" id="canvasContainer">
+        <canvas id="threeCanvas"></canvas>
+        <div class="absolute top-3 left-3 bg-gray-900/80 backdrop-blur border border-gray-700/50 rounded-lg px-3 py-1.5 text-xs text-gray-300 pointer-events-none">
+          🎮 Viewport (Camera controlled via Camera API / Script)
+        </div>
+      </div>
+
+      <!-- Console Output Terminal -->
+      <div class="h-44 border-t border-gray-800 bg-gray-950 flex flex-col">
+        <div class="bg-gray-900 px-4 py-1.5 border-b border-gray-800 text-xs text-gray-400 font-mono flex justify-between">
+          <span>Output Terminal</span>
+          <span id="statusIndicator" class="text-emerald-500">Ready</span>
+        </div>
+        <pre id="output" class="flex-1 p-3 text-xs font-mono text-gray-300 overflow-y-auto whitespace-pre-wrap leading-relaxed select-text"></pre>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- INSTANCE DESIGNER MODAL -->
+  <div id="designerModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-4xl h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="bg-gray-800 border-b border-gray-700 px-5 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🎨</span>
+          <h2 class="font-bold text-base text-white">Custom Instance Designer</h2>
+        </div>
+        <div class="flex gap-2">
+          <button id="saveTemplateBtn" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition shadow">
+            💾 Save Template
+          </button>
+          <button id="closeDesignerBtn" class="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+            ✕ Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+        <!-- Part Inspector & Settings Panel -->
+        <div class="w-full md:w-1/2 p-4 flex flex-col border-r border-gray-800 overflow-y-auto bg-gray-950 gap-4">
+
+          <!-- Template Name -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Template Name</label>
+            <input id="templateNameInput" type="text" value="CustomBot" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white font-mono focus:border-purple-500 focus:outline-none" placeholder="e.g. SpeedBoat">
+          </div>
+
+          <!-- Add Part Action Buttons -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-400 mb-2">Add Sub-Parts</label>
+            <div class="flex gap-2">
+              <button id="addBoxBtn" class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg py-1.5 text-xs font-medium text-gray-200 transition">
+                + Box
+              </button>
+              <button id="addSphereBtn" class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg py-1.5 text-xs font-medium text-gray-200 transition">
+                + Sphere
+              </button>
+              <button id="addCylinderBtn" class="flex-1 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg py-1.5 text-xs font-medium text-gray-200 transition">
+                + Cylinder
+              </button>
+            </div>
+          </div>
+
+          <!-- Parts Hierarchy List -->
+          <div class="flex-1 flex flex-col min-h-[220px]">
+            <label class="block text-xs font-semibold text-gray-400 mb-1">Part Hierarchy</label>
+            <div id="partsList" class="flex-1 bg-gray-900 border border-gray-800 rounded-lg p-2 overflow-y-auto space-y-2">
+              <!-- Dynamically populated parts -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 3D Live Designer Preview Canvas -->
+        <div class="w-full md:w-1/2 bg-black relative flex flex-col">
+          <div class="absolute top-3 left-3 z-10 bg-gray-900/80 backdrop-blur border border-gray-700/50 rounded-lg px-3 py-1 text-xs text-purple-300">
+            👁 Live Template Preview
+          </div>
+          <canvas id="designerCanvas" class="w-full h-full flex-1"></canvas>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DOCUMENTATION MODAL -->
+  <div id="docModal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-3xl h-[82vh] flex flex-col shadow-2xl overflow-hidden">
+
+      <!-- Modal Header -->
+      <div class="bg-gray-800 border-b border-gray-700 px-5 py-3 flex justify-between items-center">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📖</span>
+          <h2 class="font-bold text-base text-white">API Reference & Documentation</h2>
+        </div>
+        <button id="closeDocBtn" class="bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg text-xs font-semibold transition">
+          ✕ Close
+        </button>
+      </div>
+
+      <!-- Documentation Content -->
+      <div class="flex-1 p-6 overflow-y-auto text-xs text-gray-300 space-y-6 leading-relaxed font-sans">
+
+        <!-- Instance API -->
+        <section class="space-y-2">
+          <h3 class="text-sm font-bold text-purple-400 flex items-center gap-2 border-b border-gray-800 pb-1">
+            <span>📦</span> Instance Factory API
+          </h3>
+          <p class="text-gray-400">Used to spawn 3D object instances into the scene.</p>
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 font-mono text-[11px] space-y-1 text-emerald-400">
+            <div><span class="text-purple-300">Instance.spawn</span>(templateName, x, y, z)</div>
+            <div class="text-gray-500 font-sans text-[10px] pl-4">Spawns a new 3D instance. Built-in templates: "RobotCar", "Cube", or your saved Designer templates. Returns instance table object.</div>
+          </div>
+        </section>
+
+        <!-- Instance Methods -->
+        <section class="space-y-2">
+          <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2 border-b border-gray-800 pb-1">
+            <span>⚙️</span> Instance & Part Methods
+          </h3>
+          <p class="text-gray-400">Methods available on spawned 3D instances and sub-parts:</p>
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 font-mono text-[11px] space-y-2 text-emerald-400">
+            <div>
+              <div>inst:<span class="text-purple-300">move</span>(dx, dy, dz)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Translates the instance along local axes by (dx, dy, dz).</div>
+            </div>
+            <div>
+              <div>inst:<span class="text-purple-300">rotate</span>(rx, ry, rz)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Rotates the instance by rx, ry, rz degrees around X, Y, Z axes.</div>
+            </div>
+            <div>
+              <div>inst:<span class="text-purple-300">getPosition</span>() &amp; inst:<span class="text-purple-300">getRotation</span>()</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Returns 3 values: <code class="text-gray-300">x, y, z</code> position or <code class="text-gray-300">rx, ry, rz</code> rotation angles in degrees.</div>
+            </div>
+            <div>
+              <div>inst:<span class="text-purple-300">getData</span>()</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Returns a Lua table containing instance metadata: <code class="text-gray-300">{ id, position = {x,y,z}, rotation = {x,y,z} }</code>.</div>
+            </div>
+            <div>
+              <div>inst:<span class="text-purple-300">GetPart</span>(partName)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Retrieves a named sub-part object (e.g. <code class="text-gray-300 font-mono">car:GetPart("Cabin")</code>).</div>
+            </div>
+            <div>
+              <div>part:<span class="text-purple-300">getPosition</span>() &amp; part:<span class="text-purple-300">getWorldPosition</span>()</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Returns local or world <code class="text-gray-300">x, y, z</code> coordinates of a sub-part.</div>
+            </div>
+            <div>
+              <div>part:<span class="text-purple-300">getData</span>()</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Returns a table with sub-part properties: <code class="text-gray-300">{ name, position, worldPosition, rotation, color }</code>.</div>
+            </div>
+            <div>
+              <div>inst.<span class="text-purple-300">OnClicked:Connect</span>(function() ... end)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Binds a callback function that runs when the user clicks the 3D object in the viewport.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Camera API -->
+        <section class="space-y-2">
+          <h3 class="text-sm font-bold text-emerald-400 flex items-center gap-2 border-b border-gray-800 pb-1">
+            <span>📷</span> Camera Global API
+          </h3>
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 font-mono text-[11px] space-y-2 text-emerald-400">
+            <div><span class="text-purple-300">Camera:setPosition</span>(x, y, z)</div>
+            <div><span class="text-purple-300">Camera:move</span>(dx, dy, dz)</div>
+            <div><span class="text-purple-300">Camera:rotate</span>(rx, ry, rz)</div>
+            <div><span class="text-purple-300">Camera:lookAt</span>(x, y, z)</div>
+          </div>
+        </section>
+
+        <!-- UserInputService & Task -->
+        <section class="space-y-2">
+          <h3 class="text-sm font-bold text-amber-400 flex items-center gap-2 border-b border-gray-800 pb-1">
+            <span>🎮</span> Input & Timing Utilities
+          </h3>
+          <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 font-mono text-[11px] space-y-2 text-emerald-400">
+            <div>
+              <div><span class="text-purple-300">UserInputService.isKeyDown</span>(keyString)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Returns boolean whether a key is currently held down. Supports "w", "a", "s", "d", "ArrowUp", "Space", "Shift", "i", "j", "k", "l", etc.</div>
+            </div>
+            <div>
+              <div><span class="text-purple-300">task.wait</span>(seconds)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Yields execution of the Lua thread for specified duration (in seconds). Ideal inside <code class="text-gray-300">while true do</code> loops.</div>
+            </div>
+            <div>
+              <div><span class="text-purple-300">print</span>(...)</div>
+              <div class="text-gray-500 font-sans text-[10px] pl-4">Outputs values or text to the Output Terminal log.</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT & LUA ENGINE INTEGRATION -->
+  <script>
+    // --- Console Logger Helper ---
+    function appendLog(msg) {
+      const outputElement = document.getElementById("output");
+      if (outputElement) {
+        outputElement.textContent += msg + "\n";
+        outputElement.scrollTop = outputElement.scrollHeight;
+      } else {
+        console.log(msg);
+      }
+    }
+
+    // --- Key Input Tracking ---
+    const keysDown = {};
+
+    window.addEventListener('keydown', (e) => {
+      // Ignore key events when typing inside textareas or input fields
+      if (['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName)) return;
+
+      keysDown[e.key] = true;
+      keysDown[e.key.toLowerCase()] = true;
+      keysDown[e.key.toUpperCase()] = true;
+      if (e.code) keysDown[e.code.toLowerCase()] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keysDown[e.key] = false;
+      keysDown[e.key.toLowerCase()] = false;
+      keysDown[e.key.toUpperCase()] = false;
+      if (e.code) keysDown[e.code.toLowerCase()] = false;
+    });
+
+    // Clear key states when window loses focus
+    window.addEventListener('blur', () => {
+      for (let k in keysDown) keysDown[k] = false;
+    });
+
+    // --- Safe Lua String Helper ---
+    function safeLuaToString(lua, lauxlib, L, idx) {
+      try {
+        if (!L || lua.lua_gettop(L) === 0) return "";
+        const type = lua.lua_type(L, idx);
+        if (type === lua.LUA_TSTRING) {
+          return lua.lua_tojsstring(L, idx) || "";
+        }
+        if (type === lua.LUA_TNUMBER) {
+          return String(lua.lua_tonumber(L, idx));
+        }
+        if (type === lua.LUA_TBOOLEAN) {
+          return lua.lua_toboolean(L, idx) ? "true" : "false";
+        }
+        if (type === lua.LUA_TNIL) {
+          return "nil";
+        }
+        return "";
+      } catch (err) {
+        return "";
+      }
+    }
+
+    // --- THREE.JS Scene Setup ---
+    let scene, camera, renderer, raycaster, mouse;
+    const luaObjects = {}; // Stores instance objects by ID: { id: THREE.Group }
+    const instanceClickListeners = {}; // Stores click callbacks: { id: function }
+    let instanceIdCounter = 0;
+
+    // Custom Instance Designer State & Storage
+    const customTemplates = {};
+    let designerParts = [
+      { id: 1, name: "Body", shape: "box", color: "#3b82f6", pos: [0, 0.75, 0], size: [1.5, 1.5, 1.5], opacity: 1 },
+      { id: 2, name: "Head", shape: "sphere", color: "#ec4899", pos: [0, 2.0, 0], size: [1.0, 1.0, 1.0], opacity: 1 }
+    ];
+    let designerScene, designerCamera, designerRenderer, designerGroup;
+
+    function initThreeJS() {
+      const container = document.getElementById("canvasContainer");
+      const canvas = document.getElementById("threeCanvas");
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x111827);
+
+      camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 8, 14);
+      camera.lookAt(0, 1, 0);
+
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.shadowMap.enabled = true;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      dirLight.position.set(10, 20, 10);
+      dirLight.castShadow = true;
+      scene.add(dirLight);
+
+      // Floor Grid
+      const gridHelper = new THREE.GridHelper(40, 40, 0x3b82f6, 0x1f2937);
+      gridHelper.position.y = 0;
+      scene.add(gridHelper);
+
+      // Raycasting setup
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      // Raycast Click Handler
+      canvas.addEventListener('click', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / canvas.clientWidth) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / canvas.clientHeight) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(scene.children, true);
+
+        if (intersects.length > 0) {
+          let curr = intersects[0].object;
+          // Walk up to root container group to find matching registered Lua instance
+          while (curr && !curr.userData?.id && curr.parent) {
+            curr = curr.parent;
+          }
+          if (curr && curr.userData && curr.userData.id) {
+            const instId = curr.userData.id;
+            if (instanceClickListeners[instId]) {
+              instanceClickListeners[instId]();
+            }
+          }
+        }
+      });
+
+      // Window Resize Listener
+      window.addEventListener('resize', onWindowResize);
+
+      // Render Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById("canvasContainer");
+      if (!container || !renderer || !camera) return;
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    // --- Helper to Build 3D Models ---
+    function buildRobotCar() {
+      const group = new THREE.Group();
+
+      // Car Body
+      const bodyGeo = new THREE.BoxGeometry(2, 0.8, 3.5);
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 });
+      const body = new THREE.Mesh(bodyGeo, bodyMat);
+      body.position.y = 0.6;
+      group.add(body);
+
+      // Car Cabin
+      const cabinGeo = new THREE.BoxGeometry(1.6, 0.7, 1.8);
+      const cabinMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, transparent: true, opacity: 0.8 });
+      const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+      cabin.position.set(0, 1.25, -0.2);
+      cabin.name = "Cabin";
+      group.add(cabin);
+
+      // Wheels
+      const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
+      wheelGeo.rotateZ(Math.PI / 2);
+
+      const wheelPositions = [
+        [-1.1, 0.4, 1.1],
+        [1.1, 0.4, 1.1],
+        [-1.1, 0.4, -1.1],
+        [1.1, 0.4, -1.1]
+      ];
+
+      wheelPositions.forEach((pos) => {
+        const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+        wheel.position.set(...pos);
+        group.add(wheel);
+      });
+
+      return group;
+    }
+
+    function buildDefaultCube() {
+      const group = new THREE.Group();
+      const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.4 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.y = 0.75;
+      group.add(mesh);
+      return group;
+    }
+
+    // Build custom template geometry from part definitions
+    function buildCustomTemplate(templateDef) {
+      const group = new THREE.Group();
+      templateDef.parts.forEach(part => {
+        let geo;
+        const sx = part.size[0] || 1;
+        const sy = part.size[1] || 1;
+        const sz = part.size[2] || 1;
+
+        if (part.shape === 'sphere') {
+          geo = new THREE.SphereGeometry(sx / 2, 16, 16);
+        } else if (part.shape === 'cylinder') {
+          geo = new THREE.CylinderGeometry(sx / 2, sx / 2, sy, 16);
+        } else {
+          geo = new THREE.BoxGeometry(sx, sy, sz);
+        }
+
+        const mat = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(part.color || "#3b82f6"),
+          roughness: 0.4,
+          transparent: part.opacity < 1,
+          opacity: part.opacity !== undefined ? part.opacity : 1
+        });
+
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.position.set(...(part.pos || [0, 0, 0]));
+        if (part.name) mesh.name = part.name;
+        group.add(mesh);
+      });
+      return group;
+    }
+
+    // --- INSTANCE DESIGNER PREVIEW ENGINE ---
+    function initDesignerThreeJS() {
+      const canvas = document.getElementById("designerCanvas");
+      if (!canvas) return;
+
+      designerScene = new THREE.Scene();
+      designerScene.background = new THREE.Color(0x090d16);
+
+      designerCamera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 100);
+      designerCamera.position.set(0, 4, 7);
+      designerCamera.lookAt(0, 1, 0);
+
+      designerRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      designerRenderer.setSize(canvas.clientWidth, canvas.clientHeight);
+      designerRenderer.setPixelRatio(window.devicePixelRatio);
+
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+      designerScene.add(ambLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+      dirLight.position.set(5, 10, 5);
+      designerScene.add(dirLight);
+
+      const grid = new THREE.GridHelper(20, 20, 0x8b5cf6, 0x1e293b);
+      designerScene.add(grid);
+
+      designerGroup = new THREE.Group();
+      designerScene.add(designerGroup);
+
+      function animateDesigner() {
+        requestAnimationFrame(animateDesigner);
+        if (designerGroup) designerGroup.rotation.y += 0.005;
+        if (designerRenderer && designerScene && designerCamera) {
+          designerRenderer.render(designerScene, designerCamera);
+        }
+      }
+      animateDesigner();
+    }
+
+    function renderDesignerPreview() {
+      if (!designerGroup) return;
+
+      // Clear existing preview meshes
+      while (designerGroup.children.length > 0) {
+        designerGroup.remove(designerGroup.children[0]);
+      }
+
+      const tempGroup = buildCustomTemplate({ parts: designerParts });
+      while (tempGroup.children.length > 0) {
+        designerGroup.add(tempGroup.children[0]);
+      }
+    }
+
+    function renderPartsList() {
+      const partsListEl = document.getElementById("partsList");
+      if (!partsListEl) return;
+      partsListEl.innerHTML = "";
+
+      designerParts.forEach((part, idx) => {
+        const item = document.createElement("div");
+        item.className = "bg-gray-800 border border-gray-700/60 rounded-lg p-3 text-xs space-y-2";
+        item.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-bold text-purple-400 flex items-center gap-1">
+              📦 ${part.name || 'Part'} <span class="text-[10px] text-gray-500 font-mono">(${part.shape})</span>
+            </span>
+            <button onclick="deleteDesignerPart(${idx})" class="text-red-400 hover:text-red-300 font-bold px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20">
+              ✕
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-[10px] text-gray-400 block">Part Name</label>
+              <input type="text" value="${part.name}" onchange="updatePartProp(${idx}, 'name', this.value)" class="w-full bg-gray-900 border border-gray-700 rounded px-1.5 py-0.5 text-white">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 block">Color</label>
+              <input type="color" value="${part.color}" onchange="updatePartProp(${idx}, 'color', this.value)" class="w-full h-6 bg-gray-900 border border-gray-700 rounded cursor-pointer">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 block">Pos Offset (X, Y, Z)</label>
+            <div class="grid grid-cols-3 gap-1">
+              <input type="number" step="0.2" value="${part.pos[0]}" onchange="updatePartPos(${idx}, 0, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+              <input type="number" step="0.2" value="${part.pos[1]}" onchange="updatePartPos(${idx}, 1, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+              <input type="number" step="0.2" value="${part.pos[2]}" onchange="updatePartPos(${idx}, 2, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+            </div>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 block">Size (W, H, D)</label>
+            <div class="grid grid-cols-3 gap-1">
+              <input type="number" step="0.2" value="${part.size[0]}" onchange="updatePartSize(${idx}, 0, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+              <input type="number" step="0.2" value="${part.size[1]}" onchange="updatePartSize(${idx}, 1, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+              <input type="number" step="0.2" value="${part.size[2]}" onchange="updatePartSize(${idx}, 2, this.value)" class="bg-gray-900 border border-gray-700 rounded px-1 text-center text-white">
+            </div>
+          </div>
+        `;
+        partsListEl.appendChild(item);
+      });
+
+      renderDesignerPreview();
+    }
+
+    window.updatePartProp = function(idx, prop, val) {
+      if (designerParts[idx]) {
+        designerParts[idx][prop] = val;
+        renderDesignerPreview();
+      }
+    };
+
+    window.updatePartPos = function(idx, axis, val) {
+      if (designerParts[idx]) {
+        designerParts[idx].pos[axis] = parseFloat(val) || 0;
+        renderDesignerPreview();
+      }
+    };
+
+    window.updatePartSize = function(idx, axis, val) {
+      if (designerParts[idx]) {
+        designerParts[idx].size[axis] = parseFloat(val) || 1;
+        renderDesignerPreview();
+      }
+    };
+
+    window.deleteDesignerPart = function(idx) {
+      designerParts.splice(idx, 1);
+      renderPartsList();
+    };
+
+    // --- AUTOCOMPLETE CATALOG & MECHANIC ---
+    const globalAutocompleteItems = [
+      // Global Libraries & Objects
+      { label: 'Instance', type: 'global', snippet: 'Instance', detail: 'Instance factory library' },
+      { label: 'Instance.spawn', type: 'method', snippet: 'Instance.spawn("', detail: 'spawn(template, x, y, z)' },
+      { label: 'Camera', type: 'global', snippet: 'Camera', detail: 'Camera 3D controller' },
+      { label: 'Camera:setPosition', type: 'method', snippet: 'Camera:setPosition(', detail: 'setPosition(x, y, z)' },
+      { label: 'Camera:move', type: 'method', snippet: 'Camera:move(', detail: 'move(dx, dy, dz)' },
+      { label: 'Camera:rotate', type: 'method', snippet: 'Camera:rotate(', detail: 'rotate(rx, ry, rz)' },
+      { label: 'Camera:lookAt', type: 'method', snippet: 'Camera:lookAt(', detail: 'lookAt(x, y, z)' },
+      { label: 'UserInputService', type: 'global', snippet: 'UserInputService', detail: 'Input tracking service' },
+      { label: 'UserInputService.isKeyDown', type: 'method', snippet: 'UserInputService.isKeyDown("', detail: 'isKeyDown(keyString)' },
+      { label: 'task.wait', type: 'function', snippet: 'task.wait(', detail: 'task.wait(seconds)' },
+      { label: 'print', type: 'function', snippet: 'print(', detail: 'print(msg)' },
+
+      // Instance & Part Object Methods
+      { label: ':move', type: 'method', snippet: ':move(', detail: 'move(dx, dy, dz)' },
+      { label: ':rotate', type: 'method', snippet: ':rotate(', detail: 'rotate(rx, ry, rz)' },
+      { label: ':getPosition', type: 'method', snippet: ':getPosition()', detail: 'getPosition() -> returns x, y, z' },
+      { label: ':getRotation', type: 'method', snippet: ':getRotation()', detail: 'getRotation() -> returns rx, ry, rz' },
+      { label: ':getWorldPosition', type: 'method', snippet: ':getWorldPosition()', detail: 'getWorldPosition() -> returns world x, y, z' },
+      { label: ':getData', type: 'method', snippet: ':getData()', detail: 'getData() -> returns data table' },
+      { label: ':GetPart', type: 'method', snippet: ':GetPart("', detail: 'GetPart(partName)' },
+      { label: '.OnClicked:Connect', type: 'event', snippet: '.OnClicked:Connect(function()\n    \nend)', detail: 'Connect click listener' },
+
+      // Prebuilt Templates
+      { label: '"RobotCar"', type: 'template', snippet: '"RobotCar"', detail: 'Built-in RobotCar template' },
+      { label: '"Cube"', type: 'template', snippet: '"Cube"', detail: 'Built-in Cube template' },
+
+      // Common Keywords & Loops
+      { label: 'while true do', type: 'keyword', snippet: 'while true do\n    task.wait(0.03)\n    \nend', detail: 'Infinite game loop' },
+      { label: 'for i = 1,', type: 'keyword', snippet: 'for i = 1, ', detail: 'Numeric for loop' },
+      { label: 'local', type: 'keyword', snippet: 'local ', detail: 'Local variable definition' },
+      { label: 'function', type: 'keyword', snippet: 'function()\n    \nend', detail: 'Anonymous function' },
+      { label: 'if', type: 'keyword', snippet: 'if ', detail: 'If conditional statement' }
+    ];
+
+    let selectedAutocompleteIdx = 0;
+    let filteredAutocompleteItems = [];
+
+    function initAutocompleteEngine() {
+      const editor = document.getElementById("codeEditor");
+      const box = document.getElementById("autocompleteBox");
+      if (!editor || !box) return;
+
+      // Extract user declared local variables dynamically from script text
+      function getLocalVariables() {
+        const text = editor.value;
+        const regex = /local\s+([a-zA-Z_][a-zA-Z0-9_]*)/g;
+        const vars = new Set();
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          vars.add(match[1]);
+        }
+        return Array.from(vars).map(v => ({
+          label: v,
+          type: 'variable',
+          snippet: v,
+          detail: 'Local variable'
+        }));
+      }
+
+      // Calculate current word typed before text cursor
+      function getCurrentWordContext() {
+        const cursor = editor.selectionStart;
+        const text = editor.value.slice(0, cursor);
+        const match = text.match(/([a-zA-Z0-9_\:\.\"\"]+)$/);
+        return {
+          query: match ? match[1] : "",
+          startIdx: match ? cursor - match[1].length : cursor
+        };
+      }
+
+      function updateAutocomplete() {
+        const ctx = getCurrentWordContext();
+        const query = ctx.query;
+
+        if (!query || query.length < 1) {
+          box.classList.add("hidden");
+          return;
+        }
+
+        const localVars = getLocalVariables();
+
+        // Dynamic custom templates from Instance Designer
+        const customTemplateItems = Object.keys(customTemplates).map(name => ({
+          label: `"${name}"`,
+          type: 'template',
+          snippet: `"${name}"`,
+          detail: 'Custom saved template'
+        }));
+
+        const combinedCatalog = [...globalAutocompleteItems, ...customTemplateItems, ...localVars];
+
+        const qLower = query.toLowerCase();
+        filteredAutocompleteItems = combinedCatalog.filter(item =>
+          item.label.toLowerCase().includes(qLower) || item.snippet.toLowerCase().includes(qLower)
+        ).slice(0, 8); // Top 8 suggestions
+
+        if (filteredAutocompleteItems.length === 0) {
+          box.classList.add("hidden");
+          return;
+        }
+
+        selectedAutocompleteIdx = 0;
+        renderAutocompleteBox();
+
+        // Position box near cursor approximation
+        const lines = editor.value.slice(0, editor.selectionStart).split('\n');
+        const lineNum = lines.length;
+        const colNum = lines[lines.length - 1].length;
+
+        const topPos = Math.min(lineNum * 20 + 35, editor.clientHeight - 180);
+        const leftPos = Math.min(colNum * 8 + 20, editor.clientWidth - 280);
+
+        box.style.top = `${topPos}px`;
+        box.style.left = `${leftPos}px`;
+        box.classList.remove("hidden");
+      }
+
+      function renderAutocompleteBox() {
+        box.innerHTML = "";
+        filteredAutocompleteItems.forEach((item, idx) => {
+          const div = document.createElement("div");
+          const isSelected = idx === selectedAutocompleteIdx;
+          div.className = `px-3 py-1.5 flex items-center justify-between cursor-pointer transition ${
+            isSelected ? 'bg-purple-600/30 text-purple-200 font-bold border-l-2 border-purple-400' : 'text-gray-300 hover:bg-gray-800'
+          }`;
+
+          let badgeColor = 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+          if (item.type === 'method' || item.type === 'function') badgeColor = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+          if (item.type === 'variable') badgeColor = 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+          if (item.type === 'template') badgeColor = 'bg-pink-500/20 text-pink-300 border-pink-500/40';
+
+          div.innerHTML = `
+            <div class="flex items-center gap-2 overflow-hidden">
+              <span class="text-[9px] uppercase tracking-wider px-1 py-0.5 rounded border ${badgeColor}">${item.type}</span>
+              <span class="truncate">${item.label}</span>
+            </div>
+            <span class="text-[10px] text-gray-500 font-sans ml-2 truncate">${item.detail}</span>
+          `;
+
+          div.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            insertSelectedAutocomplete(idx);
+          });
+
+          box.appendChild(div);
+        });
+      }
+
+      function insertSelectedAutocomplete(idx) {
+        const item = filteredAutocompleteItems[idx];
+        if (!item) return;
+
+        const ctx = getCurrentWordContext();
+        const fullText = editor.value;
+        const before = fullText.slice(0, ctx.startIdx);
+        const after = fullText.slice(editor.selectionStart);
+
+        editor.value = before + item.snippet + after;
+        const newCursor = ctx.startIdx + item.snippet.length;
+        editor.selectionStart = newCursor;
+        editor.selectionEnd = newCursor;
+        editor.focus();
+
+        box.classList.add("hidden");
+      }
+
+      editor.addEventListener("input", () => {
+        updateAutocomplete();
+      });
+
+      editor.addEventListener("keydown", (e) => {
+        if (!box.classList.contains("hidden")) {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            selectedAutocompleteIdx = (selectedAutocompleteIdx + 1) % filteredAutocompleteItems.length;
+            renderAutocompleteBox();
+            return;
+          }
+          if (e.key === "ArrowUp") {
+            e.preventDefault();
+            selectedAutocompleteIdx = (selectedAutocompleteIdx - 1 + filteredAutocompleteItems.length) % filteredAutocompleteItems.length;
+            renderAutocompleteBox();
+            return;
+          }
+          if (e.key === "Tab" || e.key === "Enter") {
+            e.preventDefault();
+            insertSelectedAutocomplete(selectedAutocompleteIdx);
+            return;
+          }
+          if (e.key === "Escape") {
+            box.classList.add("hidden");
+            return;
+          }
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (e.target !== editor && !box.contains(e.target)) {
+          box.classList.add("hidden");
+        }
+      });
+    }
+
+    // --- FENGARI LUA ENGINE INTEGRATION ---
+    let activeThreads = [];
+    let currentL = null;
+
+    function clearSceneInstances() {
+      for (let id in luaObjects) {
+        scene.remove(luaObjects[id]);
+      }
+      for (let k in luaObjects) delete luaObjects[k];
+      for (let k in instanceClickListeners) delete instanceClickListeners[k];
+      instanceIdCounter = 0;
+
+      // Reset camera state to default
+      if (camera) {
+        camera.position.set(0, 8, 14);
+        camera.lookAt(0, 1, 0);
+        camera.rotation.z = 0;
+      }
+    }
+
+    function runLuaScript() {
+      if (typeof fengari === 'undefined') {
+        appendLog("Error: Fengari Lua engine failed to load.");
+        return;
+      }
+
+      const output = document.getElementById("output");
+      if (output) output.textContent = "";
+
+      const code = document.getElementById("codeEditor").value;
+      const lua = fengari.lua;
+      const lauxlib = fengari.lauxlib;
+      const lualib = fengari.lualib;
+
+      // Cleanly close previous Lua state if it exists
+      if (currentL) {
+        try {
+          lua.lua_close(currentL);
+        } catch (e) {}
+        currentL = null;
+      }
+
+      activeThreads = [];
+      clearSceneInstances();
+
+      const L = lauxlib.luaL_newstate();
+      currentL = L;
+      lualib.luaL_openlibs(L);
+
+      // --- Expose print() to Lua ---
+      lua.lua_pushcfunction(L, function(L_sub) {
+        const n = lua.lua_gettop(L_sub);
+        let outStr = "";
+        for (let i = 1; i <= n; i++) {
+          outStr += safeLuaToString(lua, lauxlib, L_sub, i) + (i < n ? "\t" : "");
+        }
+        appendLog(outStr);
+        lua.lua_settop(L_sub, 0); // Clear arguments stack
+        return 0;
+      });
+      lua.lua_setglobal(L, fengari.to_luastring("print"));
+
+      // --- Expose UserInputService ---
+      lua.lua_newtable(L);
+
+      // UserInputService.isKeyDown(keyString)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let keyIdx = 1;
+        if (lua.lua_istable(L_sub, 1)) keyIdx = 2;
+        const keyArg = safeLuaToString(lua, lauxlib, L_sub, keyIdx).toLowerCase();
+        const isPressed = !!keysDown[keyArg];
+        lua.lua_pushboolean(L_sub, isPressed ? 1 : 0);
+        return 1;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("isKeyDown"));
+      lua.lua_setglobal(L, fengari.to_luastring("UserInputService"));
+
+      // --- Expose Camera Global ---
+      lua.lua_newtable(L);
+
+      // Camera:setPosition(x, y, z)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let argStart = 1;
+        if (lua.lua_istable(L_sub, 1)) argStart = 2;
+        const x = lua.lua_tonumber(L_sub, argStart) || 0;
+        const y = lua.lua_tonumber(L_sub, argStart + 1) || 0;
+        const z = lua.lua_tonumber(L_sub, argStart + 2) || 0;
+        if (camera) camera.position.set(x, y, z);
+        return 0;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("setPosition"));
+
+      // Camera:move(dx, dy, dz)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let argStart = 1;
+        if (lua.lua_istable(L_sub, 1)) argStart = 2;
+        const dx = lua.lua_tonumber(L_sub, argStart) || 0;
+        const dy = lua.lua_tonumber(L_sub, argStart + 1) || 0;
+        const dz = lua.lua_tonumber(L_sub, argStart + 2) || 0;
+        if (camera) {
+          camera.translateX(dx);
+          camera.translateY(dy);
+          camera.translateZ(dz);
+        }
+        return 0;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("move"));
+
+      // Camera:rotate(rx, ry, rz)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let argStart = 1;
+        if (lua.lua_istable(L_sub, 1)) argStart = 2;
+        const rx = THREE.MathUtils.degToRad(lua.lua_tonumber(L_sub, argStart) || 0);
+        const ry = THREE.MathUtils.degToRad(lua.lua_tonumber(L_sub, argStart + 1) || 0);
+        const rz = THREE.MathUtils.degToRad(lua.lua_tonumber(L_sub, argStart + 2) || 0);
+        if (camera) {
+          camera.rotation.x += rx;
+          camera.rotation.y += ry;
+          camera.rotation.z += rz;
+        }
+        return 0;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("rotate"));
+
+      // Camera:lookAt(x, y, z)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let argStart = 1;
+        if (lua.lua_istable(L_sub, 1)) argStart = 2;
+        const x = lua.lua_tonumber(L_sub, argStart) || 0;
+        const y = lua.lua_tonumber(L_sub, argStart + 1) || 0;
+        const z = lua.lua_tonumber(L_sub, argStart + 2) || 0;
+        if (camera) camera.lookAt(x, y, z);
+        return 0;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("lookAt"));
+
+      lua.lua_setglobal(L, fengari.to_luastring("Camera"));
+
+      // --- Helper: Attach Lua instance methods (move, rotate, GetPart, OnClicked) ---
+      function attachPartMethods(L_gp, part, partName) {
+        lua.lua_newtable(L_gp);
+
+        // part.name
+        lua.lua_pushstring(L_gp, fengari.to_luastring(partName || part.name || "Part"));
+        lua.lua_setfield(L_gp, -2, fengari.to_luastring("name"));
+
+        // part:getPosition() -> returns x, y, z (local relative position)
+        lua.lua_pushcfunction(L_gp, function(L_p) {
+          lua.lua_pushnumber(L_p, part.position.x);
+          lua.lua_pushnumber(L_p, part.position.y);
+          lua.lua_pushnumber(L_p, part.position.z);
+          return 3;
+        });
+        lua.lua_setfield(L_gp, -2, fengari.to_luastring("getPosition"));
+
+        // part:getWorldPosition() -> returns wx, wy, wz (absolute world position)
+        lua.lua_pushcfunction(L_gp, function(L_p) {
+          const wPos = new THREE.Vector3();
+          part.getWorldPosition(wPos);
+          lua.lua_pushnumber(L_p, wPos.x);
+          lua.lua_pushnumber(L_p, wPos.y);
+          lua.lua_pushnumber(L_p, wPos.z);
+          return 3;
+        });
+        lua.lua_setfield(L_gp, -2, fengari.to_luastring("getWorldPosition"));
+
+        // part:getData() -> returns data table
+        lua.lua_pushcfunction(L_gp, function(L_p) {
+          lua.lua_newtable(L_p);
+
+          // name
+          lua.lua_pushstring(L_p, fengari.to_luastring(partName || part.name || "Part"));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("name"));
+
+          // position table {x, y, z}
+          lua.lua_newtable(L_p);
+          lua.lua_pushnumber(L_p, part.position.x);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("x"));
+          lua.lua_pushnumber(L_p, part.position.y);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("y"));
+          lua.lua_pushnumber(L_p, part.position.z);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("z"));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("position"));
+
+          // worldPosition table {x, y, z}
+          const wPos = new THREE.Vector3();
+          part.getWorldPosition(wPos);
+          lua.lua_newtable(L_p);
+          lua.lua_pushnumber(L_p, wPos.x);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("x"));
+          lua.lua_pushnumber(L_p, wPos.y);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("y"));
+          lua.lua_pushnumber(L_p, wPos.z);
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("z"));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("worldPosition"));
+
+          // rotation table {x, y, z} in degrees
+          lua.lua_newtable(L_p);
+          lua.lua_pushnumber(L_p, THREE.MathUtils.radToDeg(part.rotation.x));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("x"));
+          lua.lua_pushnumber(L_p, THREE.MathUtils.radToDeg(part.rotation.y));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("y"));
+          lua.lua_pushnumber(L_p, THREE.MathUtils.radToDeg(part.rotation.z));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("z"));
+          lua.lua_setfield(L_p, -2, fengari.to_luastring("rotation"));
+
+          // color string hex
+          if (part.material && part.material.color) {
+            const hexStr = "#" + part.material.color.getHexString();
+            lua.lua_pushstring(L_p, fengari.to_luastring(hexStr));
+            lua.lua_setfield(L_p, -2, fengari.to_luastring("color"));
+          }
+
+          return 1;
+        });
+        lua.lua_setfield(L_gp, -2, fengari.to_luastring("getData"));
+      }
+
+      function attachInstanceMethods(L_sub, instId) {
+        // inst:move(dx, dy, dz)
+        lua.lua_pushcfunction(L_sub, function(L_m) {
+          let argStart = 1;
+          if (lua.lua_istable(L_m, 1)) argStart = 2;
+          const dx = lua.lua_tonumber(L_m, argStart) || 0;
+          const dy = lua.lua_tonumber(L_m, argStart + 1) || 0;
+          const dz = lua.lua_tonumber(L_m, argStart + 2) || 0;
+
+          const obj = luaObjects[instId];
+          if (obj) {
+            obj.translateX(dx);
+            obj.translateY(dy);
+            obj.translateZ(dz);
+          }
+          return 0;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("move"));
+
+        // inst:rotate(rx, ry, rz)
+        lua.lua_pushcfunction(L_sub, function(L_r) {
+          let argStart = 1;
+          if (lua.lua_istable(L_r, 1)) argStart = 2;
+          const rx = THREE.MathUtils.degToRad(lua.lua_tonumber(L_r, argStart) || 0);
+          const ry = THREE.MathUtils.degToRad(lua.lua_tonumber(L_r, argStart + 1) || 0);
+          const rz = THREE.MathUtils.degToRad(lua.lua_tonumber(L_r, argStart + 2) || 0);
+
+          const obj = luaObjects[instId];
+          if (obj) {
+            obj.rotation.x += rx;
+            obj.rotation.y += ry;
+            obj.rotation.z += rz;
+          }
+          return 0;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("rotate"));
+
+        // inst:getPosition() -> returns x, y, z
+        lua.lua_pushcfunction(L_sub, function(L_pos) {
+          const obj = luaObjects[instId];
+          if (obj) {
+            lua.lua_pushnumber(L_pos, obj.position.x);
+            lua.lua_pushnumber(L_pos, obj.position.y);
+            lua.lua_pushnumber(L_pos, obj.position.z);
+            return 3;
+          }
+          lua.lua_pushnumber(L_pos, 0);
+          lua.lua_pushnumber(L_pos, 0);
+          lua.lua_pushnumber(L_pos, 0);
+          return 3;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("getPosition"));
+
+        // inst:getRotation() -> returns rx, ry, rz in degrees
+        lua.lua_pushcfunction(L_sub, function(L_rot) {
+          const obj = luaObjects[instId];
+          if (obj) {
+            lua.lua_pushnumber(L_rot, THREE.MathUtils.radToDeg(obj.rotation.x));
+            lua.lua_pushnumber(L_rot, THREE.MathUtils.radToDeg(obj.rotation.y));
+            lua.lua_pushnumber(L_rot, THREE.MathUtils.radToDeg(obj.rotation.z));
+            return 3;
+          }
+          lua.lua_pushnumber(L_rot, 0);
+          lua.lua_pushnumber(L_rot, 0);
+          lua.lua_pushnumber(L_rot, 0);
+          return 3;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("getRotation"));
+
+        // inst:getData() -> returns instance table data
+        lua.lua_pushcfunction(L_sub, function(L_data) {
+          const obj = luaObjects[instId];
+          lua.lua_newtable(L_data);
+          if (obj) {
+            // id
+            lua.lua_pushstring(L_data, fengari.to_luastring(instId));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("id"));
+
+            // position table {x, y, z}
+            lua.lua_newtable(L_data);
+            lua.lua_pushnumber(L_data, obj.position.x);
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("x"));
+            lua.lua_pushnumber(L_data, obj.position.y);
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("y"));
+            lua.lua_pushnumber(L_data, obj.position.z);
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("z"));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("position"));
+
+            // rotation table {x, y, z} in degrees
+            lua.lua_newtable(L_data);
+            lua.lua_pushnumber(L_data, THREE.MathUtils.radToDeg(obj.rotation.x));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("x"));
+            lua.lua_pushnumber(L_data, THREE.MathUtils.radToDeg(obj.rotation.y));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("y"));
+            lua.lua_pushnumber(L_data, THREE.MathUtils.radToDeg(obj.rotation.z));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("z"));
+            lua.lua_setfield(L_data, -2, fengari.to_luastring("rotation"));
+          }
+          return 1;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("getData"));
+
+        // inst:GetPart(partName)
+        lua.lua_pushcfunction(L_sub, function(L_gp) {
+          let argStart = 1;
+          if (lua.lua_istable(L_gp, 1)) argStart = 2;
+          const partName = safeLuaToString(lua, lauxlib, L_gp, argStart);
+          const obj = luaObjects[instId];
+          if (obj) {
+            const part = obj.getObjectByName(partName);
+            if (part) {
+              attachPartMethods(L_gp, part, partName);
+              return 1;
+            }
+          }
+          lua.lua_pushnil(L_gp);
+          return 1;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("GetPart"));
+
+        // OnClicked event table with :Connect(func)
+        lua.lua_newtable(L_sub);
+
+        lua.lua_pushcfunction(L_sub, function(L_c) {
+          let funcIdx = 1;
+          if (lua.lua_istable(L_c, 1)) funcIdx = 2;
+          if (lua.lua_isfunction(L_c, funcIdx)) {
+            lua.lua_pushvalue(L_c, funcIdx);
+            const funcRef = lauxlib.luaL_ref(L_c, lua.LUA_REGISTRYINDEX);
+
+            instanceClickListeners[instId] = function() {
+              if (!currentL) return;
+              const thread = lua.lua_newthread(currentL);
+              // Anchor thread in Lua registry so GC does not remove it mid-yield
+              const threadRef = lauxlib.luaL_ref(currentL, lua.LUA_REGISTRYINDEX);
+              activeThreads.push({ thread, threadRef });
+              lua.lua_rawgeti(thread, lua.LUA_REGISTRYINDEX, funcRef);
+              resumeThread(thread, 0, threadRef);
+            };
+          }
+          return 0;
+        });
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("Connect"));
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("OnClicked"));
+      }
+
+      // --- Expose Instance Global ---
+      lua.lua_newtable(L);
+
+      // Instance.spawn(templateName, x, y, z)
+      lua.lua_pushcfunction(L, function(L_sub) {
+        let argStart = 1;
+        if (lua.lua_istable(L_sub, 1)) argStart = 2;
+
+        const template = safeLuaToString(lua, lauxlib, L_sub, argStart) || "Cube";
+        const x = lua.lua_tonumber(L_sub, argStart + 1) || 0;
+        const y = lua.lua_tonumber(L_sub, argStart + 2) || 0;
+        const z = lua.lua_tonumber(L_sub, argStart + 3) || 0;
+
+        instanceIdCounter++;
+        const instId = "inst_" + instanceIdCounter;
+
+        let objGroup;
+        const lowerT = template.toLowerCase();
+
+        if (customTemplates[template]) {
+          objGroup = buildCustomTemplate(customTemplates[template]);
+        } else if (customTemplates[lowerT]) {
+          objGroup = buildCustomTemplate(customTemplates[lowerT]);
+        } else if (lowerT === "robotcar") {
+          objGroup = buildRobotCar();
+        } else {
+          objGroup = buildDefaultCube();
+        }
+
+        objGroup.position.set(x, y, z);
+        objGroup.userData = { id: instId };
+        scene.add(objGroup);
+        luaObjects[instId] = objGroup;
+
+        // Return Lua table wrapper object
+        lua.lua_newtable(L_sub);
+        lua.lua_pushstring(L_sub, fengari.to_luastring(instId));
+        lua.lua_setfield(L_sub, -2, fengari.to_luastring("id"));
+
+        attachInstanceMethods(L_sub, instId);
+        return 1;
+      });
+      lua.lua_setfield(L, -2, fengari.to_luastring("spawn"));
+      lua.lua_setglobal(L, fengari.to_luastring("Instance"));
+
+      // Define task.wait using pure Lua coroutine.yield to avoid C-call boundary yields
+      lauxlib.luaL_dostring(L, fengari.to_luastring(`
+        task = {
+          wait = function(sec)
+            return coroutine.yield(sec or 0)
+          end
+        }
+      `));
+
+      // --- Coroutine Resume Engine ---
+      function resumeThread(thread, nargs, threadRef) {
+        const status = lua.lua_resume(thread, L, nargs);
+
+        if (status === lua.LUA_YIELD) {
+          let waitTime = 0;
+          const nres = lua.lua_gettop(thread);
+          if (nres > 0 && lua.lua_isnumber(thread, -1)) {
+            waitTime = lua.lua_tonumber(thread, -1);
+          }
+          if (nres > 0) {
+            lua.lua_pop(thread, nres);
+          }
+
+          setTimeout(() => {
+            const activeObj = activeThreads.find(item => item.thread === thread);
+            if (activeObj) {
+              resumeThread(thread, 0, threadRef);
+            }
+          }, Math.max(0, waitTime * 1000));
+
+        } else {
+          // Thread execution finished (LUA_OK) or encountered an error (status > 1)
+          const idx = activeThreads.findIndex(item => item.thread === thread);
+          if (idx !== -1) activeThreads.splice(idx, 1);
+
+          // Release registry anchor reference so Lua GC can clean up completed thread
+          if (threadRef !== undefined && threadRef !== null) {
+            lauxlib.luaL_unref(L, lua.LUA_REGISTRYINDEX, threadRef);
+          }
+
+          if (status !== lua.LUA_OK) {
+            let errMsg = safeLuaToString(lua, lauxlib, thread, -1);
+            if (!errMsg || errMsg.startsWith("function:") || errMsg.startsWith("table:")) {
+              errMsg = "Event function execution error (status " + status + ")";
+            }
+            appendLog("Runtime Error: " + errMsg);
+          }
+        }
+      }
+
+      // --- Compile & Execute Main Script ---
+      const mainThread = lua.lua_newthread(L);
+      const mainThreadRef = lauxlib.luaL_ref(L, lua.LUA_REGISTRYINDEX);
+      activeThreads.push({ thread: mainThread, threadRef: mainThreadRef });
+
+      const loadStatus = lauxlib.luaL_loadstring(mainThread, fengari.to_luastring(code));
+
+      if (loadStatus !== lua.LUA_OK) {
+        const err = safeLuaToString(lua, lauxlib, mainThread, -1);
+        appendLog("Syntax Error: " + err);
+        lauxlib.luaL_unref(L, lua.LUA_REGISTRYINDEX, mainThreadRef);
+        return;
+      }
+
+      resumeThread(mainThread, 0, mainThreadRef);
+    }
+
+    // --- DOM Initializations ---
+    document.addEventListener("DOMContentLoaded", () => {
+      initThreeJS();
+      initAutocompleteEngine();
+
+      const runBtn = document.getElementById("runBtn");
+      if (runBtn) {
+        runBtn.addEventListener("click", () => {
+          runLuaScript();
+        });
+      }
+
+      const designerBtn = document.getElementById("designerBtn");
+      const designerModal = document.getElementById("designerModal");
+      const closeDesignerBtn = document.getElementById("closeDesignerBtn");
+      const saveTemplateBtn = document.getElementById("saveTemplateBtn");
+
+      const docBtn = document.getElementById("docBtn");
+      const docModal = document.getElementById("docModal");
+      const closeDocBtn = document.getElementById("closeDocBtn");
+
+      if (docBtn && docModal) {
+        docBtn.addEventListener("click", () => {
+          docModal.classList.remove("hidden");
+        });
+      }
+
+      if (closeDocBtn && docModal) {
+        closeDocBtn.addEventListener("click", () => {
+          docModal.classList.add("hidden");
+        });
+      }
+
+      if (designerBtn && designerModal) {
+        designerBtn.addEventListener("click", () => {
+          designerModal.classList.remove("hidden");
+          if (!designerScene) {
+            initDesignerThreeJS();
+          }
+          renderPartsList();
+        });
+      }
+
+      if (closeDesignerBtn && designerModal) {
+        closeDesignerBtn.addEventListener("click", () => {
+          designerModal.classList.add("hidden");
+        });
+      }
+
+      // Add sub-part handlers
+      document.getElementById("addBoxBtn")?.addEventListener("click", () => {
+        designerParts.push({ id: Date.now(), name: "Part_" + (designerParts.length + 1), shape: "box", color: "#10b981", pos: [0, 1, 0], size: [1, 1, 1], opacity: 1 });
+        renderPartsList();
+      });
+
+      document.getElementById("addSphereBtn")?.addEventListener("click", () => {
+        designerParts.push({ id: Date.now(), name: "Part_" + (designerParts.length + 1), shape: "sphere", color: "#f59e0b", pos: [0, 1, 0], size: [1, 1, 1], opacity: 1 });
+        renderPartsList();
+      });
+
+      document.getElementById("addCylinderBtn")?.addEventListener("click", () => {
+        designerParts.push({ id: Date.now(), name: "Part_" + (designerParts.length + 1), shape: "cylinder", color: "#8b5cf6", pos: [0, 1, 0], size: [1, 1, 1], opacity: 1 });
+        renderPartsList();
+      });
+
+      // Save Custom Template
+      saveTemplateBtn?.addEventListener("click", () => {
+        const templateNameInput = document.getElementById("templateNameInput");
+        const name = (templateNameInput?.value || "CustomTemplate").trim();
+
+        customTemplates[name] = {
+          name: name,
+          parts: JSON.parse(JSON.stringify(designerParts))
+        };
+        customTemplates[name.toLowerCase()] = customTemplates[name];
+
+        appendLog(`[Designer] Saved template "${name}"! You can now call: Instance.spawn("${name}", x, y, z)`);
+        designerModal.classList.add("hidden");
+      });
+
+      const clearBtn = document.getElementById("clearBtn");
+      if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+          const output = document.getElementById("output");
+          if (output) output.textContent = "";
+        });
+      }
+
+      // Automatically run default script on load
+      runLuaScript();
+    });
+  </script>
+</body>
+</html>
