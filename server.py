@@ -16,6 +16,7 @@ import sys
 import tempfile
 import termios
 import threading
+import time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -45,6 +46,17 @@ ROOT = Path(__file__).resolve().parent
 VOTES_FILE = ROOT / "votes.json"
 VOTES_LOCK = threading.Lock()
 SLUG_PATTERN = re.compile(r"^[a-z0-9_-]+$")
+VISITOR_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+# Vote limits (all in memory; they reset when the server restarts). The kiosk is
+# shared, so there is no per-person login: a "visitor" is one turn at the kiosk
+# (the page starts a new one when the hub has been idle).
+VOTE_COOLDOWN_SECONDS = 10      # min gap between accepted likes for the same game / web app
+VOTE_GLOBAL_LIMIT = 20          # max accepted likes across everything...
+VOTE_GLOBAL_WINDOW_SECONDS = 60  # ...in this many seconds
+VOTE_MEMORY_LIMIT = 5000        # (visitor, game) pairs remembered
+VOTE_STATE = {"last_for_key": {}, "recent": [], "seen": {}}  # guarded by VOTES_LOCK
+VOTE_KINDS = {"game": ("games", ""), "webapp": ("webapps", "webapp:")}  # kind -> (folder, vote-key prefix)
 
 PYTHON_PROJECTS_DIR = ROOT / "python_projects"
 PYTHON_MANIFEST = ROOT / "pythonProjects.json"
@@ -159,6 +171,26 @@ def restart_server():
     os.execv(sys.executable, [sys.executable, str(Path(__file__).resolve()), *sys.argv[1:]])
 
 
+def check_vote_allowed(key, visitor, now):
+    """Return None when a like may be counted, else a short reason. Call with
+    VOTES_LOCK held; records the like in VOTE_STATE when it is allowed."""
+    state = VOTE_STATE
+    if (visitor, key) in state["seen"]:
+        return "already_voted"
+    if now - state["last_for_key"].get(key, -1e9) < VOTE_COOLDOWN_SECONDS:
+        return "too_fast"
+    state["recent"] = [t for t in state["recent"] if now - t < VOTE_GLOBAL_WINDOW_SECONDS]
+    if len(state["recent"]) >= VOTE_GLOBAL_LIMIT:
+        return "too_many"
+    state["seen"][(visitor, key)] = now
+    if len(state["seen"]) > VOTE_MEMORY_LIMIT:  # forget the oldest half
+        for old in sorted(state["seen"], key=state["seen"].get)[: VOTE_MEMORY_LIMIT // 2]:
+            del state["seen"][old]
+    state["last_for_key"][key] = now
+    state["recent"].append(now)
+    return None
+
+
 class HubRequestHandler(SimpleHTTPRequestHandler):
     def send_json(self, payload, status=200):
         body = json.dumps(payload).encode("utf-8")
@@ -262,21 +294,42 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
         if path != "/api/vote":
             self.send_error(404)
             return
+        if not self.local_origin():
+            self.send_json({"error": "forbidden"}, 403)
+            return
         try:
             content_length = int(self.headers.get("Content-Length", "0"))
+            if not 0 <= content_length <= 1024:
+                raise ValueError("vote body too large")
             payload = json.loads(self.rfile.read(content_length))
-            slug = payload.get("slug") if isinstance(payload, dict) else None
+            if not isinstance(payload, dict):
+                raise ValueError("payload must be an object")
         except (ValueError, json.JSONDecodeError):
             self.send_json({"error": "invalid JSON"}, 400)
             return
+        slug = payload.get("slug")
+        kind = payload.get("kind", "game")
+        visitor = payload.get("visitor", "anonymous")
         if not isinstance(slug, str) or not SLUG_PATTERN.fullmatch(slug):
             self.send_json({"error": "invalid slug"}, 400)
             return
+        if kind not in VOTE_KINDS or not isinstance(visitor, str) or not VISITOR_PATTERN.fullmatch(visitor):
+            self.send_json({"error": "invalid vote"}, 400)
+            return
+        folder, prefix = VOTE_KINDS[kind]
+        if not (ROOT / folder / slug / "index.html").is_file():
+            self.send_json({"error": "unknown game"}, 404)  # never let junk keys into votes.json
+            return
+        key = prefix + slug
         with VOTES_LOCK:
+            reason = check_vote_allowed(key, visitor, time.monotonic())
+            if reason:
+                self.send_json({"error": "rate_limited", "reason": reason}, 429)
+                return
             votes = read_votes()
-            votes[slug] = votes.get(slug, 0) + 1
+            votes[key] = votes.get(key, 0) + 1
             write_votes(votes)
-            self.send_json({"slug": slug, "count": votes[slug]})
+            self.send_json({"slug": slug, "count": votes[key]})
 
     def log_message(self, format, *args):
         super().log_message(format, *args)
