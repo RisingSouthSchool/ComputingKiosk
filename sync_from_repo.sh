@@ -5,6 +5,10 @@
 # votes.json is runtime data written by the server, so it is preserved.
 set -u
 
+# launchd starts agents with a minimal PATH; make sure git, python3 and the
+# python.org / Homebrew installs are all findable.
+export PATH="/usr/local/bin:/opt/homebrew/bin:/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 HUB_DIR="$(cd "$(dirname "$0")" && pwd)"
 BRANCH="${KIOSK_BRANCH:-main}"
 LABEL="com.computingkiosk.launch-kiosk"
@@ -12,8 +16,12 @@ cd "$HUB_DIR" || exit 1
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*"; }
 
-# Offline or GitHub unreachable: do nothing and try again next tick.
-if ! git fetch --quiet origin "$BRANCH" 2>/dev/null; then
+# Heartbeat: shows the job is actually running, even when nothing changed.
+{ date '+%Y-%m-%d %H:%M:%S' > "$HOME/Library/Logs/com.computingkiosk.sync.lastcheck"; } 2>/dev/null
+
+# Offline or GitHub unreachable: log why, and try again next tick.
+if ! FETCH_ERR="$(git fetch --quiet origin "$BRANCH" 2>&1)"; then
+    log "fetch failed: ${FETCH_ERR:-unknown error}"
     exit 0
 fi
 
