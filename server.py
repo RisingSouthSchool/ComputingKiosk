@@ -18,7 +18,7 @@ import tempfile
 import termios
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -91,6 +91,85 @@ def usage_connection():
         conn.commit()
         _USAGE_CONN = conn
     return _USAGE_CONN
+
+
+# --- "New" banners --------------------------------------------------------
+# Anything added to the kiosk shows a NEW banner for NEW_DAYS days. An item's
+# date is, in order: an "added" date in its manifest entry (games.json,
+# webapps.json, ... -- set it by hand to force or end a banner), else the day
+# this kiosk first saw it (remembered in first_seen.json, which is git-ignored
+# so it survives updates). Videos use the date the file landed in escape-rooms/.
+# The first time this runs, everything already on the kiosk counts as old.
+NEW_DAYS = 14
+FIRST_SEEN_FILE = ROOT / "first_seen.json"
+FIRST_SEEN_LOCK = threading.Lock()
+LONG_AGO = "2000-01-01"
+
+
+def manifest_dates(path):
+    """{slug: 'added' date string} for the entries of a manifest that have one."""
+    try:
+        entries = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(entries, list):
+        return {}
+    return {e["slug"]: e["added"] for e in entries if isinstance(e, dict) and isinstance(e.get("slug"), str) and isinstance(e.get("added"), str)}
+
+
+def kiosk_items():
+    """{'kind:slug': added-date-or-None} for everything on the kiosk right now."""
+    items = {}
+    for kind, folder, manifest, needs_index in (
+            ("game", ROOT / "games", ROOT / "games.json", True), ("webapp", ROOT / "webapps", ROOT / "webapps.json", True),
+            ("python", PYTHON_PROJECTS_DIR, PYTHON_MANIFEST, False), ("db", DB_PROJECTS_DIR, DB_MANIFEST, False)):
+        added = manifest_dates(manifest)
+        if folder.is_dir():
+            for entry in folder.iterdir():
+                if entry.is_dir() and not entry.name.startswith(".") and (not needs_index or (entry / "index.html").is_file()):
+                    items[f"{kind}:{entry.name}"] = added.get(entry.name)
+    if ESCAPE_ROOMS_DIR.is_dir():
+        for entry in ESCAPE_ROOMS_DIR.iterdir():
+            if entry.is_file() and not entry.name.startswith(".") and entry.suffix.lower() in VIDEO_TYPES:
+                info = entry.stat()
+                landed = getattr(info, "st_birthtime", info.st_mtime)  # macOS: when it was copied in
+                items[f"video:{entry.name}"] = datetime.fromtimestamp(landed).strftime("%Y-%m-%d")
+    return items
+
+
+def new_items(today=None):
+    today = today or date.today()
+    items = kiosk_items()
+    with FIRST_SEEN_LOCK:
+        first_run = not FIRST_SEEN_FILE.exists()
+        try:
+            seen = json.loads(FIRST_SEEN_FILE.read_text(encoding="utf-8")) if not first_run else {}
+            if not isinstance(seen, dict):
+                seen = {}
+        except (OSError, ValueError):
+            seen = {}
+        changed = first_run
+        for key, added in items.items():
+            if added is None and key not in seen:
+                seen[key] = LONG_AGO if first_run else today.isoformat()
+                changed = True
+        if changed:
+            try:
+                with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=ROOT, prefix="first_seen.", suffix=".tmp", delete=False) as handle:
+                    json.dump(seen, handle, indent=2, sort_keys=True)
+                    temporary = handle.name
+                os.replace(temporary, FIRST_SEEN_FILE)
+            except OSError as error:
+                print(f"could not save first_seen.json: {error}", file=sys.stderr)
+    fresh = []
+    for key, added in items.items():
+        try:
+            when = date.fromisoformat(added or seen.get(key, LONG_AGO))
+        except ValueError:
+            continue
+        if (today - when).days < NEW_DAYS:
+            fresh.append(key)
+    return {"days": NEW_DAYS, "new": sorted(fresh)}
 
 
 # --- Usage statistics ---------------------------------------------------
@@ -446,6 +525,9 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urlsplit(self.path).path
+        if path == "/api/new":
+            self.send_json(new_items())
+            return
         if path in ("/api/stats", "/api/usage.csv"):
             self.handle_stats(path)
             return

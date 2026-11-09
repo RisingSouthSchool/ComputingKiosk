@@ -62,6 +62,9 @@
     .category-title { font-size: 1.25rem; font-weight: 700; }
     .category-subtitle { color: var(--muted); font-size: .9rem; line-height: 1.35; }
     .category-tile.placeholder .category-title, .category-tile.placeholder .category-subtitle { max-width: calc(100% - 76px); }
+    .new-ribbon { position: absolute; top: 0; left: 0; width: 100px; height: 100px; overflow: hidden; border-top-left-radius: 14px; pointer-events: none; z-index: 3; }
+    .new-ribbon span { position: absolute; top: 21px; left: -32px; width: 136px; padding: 4px 0; text-align: center; transform: rotate(-45deg); background: var(--focus); color: #10151c; font-size: .8rem; font-weight: 800; letter-spacing: .14em; box-shadow: 0 2px 6px #0006; }
+    .new-pill { position: absolute; top: 14px; right: 14px; border-radius: 999px; background: var(--focus); color: #10151c; font-size: .7rem; font-weight: 800; letter-spacing: .1em; padding: 3px 10px; }
     .coming-soon-badge { position: absolute; top: 14px; right: 14px; border: 1px solid #ffffff33; border-radius: 999px; background: #10151c99; color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; white-space: nowrap; }
     @media (max-width: 900px) { #categories { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; } .featured-icon { width: 100px; height: 100px; } }
@@ -252,6 +255,26 @@
     let currentFeaturedGame = null;
     let tiles = [];
     let games = [];
+    // Things added in the last 14 days (the server decides, see /api/new), as "kind:slug".
+    let newKeys = new Set();
+    const isNew = (kind, slug) => newKeys.has(kind + ":" + slug);
+    function newRibbon() {
+      const ribbon = document.createElement("div");
+      ribbon.className = "new-ribbon";
+      const band = document.createElement("span");
+      band.textContent = "NEW";
+      ribbon.append(band);
+      return ribbon;
+    }
+    const CATEGORY_KINDS = { games: "game", python: "python", databases: "db", webapps: "webapp", minecraft: "video" };
+    const categoryHasNew = id => [...newKeys].some(key => key.startsWith(CATEGORY_KINDS[id] + ":"));
+    function refreshNew() {
+      fetch("/api/new", { cache: "no-store" }).then(response => response.json()).then(result => {
+        newKeys = new Set(Array.isArray(result.new) ? result.new : []);
+        renderCategories();
+        updateLandingFocusables();
+      }).catch(() => { /* keep what we had */ });
+    }
     let votes = {};
     let pythonProjects = [];
     let pythonTiles = [];
@@ -313,6 +336,7 @@
       landingView.classList.add("open");
       landingFocusables[0]?.focus();
       if (typeof refreshHomeStats === "function") refreshHomeStats();
+      refreshNew();
     }
 
     function enterHub() {
@@ -411,6 +435,7 @@
         launch.append(icon, title);
         launch.addEventListener("click", () => openPrelaunch(project));
         tile.append(launch);
+        if (isNew(project.kind === "db" ? "db" : "python", project.slug)) tile.append(newRibbon());
         if (project.student) {
           const student = document.createElement("span");
           student.className = "project-student";
@@ -625,6 +650,7 @@
         vote.setAttribute("aria-label", "Like " + app.title);
         vote.addEventListener("click", event => castVote(app, event));
         tile.append(launch, vote);
+        if (isNew("webapp", app.slug)) tile.append(newRibbon());
         const student = app.student || app.students || app.author;
         if (student) {
           const line = document.createElement("span");
@@ -735,6 +761,7 @@
         tile.append(icon, title);
         if (category.subtitle) { const subtitle = document.createElement("span"); subtitle.className = "category-subtitle"; subtitle.textContent = category.subtitle; tile.append(subtitle); }
         if (!category.real) { const badge = document.createElement("span"); badge.className = "coming-soon-badge"; badge.textContent = "Coming soon"; tile.append(badge); }
+        if (category.real && categoryHasNew(category.id)) { const pill = document.createElement("span"); pill.className = "new-pill"; pill.textContent = "NEW"; tile.append(pill); }
         if (category.real) { tile.addEventListener("click", category.enter); }
         categoriesElement.append(tile);
       });
@@ -800,6 +827,7 @@
         vote.setAttribute("aria-label", "Like " + game.title);
         vote.addEventListener("click", event => castVote(game, event));
         tile.append(launch, vote);
+        if (isNew("game", game.slug)) tile.append(newRibbon());
         gamesElement.append(tile);
       });
       tiles = [...document.querySelectorAll(".game-launch")];
@@ -1132,8 +1160,10 @@
       // missing webapps.json must not take the rest of the hub down.
       fetch("webapps.json", { cache: "no-store" })
         .then(response => { if (!response.ok) throw new Error("webapps.json"); return response.json(); })
-        .catch(() => { webappError.hidden = false; return []; })
-    ]).then(([gameList, voteList, webappList]) => {
+        .catch(() => { webappError.hidden = false; return []; }),
+      fetch("/api/new", { cache: "no-store" }).then(response => response.json()).catch(() => ({ new: [] }))
+    ]).then(([gameList, voteList, webappList, newList]) => {
+      newKeys = new Set(newList && Array.isArray(newList.new) ? newList.new : []);
       games = gameList.map(game => ({ ...game, base: "games/" }));
       renderFilters();
       webapps = (Array.isArray(webappList) ? webappList : []).map(app => ({ ...app, base: "webapps/" }));
