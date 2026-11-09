@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Minecraft escape rooms</title>
+  <style>
+    :root { color-scheme: dark; --ink: #f5f7fa; --muted: #aeb9c6; --bg: #10151c; --panel: #18212b; --focus: #ffd166; --accent: #52d6b5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at top right, #243746 0, var(--bg) 42%); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    header, main { max-width: 1200px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+    header { padding-top: 42px; padding-bottom: 22px; }
+    main { padding-top: 10px; padding-bottom: 50px; }
+    h1 { margin: 0; font-size: clamp(2.1rem, 5vw, 4rem); letter-spacing: .02em; }
+    .subtitle { color: var(--muted); font-size: 1.1rem; margin: 10px 0 0; }
+    #list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+    .room { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 10px; min-height: 170px; padding: 20px; border: 2px solid transparent; border-radius: 14px; background: var(--panel); color: var(--ink); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
+    .room:hover, .room:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
+    .room .icon { font-size: 2.6rem; }
+    .room .name { font-size: 1.25rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+    .room .hint { color: var(--accent); font-size: .95rem; font-weight: 600; }
+    #empty { color: var(--muted); font-size: 1.1rem; }
+    #viewer { display: none; max-width: 1200px; margin: 0 auto; padding: 24px 32px 40px; }
+    #viewer.open { display: block; }
+    #list-view.hidden { display: none; }
+    #back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 14px; font-family: inherit; }
+    #back:hover, #back:focus-visible { background: #22303c; outline: none; }
+    #now-playing { margin: 0 0 14px; font-size: clamp(1.4rem, 3vw, 2.2rem); }
+    video { display: block; width: 100%; max-height: 78vh; background: #000; border-radius: 12px; box-shadow: 0 20px 60px #0008; }
+    #error { color: #ff8787; margin-top: 12px; }
+    @media (max-width: 600px) { header, main, #viewer { padding-left: 18px; padding-right: 18px; } #list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; } }
+  </style>
+</head>
+<body>
+  <div id="list-view">
+    <header><h1>Minecraft escape rooms</h1><p class="subtitle">Student-built rooms: pick one to watch the walkthrough</p></header>
+    <main>
+      <div id="list" aria-live="polite"></div>
+      <p id="empty" hidden>No escape-room videos yet. Copy .mp4 or .mov files into the escape-rooms folder.</p>
+    </main>
+  </div>
+  <section id="viewer" aria-label="Walkthrough video">
+    <button id="back" type="button">&larr; All escape rooms</button>
+    <h2 id="now-playing"></h2>
+    <video id="player" controls playsinline></video>
+    <p id="error" hidden>This video could not be played. Try re-exporting it as H.264 .mp4.</p>
+  </section>
+  <script>
+    const listView = document.getElementById("list-view");
+    const list = document.getElementById("list");
+    const empty = document.getElementById("empty");
+    const viewer = document.getElementById("viewer");
+    const back = document.getElementById("back");
+    const nowPlaying = document.getElementById("now-playing");
+    const player = document.getElementById("player");
+    const error = document.getElementById("error");
+    let lastTile = null;
+
+    function showList() {
+      player.pause();
+      player.removeAttribute("src");
+      player.load();
+      viewer.classList.remove("open");
+      listView.classList.remove("hidden");
+      (lastTile || list.querySelector(".room"))?.focus();
+    }
+
+    function play(video, tile) {
+      lastTile = tile;
+      error.hidden = true;
+      nowPlaying.textContent = video.title;
+      player.src = "/escape-rooms/" + encodeURIComponent(video.file);
+      listView.classList.add("hidden");
+      viewer.classList.add("open");
+      player.play().catch(() => {});
+      back.focus();
+    }
+
+    function render(videos) {
+      list.replaceChildren();
+      empty.hidden = videos.length !== 0;
+      for (const video of videos) {
+        const tile = document.createElement("button");
+        tile.type = "button";
+        tile.className = "room";
+        tile.innerHTML = '<span class="icon">🧱</span><span class="name"></span><span class="hint">▶ Watch walkthrough</span>';
+        tile.querySelector(".name").textContent = video.title;
+        tile.addEventListener("click", () => play(video, tile));
+        list.append(tile);
+      }
+      list.querySelector(".room")?.focus();
+    }
+
+    back.addEventListener("click", showList);
+    player.addEventListener("error", () => { error.hidden = false; });
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && viewer.classList.contains("open")) showList();
+    });
+
+    fetch("/api/escape-rooms", { cache: "no-store" })
+      .then(response => response.json())
+      .then(render)
+      .catch(() => { empty.textContent = "Could not load the video list."; empty.hidden = false; });
+  </script>
+</body>
+</html>
