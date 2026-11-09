@@ -6,7 +6,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "crosser22",
@@ -15,7 +17,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "extremegolfgametempname",
@@ -24,7 +28,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "jumpking",
@@ -33,7 +39,9 @@
     "iconSource": "generated",
     "iconFile": "generated_icon.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "ok",
@@ -42,7 +50,9 @@
     "iconSource": "generated",
     "iconFile": "generated_icon.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "operationopentreasure",
@@ -51,7 +61,9 @@
     "iconSource": "generated",
     "iconFile": "generated_icon.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "spacejunkiesfinal2",
@@ -60,7 +72,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "spiritbound",
@@ -69,7 +83,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "streetrunnerv1",
@@ -78,7 +94,9 @@
     "iconSource": "custom",
     "iconFile": "icon192.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
   },
   {
     "slug": "tyreseandmaxrun",
@@ -87,6 +105,19 @@
     "iconSource": "placeholder",
     "iconFile": "placeholder_icon.png",
     "blurb": "",
-    "featured": false
+    "featured": false,
+    "year": 9,
+    "type": "MicroStudio"
+  },
+  {
+    "slug": "zombie-city",
+    "title": "Zombie City",
+    "hasIcon": false,
+    "iconSource": "placeholder",
+    "iconFile": "placeholder_icon.png",
+    "blurb": "",
+    "featured": false,
+    "year": 10,
+    "type": "Vibe coded"
   }
 ]

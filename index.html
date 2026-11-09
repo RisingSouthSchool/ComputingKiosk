@@ -21,6 +21,12 @@
     .game-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 10px; background: #2b3945; color: var(--accent); font-size: 5rem; font-weight: 700; overflow: hidden; }
     .game-icon img { width: 100%; height: 100%; object-fit: cover; }
     .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
+    .game-tags { display: block; margin-top: 6px; color: var(--accent); font-size: .85rem; font-weight: 600; }
+    #game-filters { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 22px; }
+    #game-filters:empty { display: none; }
+    .filter-chip { appearance: none; border: 2px solid #ffffff33; border-radius: 999px; background: transparent; color: var(--ink); padding: 7px 16px; font: inherit; font-size: .95rem; font-weight: 600; cursor: pointer; }
+    .filter-chip:hover, .filter-chip:focus-visible { border-color: var(--focus); background: #22303c; outline: none; }
+    .filter-chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent); color: #10151c; }
     .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
     #version-bar { position: fixed; right: 14px; bottom: 8px; display: flex; align-items: center; gap: 12px; padding: 6px 10px; background: #10151cf2; border: 1px solid #ffffff26; border-radius: 10px; font-size: 0.9rem; font-weight: 600; letter-spacing: 0.04em; color: #fff; z-index: 5; }
@@ -137,7 +143,7 @@
   </section>
   <section id="hub-view" aria-label="Game selection">
     <header><button id="hub-back" type="button">&larr; Categories</button><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
-    <main><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
+    <main><div id="game-filters" role="group" aria-label="Filter games"></div><div id="games" aria-live="polite"></div><p id="empty" hidden>No working games found yet. Add an export zip to the zips folder, then run start.command.</p><p id="error" hidden>Could not load games.json. Run start.command again.</p></main>
   </section>
   <section id="python-view" aria-label="Python console project selection">
     <header><button id="python-back" type="button">&larr; Categories</button><h1>Python Console Projects</h1><p class="subtitle">Year 11 programming, live terminal programs</p></header>
@@ -181,6 +187,7 @@
   <script src="vendor/xterm/xterm.js"></script>
   <script>
     const gamesElement = document.getElementById("games");
+    const gameFiltersElement = document.getElementById("game-filters");
     const player = document.getElementById("player");
     const frame = document.getElementById("game-frame");
     const back = document.getElementById("back");
@@ -591,8 +598,34 @@
       return Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
     }
 
+    // Hand-edited "year" (e.g. 9) and "type" (e.g. "MicroStudio", "Vibe coded")
+    // fields in games.json drive the filter chips and the label on each tile.
+    // Games without them still show under "All".
+    let gameFilter = "all";
+    const yearLabel = game => (game.year !== undefined && game.year !== "" ? "Year " + game.year : "");
+    const gameTagText = game => [yearLabel(game), game.type].filter(Boolean).join(" · ");
+    const matchesFilter = game => gameFilter === "all" || yearLabel(game) === gameFilter || game.type === gameFilter;
+
+    function renderFilters() {
+      const labels = [...new Set(games.flatMap(game => [yearLabel(game), game.type]).filter(Boolean))];
+      const years = labels.filter(label => label.startsWith("Year ")).sort((a, b) => parseInt(a.slice(5)) - parseInt(b.slice(5)) || a.localeCompare(b));
+      const types = labels.filter(label => !label.startsWith("Year ")).sort((a, b) => a.localeCompare(b));
+      const options = labels.length ? ["all", ...years, ...types] : [];
+      if (!options.includes(gameFilter)) gameFilter = "all";
+      gameFiltersElement.replaceChildren();
+      for (const option of options) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "filter-chip";
+        chip.textContent = option === "all" ? "All" : option;
+        chip.setAttribute("aria-pressed", String(option === gameFilter));
+        chip.addEventListener("click", () => { gameFilter = option; renderFilters(); render(); });
+        gameFiltersElement.append(chip);
+      }
+    }
+
     function sortedGames() {
-      return [...games].sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
+      return [...games].filter(matchesFilter).sort((first, second) => voteCount(second.slug) - voteCount(first.slug) || String(first.title).localeCompare(String(second.title)) || first.slug.localeCompare(second.slug));
     }
 
     // Everything marked featured, games and web apps together. Until anything
@@ -689,6 +722,7 @@
         else icon.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
         const title = document.createElement("span"); title.className = "game-title"; title.textContent = game.title;
         launch.append(icon, title);
+        if (gameTagText(game)) { const tags = document.createElement("span"); tags.className = "game-tags"; tags.textContent = gameTagText(game); launch.append(tags); }
         launch.addEventListener("click", () => openGame(game));
         const vote = document.createElement("button");
         vote.className = "vote-button";
@@ -982,6 +1016,7 @@
         .catch(() => { webappError.hidden = false; return []; })
     ]).then(([gameList, voteList, webappList]) => {
       games = gameList.map(game => ({ ...game, base: "games/" }));
+      renderFilters();
       webapps = (Array.isArray(webappList) ? webappList : []).map(app => ({ ...app, base: "webapps/" }));
       votes = voteList && typeof voteList === "object" ? voteList : {};
       renderFeatured();

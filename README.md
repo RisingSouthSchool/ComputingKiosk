@@ -116,6 +116,20 @@ when the served version changes, for example after the background auto-sync
 (`setup_autosync.command`) has pulled an update. Votes (`votes.json`) are always
 kept. The button needs the hub folder to be a git clone.
 
+## Year and type tags
+
+Two more hand-edited fields in `games.json` (kept across re-scans) drive the
+filter chips at the top of the Games view and the label on each tile:
+
+- `"year"` — e.g. `9` or `10`, shown as "Year 9".
+- `"type"` — e.g. `"MicroStudio"` or `"Vibe coded"`.
+
+Games without them still appear under "All". To add a non-MicroStudio game
+(for example a vibe-coded single-file HTML game), put its folder in
+`games/<slug>/` with an `index.html` (an inline `<script>` is enough), make it
+work offline using the files in `vendor/web/` (for example
+`../../vendor/web/three.min.js`), then set its `year` and `type`.
+
 ## Skipped games
 
 The scanner prints a `Skipped ...` warning when an archive cannot be used. The
