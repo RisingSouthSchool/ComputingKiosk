@@ -16,6 +16,9 @@
     #list { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
     .room { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-end; gap: 10px; min-height: 170px; padding: 20px; border: 2px solid transparent; border-radius: 14px; background: var(--panel); color: var(--ink); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 10px 25px #0005; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     .room:hover, .room:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
+    .room { position: relative; overflow: hidden; }
+    .new-ribbon { position: absolute; top: 0; left: 0; width: 100px; height: 100px; overflow: hidden; pointer-events: none; }
+    .new-ribbon span { position: absolute; top: 21px; left: -32px; width: 136px; padding: 4px 0; text-align: center; transform: rotate(-45deg); background: var(--focus); color: #10151c; font-size: .8rem; font-weight: 800; letter-spacing: .14em; box-shadow: 0 2px 6px #0006; }
     .room .icon { font-size: 2.6rem; }
     .room .name { font-size: 1.25rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
     .room .hint { color: var(--accent); font-size: .95rem; font-weight: 600; }
@@ -103,7 +106,7 @@
       back.focus();
     }
 
-    function render(videos) {
+    function render(videos, fresh) {
       list.replaceChildren();
       empty.hidden = videos.length !== 0;
       for (const video of videos) {
@@ -112,6 +115,7 @@
         tile.className = "room";
         tile.innerHTML = '<span class="icon">🧱</span><span class="name"></span><span class="hint">▶ Watch walkthrough</span>';
         tile.querySelector(".name").textContent = video.title;
+        if (fresh.has("video:" + video.file)) tile.insertAdjacentHTML("afterbegin", '<div class="new-ribbon"><span>NEW</span></div>');
         tile.addEventListener("click", () => play(video, tile));
         list.append(tile);
       }
@@ -128,9 +132,11 @@
       if (event.key === "Escape" && viewer.classList.contains("open")) showList();
     });
 
+    const freshVideos = fetch("/api/new", { cache: "no-store" }).then(response => response.json())
+      .then(result => new Set(Array.isArray(result.new) ? result.new : [])).catch(() => new Set());
     fetch("/api/escape-rooms", { cache: "no-store" })
       .then(response => response.json())
-      .then(render)
+      .then(async videos => render(videos, await freshVideos))
       .catch(() => { empty.textContent = "Could not load the video list."; empty.hidden = false; });
   </script>
 </body>

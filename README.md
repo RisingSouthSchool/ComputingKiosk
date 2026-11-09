@@ -256,3 +256,11 @@ is rebuilt automatically each time the launcher runs. You can delete a game's
 folder from `games/` and its entry will disappear from the next generated
 list, but remove the original zip from `zips/` too if you do not want it
 extracted again.
+## NEW banners
+
+Anything added in the last 14 days gets a gold **NEW** ribbon on its tile, and its category tile on the home screen gets a **NEW** pill. It expires by itself, and anything you add later gets the banner automatically. This covers games, web apps, Python and database projects, and escape-room videos.
+
+- **How it knows an item is new:** the first time this kiosk sees it, the server records the date in `first_seen.json` (local to the kiosk, git-ignored, so updates never touch it). The first ever run stamps everything that already exists as old, so nothing is flagged on day one.
+- **Override the date:** add `"added": "2026-11-09"` to an entry in `games.json`, `webapps.json`, etc. That date wins over first-seen. Zombie City uses this.
+- **Videos** use the file's creation date.
+- **Change the length:** `NEW_DAYS` near the top of the NEW section in `server.py`.

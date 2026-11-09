@@ -9,3 +9,7 @@ escape-rooms/*
 # Usage log: stays on the kiosk
 usage.db
 usage.db-*
+
+# Remembers when this kiosk first saw each item (for NEW banners)
+first_seen.json
+first_seen.*.tmp
