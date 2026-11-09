@@ -23,6 +23,7 @@
     .game-title { display: block; font-size: 1.35rem; font-weight: 700; margin-top: 16px; }
     .vote-button { position: absolute; right: 14px; bottom: 12px; border: 1px solid #ffffff33; border-radius: 6px; background: #10151c99; color: var(--ink); padding: 5px 8px; font-size: .9rem; cursor: pointer; }
     .vote-button:hover, .vote-button:focus-visible { border-color: var(--focus); background: #10151cdd; outline: none; }
+    #repo-version { position: fixed; right: 14px; bottom: 8px; margin: 0; font-size: 0.7rem; letter-spacing: 0.04em; color: var(--muted); opacity: 0.35; pointer-events: none; user-select: none; }
     #landing-view, #hub-view { display: none; }
     #landing-view.open, #hub-view.open { display: block; }
     #webapps-view { display: none; }
@@ -119,6 +120,7 @@
       </div>
       <div id="categories" aria-live="polite"></div>
     </main>
+    <p id="repo-version" aria-hidden="true" hidden></p>
   </section>
   <section id="hub-view" aria-label="Game selection">
     <header><button id="hub-back" type="button">&larr; Categories</button><h1>Classroom Game Hub</h1><p class="subtitle">Choose a game to play</p></header>
@@ -930,6 +932,21 @@
       .then(response => { if (!response.ok) throw new Error("pythonProjects.json"); return response.json(); })
       .then(projectList => { pythonProjects = Array.isArray(projectList) ? projectList : []; })
       .catch(() => { pythonProjects = []; pythonError.hidden = false; });
+  
+
+    // Subtle build marker on the landing screen: commit count, short hash and
+    // commit date of the checkout being served, so it is easy to see whether an
+    // auto-sync has landed. Hidden when the folder isn't a git clone.
+    fetch("/api/version", { cache: "no-store" })
+      .then(response => response.ok ? response.json() : null)
+      .then(data => {
+        const v = data && data.version;
+        const label = document.getElementById("repo-version");
+        if (!v || !label) return;
+        label.textContent = (v.count ? "v" + v.count + " · " : "") + v.hash + " · " + v.date;
+        label.hidden = false;
+      })
+      .catch(() => {});
   </script>
 </body>
 </html>

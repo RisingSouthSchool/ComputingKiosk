@@ -50,6 +50,34 @@ def read_votes():
     return {slug: count for slug, count in votes.items() if isinstance(slug, str) and isinstance(count, int) and count >= 0}
 
 
+_VERSION_CACHE = {"at": 0.0, "value": None}
+
+
+def read_version():
+    """Short git hash, commit count and commit date of the hub's checkout, or
+    None when this folder isn't a git clone (or git isn't installed)."""
+    import time
+    now = time.monotonic()
+    if now - _VERSION_CACHE["at"] < 5:
+        return _VERSION_CACHE["value"]
+
+    def git(*args):
+        return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True,
+                              timeout=3, check=True).stdout.strip()
+
+    value = None
+    try:
+        short, date = git("log", "-1", "--format=%h|%cd", "--date=format:%-d %b %H:%M").split("|", 1)
+        count = None
+        if git("rev-parse", "--is-shallow-repository") == "false":
+            count = int(git("rev-list", "--count", "HEAD"))
+        value = {"hash": short, "count": count, "date": date}
+    except (OSError, ValueError, subprocess.SubprocessError):
+        value = None
+    _VERSION_CACHE.update(at=now, value=value)
+    return value
+
+
 def write_votes(votes):
     temporary_path = None
     try:
@@ -81,6 +109,9 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/votes":
             with VOTES_LOCK:
                 self.send_json(read_votes())
+            return
+        if path == "/api/version":
+            self.send_json({"version": read_version()})
             return
         if path == "/api/pty-port":
             self.send_json({"port": PTY_PORT})
