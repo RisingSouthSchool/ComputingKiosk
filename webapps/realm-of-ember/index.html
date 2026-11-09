@@ -117,7 +117,7 @@ body.talk #tgt{display:none}
 <div id="flash"></div><div id="vig"></div>
 <div id="menu">
  <div class="pg" id="pg_main"><h1>REALM OF EMBER</h1><div class="sub">A tale of steel, ash &amp; starlight</div>
-  <div class="mb"><button class="ch big hidden" id="cont" onclick="begin(null,true)"></button><button class="ch big" onclick="pg('pg_class')">New Game</button><button class="ch big" onclick="pg('pg_set')">Settings</button><button class="ch big" onclick="pg('pg_help')">How to Play</button></div>
+  <div class="mb"><button class="ch big hidden" id="cont" onclick="begin(null,true)"></button><button class="ch big" onclick="pg('pg_class')">New Game</button><button class="ch big" onclick="pg('pg_set')">Settings</button><button class="ch big" onclick="pg('pg_help')">How to Play</button><button class="ch big hidden" id="hubbtn" onclick="parent.closePlayer()">⬅ Back to Hub</button></div>
   <small>Progress autosaves in your browser</small></div>
  <div class="pg hidden" id="pg_class"><h2>Choose your path</h2><div id="cl" style="display:flex;gap:12px;flex-wrap:wrap"></div><div id="ar"></div><input id="nm_in" maxlength="14" value="Hero" placeholder="Name your hero">
   <div style="display:flex;gap:10px"><button class="ch big" style="width:130px" onclick="pg('pg_main')">Back</button><button class="ch big" style="width:210px" onclick="begin(selCls)">Begin Journey</button></div></div>
@@ -149,7 +149,7 @@ function pop(p,t,c,s=1,dy=0){const v=new THREE.Vector3(p.x,(p.y||0)+2.5*s+.5,p.z
 function fx(p,c,s,d,ring){const m=new THREE.Mesh(ring?new THREE.RingGeometry(.85,1,40):new THREE.SphereGeometry(.5,10,8),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.7,side:THREE.DoubleSide}));if(ring)m.rotation.x=-Math.PI/2;m.position.set(p.x,(p.y||0)+(ring?.2:.8),p.z);scene.add(m);FX.push({m,t:0,d,s})}
 function slide(p,r){const cx=p.x/10|0,cz=p.z/10|0;for(let i=-1;i<2;i++)for(let j=-1;j<2;j++){const a=col.g[(cx+i)+","+(cz+j)];if(a)for(const c of a){const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz),m=c.r+r;if(d<m&&d>0){p.x=c.x+dx/d*m;p.z=c.z+dz/d*m}}}}
 const mat=(c,m=.1,r=.7,x={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:m,roughness:r},x));
-let water,mmBase,stars,dustT=0,hs=0,shake=0,combo=0,swD=.5,hitDone=true,lastAtk=0,spinT=0,paused=false,selCls="warrior",plight,tgtE=null,tgtT=0,blk=false,blkT=0,stock=null,selI=-1,gmTab="char";const WS=540,WL=-2.5;
+let HUB=false,water,mmBase,stars,dustT=0,hs=0,shake=0,combo=0,swD=.5,hitDone=true,lastAtk=0,spinT=0,paused=false,selCls="warrior",plight,tgtE=null,tgtT=0,blk=false,blkT=0,stock=null,selI=-1,gmTab="char";const WS=540,WL=-2.5;
 function hash(i,j){const s=Math.sin(i*127.1+j*311.7)*43758.5453;return s-Math.floor(s)}
 function vn(x,z){const i=Math.floor(x),j=Math.floor(z),fx=x-i,fz=z-j,u=fx*fx*(3-2*fx),v=fz*fz*(3-2*fz);return hash(i,j)*(1-u)*(1-v)+hash(i+1,j)*u*(1-v)+hash(i,j+1)*(1-u)*v+hash(i+1,j+1)*u*v}
 function fbm(x,z){return vn(x,z)*.55+vn(x*2.1+5,z*2.1+9)*.3+vn(x*4.3+11,z*4.3+3)*.15}
@@ -201,6 +201,9 @@ function init(){
  HB.forEach(([k,key,ic])=>$("hot").insertAdjacentHTML("beforeend",`<div class="slot"><kbd>${key}</kbd>${ic}<em id="ct_${k}"></em><u id="cu_${k}"></u></div>`));
  addEventListener("resize",()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
  addEventListener("keydown",ev=>key(ev,1));addEventListener("keyup",ev=>key(ev,0));
+ // Running inside the kiosk hub? Then offer a way back to it, and let Escape step back through the title screens.
+ {let h=false;try{h=window.parent!==window&&typeof parent.closePlayer=="function"}catch(e){}HUB=h;if(h)$("hubbtn").classList.remove("hidden")}
+ addEventListener("keydown",ev=>{if(ev.code=="Escape"&&!ev.repeat&&!started){const o=document.querySelector(".pg:not(.hidden)");if(o&&o.id!="pg_main")pg("pg_main")}});
  $("cv").addEventListener("mousedown",e=>{if(e.button==2){if(started&&live&&!paused&&!dnpc&&!cs&&S.sta>5){blk=true;blkT=0}}else mdown=true});addEventListener("mouseup",e=>{if(e.button==2)blk=false});$("cv").addEventListener("contextmenu",e=>e.preventDefault());addEventListener("mouseup",()=>mdown=false);
  let sv=null;try{sv=JSON.parse(localStorage.getItem(KEY))}catch(e){}
  if(sv&&sv.cls){$("cont").textContent=`Continue — ${CLS[sv.cls].n}, Level ${sv.lv}`;$("cont").classList.remove("hidden")}
@@ -635,7 +638,7 @@ function invH(){const g=S.inv.map((it,i)=>`<div class="ic${i==selI?" sel":""}" s
 function questH(){const L=Object.keys(QD).filter(id=>qst(id)).sort((a,b)=>qst(a)-qst(b)).map(id=>{const q=QD[id],s=S.q[id];return `<div class="qe ${s.st==3?"done":""}" onclick="trkQ('${id}')" style="cursor:pointer"><b>${S.trk==id?"★ ":""}${q.n}</b> <small>${s.st==3?"Completed":s.st==2?"Ready — return to "+npcName(q.g):q.t=="talk"?"Deliver to "+npcName(q.tg):s.p+"/"+q.need+" "+qT(q)}</small><div class="mut">${q.d}</div></div>`}).join("");return `<div class="col wide"><h3>Journal</h3><div class="gold">${CHT[S.ch||0]}</div>${L||"<i class='mut'>No quests yet. Speak to the villagers — Elder Bram waits by the town hall.</i>"}</div>`}
 function gmRender(){const T=[["char","Character"],["tal","Talents"],["inv","Inventory"],["quest","Journal"],["map","World Map"],["sys","System"]];let h=`<div class="tabs">${T.map(([k,n])=>`<button class="tab${k==gmTab?" on":""}" onclick="gmTab='${k}';gmRender()">${n}</button>`).join("")}<button class="tab x" onclick="gmClose()">✕</button></div><div class="gmb">`;
  if(gmTab=="char")h+=charH();else if(gmTab=="tal")h+=talH();else if(gmTab=="inv")h+=invH();else if(gmTab=="quest")h+=questH();else if(gmTab=="map")h+=`<div class="col wide"><canvas id="bigmap" width="560" height="560" onclick="mapClick(event)"></canvas><div class="mut" style="text-align:center;margin-top:6px">Click a waypoint (blue) to fast-travel · click elsewhere to drop a pin (click a pin to remove it)</div></div>`;
- else h+=`<div class="col"><h2>${S.name}</h2><div class="mb"><button class="ch" onclick="gmClose()">▶ Resume</button><button class="ch" onclick="save();msg('Game saved.');gmClose()">💾 Save game</button><button class="ch" onclick="$('gm').classList.add('hidden');pg('pg_set')">⚙️ Settings</button><button class="ch" onclick="quit()">🚪 Save &amp; quit to title</button></div></div>`;
+ else h+=`<div class="col"><h2>${S.name}</h2><div class="mb"><button class="ch" onclick="gmClose()">▶ Resume</button><button class="ch" onclick="save();msg('Game saved.');gmClose()">💾 Save game</button><button class="ch" onclick="$('gm').classList.add('hidden');pg('pg_set')">⚙️ Settings</button><button class="ch" onclick="quit()">🚪 Save &amp; quit to title</button>${HUB?`<button class="ch" onclick="save();parent.closePlayer()">⬅ Save &amp; back to Hub</button>`:""}</div></div>`;
  $("gm").innerHTML=h+"</div>";if(gmTab=="map")drawMap()}
 function zoneAt(x,z){const r=Math.hypot(x,z),d=dd(x,z),h=gy(x,z);return Math.hypot(x+440,z+440)<44?"Troll Lair ☠️":r<118?"Willowbrook Village (safe)":h<WL+1?"Lakeshore":h>6?"Highlands":d<280?"Sunny Meadow · Slimes":d<420?"Whispering Woods · Goblins":"Ashen Ruins · Skeletons"}
 let near=null,last,now=0,uiT=0,sT=8;

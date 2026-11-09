@@ -829,6 +829,20 @@
     }
 
     document.addEventListener("keydown", (event) => {
+      // A game or web app is open but keyboard focus is on the hub page, not the
+      // frame (so the app never saw the key): pass Escape in and hand focus over,
+      // so in-game pause menus open instead of the key doing nothing.
+      if (event.key === "Escape" && player.classList.contains("open") && !terminalView.classList.contains("open")) {
+        event.preventDefault();
+        try {
+          const win = frame.contentWindow;
+          for (const type of ["keydown", "keyup"]) {
+            win.dispatchEvent(new win.KeyboardEvent(type, { key: "Escape", code: "Escape", keyCode: 27, bubbles: true }));
+          }
+          frame.focus();
+        } catch (error) { /* frame not ready or cross-origin: nothing to forward to */ }
+        return;
+      }
       if (event.key === "Escape" && terminalView.classList.contains("open")) {
         event.preventDefault();
         terminalBack.click();
