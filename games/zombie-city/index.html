@@ -177,6 +177,7 @@
         <h1>ZOMBIE CITY</h1>
         <p>Click anywhere to start</p>
         <p style="font-size: 0.9rem; margin-top: 20px;">WASD to move | Mouse to look | Left Click to shoot | R to reload</p>
+        <p style="font-size: 0.9rem; margin-top: 10px;">Esc frees the mouse | Esc again to go back to the hub</p>
     </div>
 
     <div id="game-over-screen">
@@ -789,8 +790,22 @@
                 case 'KeyR':
                     reload();
                     break;
+                case 'Escape':
+                    // The first Esc is used by the browser to release the mouse.
+                    // Once the mouse is free, Esc leaves the game and returns to the kiosk hub.
+                    if (!controls.isLocked) exitToHub();
+                    break;
             }
         };
+
+        // Leave the game by pressing the kiosk's own "Back to Hub" button
+        function exitToHub() {
+            try {
+                if (window.parent !== window) {
+                    window.parent.document.getElementById('back').click();
+                }
+            } catch (error) { /* not running inside the kiosk: nothing to go back to */ }
+        }
 
         const onKeyUp = function (event) {
             switch (event.code) {
