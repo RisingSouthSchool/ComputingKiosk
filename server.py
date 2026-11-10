@@ -24,15 +24,6 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
-# The kiosk is in Perth. Pin this process to that time zone so the weekday/hour stats, the "NEW"
-# dates and the CSV export never depend on how the Mac's own time zone happens to be set (the kiosk
-# is offline, so it can't correct itself). Set KIOSK_TZ to use a different zone.
-os.environ["TZ"] = os.environ.get("KIOSK_TZ", "Australia/Perth")
-try:
-    time.tzset()
-except AttributeError:
-    pass  # no tzset on Windows
-
 def _import_websockets():
     from websockets.asyncio.server import serve
     from websockets.exceptions import ConnectionClosed as closed
