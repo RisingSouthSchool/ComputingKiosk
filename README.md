@@ -264,3 +264,7 @@ Anything added in the last 14 days gets a gold **NEW** ribbon on its tile, and i
 - **Override the date:** add `"added": "2026-11-09"` to an entry in `games.json`, `webapps.json`, etc. That date wins over first-seen. Zombie City uses this.
 - **Videos** use the file's creation date.
 - **Change the length:** `NEW_DAYS` near the top of the NEW section in `server.py`.
+
+## Sound
+
+The launcher starts Chrome with `--mute-audio`, so every game, app and video is silent and students can't turn sound on. This only applies when Chrome is started by `launch_kiosk.command`; if Chrome is already open, quit it first (Cmd+Q) and relaunch. Escape-room videos are muted too. To allow sound, remove `--mute-audio` from `launch_kiosk.command`.
