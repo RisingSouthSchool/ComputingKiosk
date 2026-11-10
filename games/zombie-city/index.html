@@ -121,6 +121,62 @@
             text-shadow: 1px 1px 2px black;
         }
 
+        #objective-display {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ffcc66;
+            font-size: 1.3rem;
+            font-weight: bold;
+            z-index: 5;
+            display: none;
+            text-align: center;
+            text-shadow: 1px 1px 2px black;
+        }
+
+        #objective-display.unlocked {
+            color: #66ff88;
+        }
+
+        /* Escape (win) Screen */
+        #win-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(0, 110, 40, 0.6);
+            color: white;
+            z-index: 15;
+            display: none; /* Hidden by default */
+        }
+
+        #win-screen h1 {
+            font-size: 5rem;
+            color: #66ff88;
+            text-shadow: 3px 3px 6px #000;
+        }
+
+        #win-screen button {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            background-color: #222;
+            color: white;
+            border: 2px solid white;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.2s;
+        }
+
+        #win-screen button:hover {
+            background-color: #555;
+        }
+
         /* Game Over Screen */
         #game-over-screen {
             position: absolute;
@@ -170,13 +226,21 @@
     <div id="score-display">Targets Hit: <span id="score">0</span></div>
     <div id="ammo-display">25 / 25</div>
     <div id="health-display">HP: <span id="health">100</span></div>
+    <div id="objective-display"></div>
 
     <div id="crosshair"></div>
 
     <div id="ui-layer">
         <h1>ZOMBIE CITY</h1>
         <p>Click anywhere to start</p>
-        <p style="font-size: 0.9rem; margin-top: 20px;">WASD to move | Mouse to look | Left Click to shoot | R to reload</p>
+        <p style="font-size: 0.9rem; margin-top: 20px;">WASD to move | Mouse to look | Left Click to shoot | R to reload | Space to jump</p>
+        <p style="font-size: 1rem; margin-top: 10px; color: #ffcc66;">Escape the city: take down 12 zombies to unlock the exit gate, then reach it alive.</p>
+    </div>
+
+    <div id="win-screen">
+        <h1>YOU ESCAPED!</h1>
+        <p>Zombies taken down: <span id="win-score">0</span> | Time: <span id="win-time">0:00</span></p>
+        <button id="win-restart-btn">Play Again</button>
     </div>
 
     <div id="game-over-screen">
@@ -237,6 +301,14 @@
         const PLAYER_SPEED = 400; // Movement speed modifier
         const ENEMY_SPEED = 14; // Zombie speed
 
+        // Escape objective: kill enough zombies to unlock the exit gate, then reach it
+        const KILLS_TO_UNLOCK = 12;
+        const EXIT_RADIUS = 10; // How close the player must get to the gate to escape
+        const EXIT_POS = new THREE.Vector3(0, 0, -ARENA_SIZE / 2 + 25); // North edge of the city
+        let exitUnlocked = false;
+        let exitMaterials = []; // Gate parts that change colour when unlocked
+        let exitLight = null;
+
         // --- Initialization ---
         function init() {
             const container = document.getElementById('game-container');
@@ -294,6 +366,7 @@
                 scoreDisplay.style.display = 'block';
                 ammoDisplay.style.display = 'block';
                 document.getElementById('health-display').style.display = 'block';
+                document.getElementById('objective-display').style.display = 'block';
             });
 
             controls.addEventListener('unlock', () => {
@@ -304,6 +377,7 @@
                 scoreDisplay.style.display = 'none';
                 ammoDisplay.style.display = 'none';
                 document.getElementById('health-display').style.display = 'none';
+                document.getElementById('objective-display').style.display = 'none';
             });
 
             restartBtn.addEventListener('click', () => {
@@ -312,8 +386,16 @@
                 controls.lock();
             });
 
+            document.getElementById('win-restart-btn').addEventListener('click', () => {
+                resetGame();
+                document.getElementById('win-screen').style.display = 'none';
+                controls.lock();
+            });
+
             // 5. Build Environment
             createArena();
+            createExit();
+            updateObjective();
 
             // 6. Player Gun Model
             createGun();
@@ -385,6 +467,9 @@
                     // Keep center spawn clear
                     if (Math.abs(x) < 40 && Math.abs(z) < 40) continue;
 
+                    // Keep the area around the exit gate clear so it is always reachable
+                    if (Math.abs(x - EXIT_POS.x) < 90 && Math.abs(z - EXIT_POS.z) < 60) continue;
+
                     if (Math.random() > 0.4) { // 60% chance to spawn a building block
                         const w = 15 + Math.random() * 20;
                         const d = 15 + Math.random() * 20;
@@ -435,6 +520,57 @@
                     pointLight.position.set(x, 24, z);
                     scene.add(pointLight);
                 }
+            }
+        }
+
+        // --- Exit Gate ---
+        function createExit() {
+            const frameMat = new THREE.MeshBasicMaterial({ color: 0xff3333, fog: false });
+            const beamMat = new THREE.MeshBasicMaterial({
+                color: 0xff3333, transparent: true, opacity: 0.3, side: THREE.DoubleSide, depthWrite: false, fog: false
+            });
+            exitMaterials = [frameMat, beamMat];
+
+            // Two pillars and a crossbar
+            const pillarGeo = new THREE.BoxGeometry(3, 30, 3);
+            const left = new THREE.Mesh(pillarGeo, frameMat);
+            left.position.set(EXIT_POS.x - 9, 15, EXIT_POS.z);
+            const right = new THREE.Mesh(pillarGeo, frameMat);
+            right.position.set(EXIT_POS.x + 9, 15, EXIT_POS.z);
+            const bar = new THREE.Mesh(new THREE.BoxGeometry(21, 3, 3), frameMat);
+            bar.position.set(EXIT_POS.x, 31.5, EXIT_POS.z);
+
+            // Tall beacon so the gate can be spotted from anywhere in the city
+            const beam = new THREE.Mesh(new THREE.CylinderGeometry(4, 4, 300, 16, 1, true), beamMat);
+            beam.position.set(EXIT_POS.x, 150, EXIT_POS.z);
+
+            exitLight = new THREE.PointLight(0xff3333, 2, 90);
+            exitLight.position.set(EXIT_POS.x, 20, EXIT_POS.z + 8);
+
+            scene.add(left, right, bar, beam, exitLight);
+        }
+
+        function setExitUnlocked(unlocked) {
+            exitUnlocked = unlocked;
+            const color = unlocked ? 0x33ff66 : 0xff3333;
+            exitMaterials.forEach(m => m.color.setHex(color));
+            if (exitLight) exitLight.color.setHex(color);
+        }
+
+        function updateObjective() {
+            const el = document.getElementById('objective-display');
+            if (!exitUnlocked && score >= KILLS_TO_UNLOCK) setExitUnlocked(true);
+
+            if (exitUnlocked) {
+                const dist = Math.round(Math.hypot(
+                    camera.position.x - EXIT_POS.x,
+                    camera.position.z - EXIT_POS.z
+                ));
+                el.classList.add('unlocked');
+                el.innerText = `EXIT UNLOCKED - reach the green beacon (${dist} m)`;
+            } else {
+                el.classList.remove('unlocked');
+                el.innerText = `Take down ${KILLS_TO_UNLOCK} zombies to unlock the exit (${score}/${KILLS_TO_UNLOCK})`;
             }
         }
 
@@ -758,9 +894,25 @@
             activePlayTime = 0;
             lastSpawnTime = 0;
 
+            // Re-lock the exit gate
+            setExitUnlocked(false);
+            updateObjective();
+
             // Clear enemies (they will rebuild over time)
             enemies.forEach(e => scene.remove(e));
             enemies.length = 0;
+        }
+
+        function escapeCity() {
+            isGameOver = true;
+            controls.unlock();
+            const totalSeconds = Math.round(activePlayTime / 1000);
+            const mins = Math.floor(totalSeconds / 60);
+            const secs = String(totalSeconds % 60).padStart(2, '0');
+            document.getElementById('win-score').innerText = score;
+            document.getElementById('win-time').innerText = `${mins}:${secs}`;
+            document.getElementById('win-screen').style.display = 'flex';
+            document.getElementById('crosshair').style.display = 'none';
         }
 
         function die() {
@@ -932,6 +1084,19 @@
                 if (pos.z > bounds) pos.z = bounds;
                 if (pos.z < -bounds) pos.z = -bounds;
 
+                // Exit gate: update distance readout and check for escape
+                updateObjective();
+                if (exitUnlocked) {
+                    const dx = pos.x - EXIT_POS.x;
+                    const dz = pos.z - EXIT_POS.z;
+                    if (Math.hypot(dx, dz) < EXIT_RADIUS) {
+                        escapeCity();
+                        prevTime = time;
+                        renderer.render(scene, camera);
+                        return;
+                    }
+                }
+
                 // 2. Handle Projectiles & Hit Detection
                 for (let i = bullets.length - 1; i >= 0; i--) {
                     const b = bullets[i];
@@ -974,6 +1139,7 @@
                             // Update Score
                             score++;
                             document.getElementById('score').innerText = score;
+                            updateObjective();
 
                             // Respawn a new enemy somewhere else
                             spawnEnemy();
