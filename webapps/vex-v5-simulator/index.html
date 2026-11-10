@@ -193,7 +193,6 @@
       border-color: var(--muted-color);
     }
 
-    /* COUNTDOWN & TIMER HUD */
     #timerHUD {
       position: absolute;
       top: 15px;
@@ -230,10 +229,8 @@
       font-weight: 900;
       color: var(--accent-color);
       text-shadow: 0 0 30px var(--accent-glow);
-      animation: pulse 0.5s infinite alternate;
     }
 
-    /* SCORE BREAKDOWN TABLE */
     .score-breakdown {
       display: flex;
       flex-direction: column;
@@ -268,7 +265,6 @@
       margin-top: 4px;
     }
 
-    /* SIDE PANEL STYLING */
     .side-panel {
       background-color: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -341,12 +337,6 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
-    }
-
-    .control-group-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
 
     .grid-2x2 {
@@ -443,6 +433,40 @@
       line-height: 1.5;
     }
 
+    .keymap-box {
+      font-size: 11px;
+      background-color: #111318;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .keymap-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px dashed #242834;
+      padding-bottom: 3px;
+    }
+
+    .keymap-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .key-badge {
+      background-color: #242834;
+      color: var(--accent-color);
+      font-family: monospace;
+      font-weight: bold;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--card-border);
+    }
+
     .range-val {
       font-family: monospace;
       font-size: 13px;
@@ -459,15 +483,12 @@
   <div class="container">
     <div class="main-panel">
       <div id="simCanvasContainer">
-        <!-- MATCH TIMER HUD -->
         <div id="timerHUD">⏱️ <span id="timerText">01:00.0</span></div>
 
-        <!-- REPLAY CONTROLS HUD -->
         <div id="replayHUD" class="hidden">
           <button id="btnExitReplay" class="btn-secondary" style="background: #ef4444; color: #fff; border: none; padding: 8px 16px;">🛑 EXIT REPLAY</button>
         </div>
 
-        <!-- MAIN MENU OVERLAY -->
         <div id="mainMenuOverlay" class="overlay">
           <div class="menu-card">
             <h2 class="menu-title">HIGH STAKES SIMULATOR</h2>
@@ -477,10 +498,8 @@
           </div>
         </div>
 
-        <!-- COUNTDOWN OVERLAY -->
         <div id="countdownOverlay" class="overlay hidden">3</div>
 
-        <!-- GAME OVER / SCORE BREAKDOWN OVERLAY -->
         <div id="gameOverOverlay" class="overlay hidden">
           <div class="menu-card">
             <h2 class="menu-title">TIME'S UP!</h2>
@@ -529,9 +548,26 @@
 
       <!-- TAB 1: DRIVE & CONTROLS -->
       <div id="driveTab" class="tab-content active">
-        <div id="statusBadge" class="status-badge">Waiting for Controller...</div>
+        <div id="statusBadge" class="status-badge">Keyboard + Controller Active</div>
 
         <button id="connectSerialBtn" class="btn-connect">Connect VEX V5 Controller (Serial)</button>
+
+        <!-- COMPLETE KEYBOARD MAPPING GUIDE TABLE -->
+        <div class="control-group">
+          <label>⌨️ Complete Keyboard Control Mapping</label>
+          <div class="keymap-box">
+            <div class="keymap-row"><span>Drive Forward / Reverse</span><span><span class="key-badge">W</span> / <span class="key-badge">S</span> (or <span class="key-badge">↑</span>/<span class="key-badge">↓</span>)</span></div>
+            <div class="keymap-row"><span>Steer Left / Right</span><span><span class="key-badge">A</span> / <span class="key-badge">D</span> (or <span class="key-badge">←</span>/<span class="key-badge">→</span>)</span></div>
+            <div class="keymap-row"><span>Raise Cascade Lift</span><span><span class="key-badge">R</span></span></div>
+            <div class="keymap-row"><span>Lower Cascade Lift</span><span><span class="key-badge">F</span></span></div>
+            <div class="keymap-row"><span>Reset Lift to 0" Base</span><span><span class="key-badge">B</span></span></div>
+            <div class="keymap-row"><span>Intake / Hold Pin</span><span><span class="key-badge">E</span></span></div>
+            <div class="keymap-row"><span>Release / Score Pin</span><span><span class="key-badge">Q</span></span></div>
+            <div class="keymap-row"><span>Spin 48T Gear (120 RPM)</span><span><span class="key-badge">G</span></span></div>
+            <div class="keymap-row"><span>Toggle Match Loaders (1-4)</span><span><span class="key-badge">1</span> <span class="key-badge">2</span> <span class="key-badge">3</span> <span class="key-badge">4</span></span></div>
+            <div class="keymap-row"><span>Reset Simulation</span><span><span class="key-badge">SPACE</span></span></div>
+          </div>
+        </div>
 
         <div class="control-group">
           <label for="matchloaderTypeSelect">Matchloader Preload Customizer</label>
@@ -561,20 +597,20 @@
 
         <div class="control-group">
           <label>48T Spinner Controls (0.5s per 360°)</label>
-          <button id="btnGearRotate" class="btn-lift">ROTATE 48T (120 RPM) [DOWN ARROW]</button>
+          <button id="btnGearRotate" class="btn-lift">ROTATE 48T (120 RPM) [G]</button>
         </div>
 
         <div class="control-group">
           <label>Match Loaders (Auto-Lifts Within 1 Tile)</label>
           <div class="grid-2x2">
-            <button id="loaderBtn0" class="btn-loader">Red Left [DN]</button>
-            <button id="loaderBtn1" class="btn-loader">Red Right [DN]</button>
-            <button id="loaderBtn2" class="btn-loader">Blue Left [DN]</button>
-            <button id="loaderBtn3" class="btn-loader">Blue Right [DN]</button>
+            <button id="loaderBtn0" class="btn-loader">Red Left [1]</button>
+            <button id="loaderBtn1" class="btn-loader">Red Right [2]</button>
+            <button id="loaderBtn2" class="btn-loader">Blue Left [3]</button>
+            <button id="loaderBtn3" class="btn-loader">Blue Right [4]</button>
           </div>
         </div>
 
-        <button id="resetBtn">Reset Simulator State</button>
+        <button id="resetBtn">Reset Simulator State [SPACE]</button>
       </div>
 
       <!-- TAB 2: ROBOT CONFIGURATION & TUNING -->
@@ -614,11 +650,9 @@
         </div>
 
         <div class="specs-box" id="liveConfigSpecs">
-          <strong>Physics & Stacking Refinements:</strong><br>
-          • Skills Goal Setup: Neutral & Center goals start EMPTY in Driver Skills, but pre-loaded in Head-to-Head.<br>
-          • Skills Match Recording: Records complete 1-minute runs with 30 FPS snapshot replay engine.<br>
-          • Game Over Menu: 3 Options (Watch Replay, Retry Skills, Main Menu).<br>
-          • Reverted Stacks: Standard field stacks & flower cups intact.<br>
+          <strong>Physics & Controls Specifications:</strong><br>
+          • Dual Keyboard + Controller input blending.<br>
+          • Complete Keymap mapping active.<br>
         </div>
       </div>
     </div>
@@ -630,7 +664,6 @@
     const connectSerialBtn = document.getElementById('connectSerialBtn');
     const resetBtn = document.getElementById('resetBtn');
 
-    // UI Overlays & Buttons
     const timerHUD = document.getElementById('timerHUD');
     const timerText = document.getElementById('timerText');
     const replayHUD = document.getElementById('replayHUD');
@@ -645,7 +678,6 @@
     const btnReplaySkills = document.getElementById('btnReplaySkills');
     const btnReturnMenu = document.getElementById('btnReturnMenu');
 
-    // Score elements
     const scoreQuadYellow = document.getElementById('scoreQuadYellow');
     const scoreVisibleRed = document.getElementById('scoreVisibleRed');
     const scoreMidYellow = document.getElementById('scoreMidYellow');
@@ -694,10 +726,9 @@
       liveConfigSpecs.innerHTML =
 `<strong>Calculated Dynamics:</strong><br>
 • Drivetrain: Dual C-Channel Rails + Structural Delrin Goal Aligner<br>
-• 120 RPM Spinner: Symmetrical L-channel rotates at 0.5s per 360° on Down Arrow<br>
-• Spawn Preload: Spawns holding Yellow-Red pin in closed claw<br>
+• Keyboard + Controller: Simultaneous WASD & Joystick support<br>
+• 120 RPM Spinner: Symmetrical L-channel rotates at 0.5s per 360° on G key<br>
 • Skills Goal Setup: Empty Neutral/Center Goals in Skills, Pre-loaded in Head-to-Head<br>
-• Replay System: Recording & smooth playback with Exit Replay controls<br>
 • Max Speed: ${config.maxLinearSpeed.toFixed(2)} m/s (${ftPerSec} ft/s)`;
     }
 
@@ -707,25 +738,22 @@
     weightInput.addEventListener('input', recalculatePhysicsParams);
     recalculatePhysicsParams();
 
-    // VEX Field Physics Constants
-    const FIELD_SIZE = 3.6576; // 12 feet in meters
+    const FIELD_SIZE = 3.6576;
     const HALF_FIELD = FIELD_SIZE / 2;
-    const FIELD_RAISE_HEIGHT = 0.762; // 30 inches raised off floor
+    const FIELD_RAISE_HEIGHT = 0.762;
     const TRACK_WIDTH_METERS = 0.35;
     const MAX_MOTOR_FORCE = 52.0;
-    const TILE_SIZE = FIELD_SIZE / 6; // 0.6096m (2 feet per tile)
+    const TILE_SIZE = FIELD_SIZE / 6;
     const S = TILE_SIZE;
 
-    // Colors
     const COLOR_YELLOW = 0xeab308;
     const COLOR_RED    = 0xef4444;
     const COLOR_BLUE   = 0x3b82f6;
     const COLOR_DARK_GREY = 0x334155;
 
-    // Robot Simulation State
     const START_X = 0;
-    const START_Z = HALF_FIELD - 0.22; // Back of robot right up against front toggle
-    const START_HEADING = Math.PI / 2;  // Facing front (spinners touching toggle)
+    const START_Z = HALF_FIELD - 0.22;
+    const START_HEADING = Math.PI / 2;
 
     let robot = {
       x: START_X,
@@ -739,8 +767,7 @@
       lastTime: performance.now()
     };
 
-    // GAME MODE, TIMER & REPLAY STATE
-    let gameMode = 'menu'; // 'menu', 'countdown', 'skills', 'freeplay', 'gameover', 'replay'
+    let gameMode = 'menu';
     let timerRemaining = 60.0;
     let countdownRemaining = 3;
     let countdownInterval = null;
@@ -749,7 +776,6 @@
     let recordSampleTimer = 0;
     let replayPlaybackTime = 0;
 
-    // --- CASCADE LIFT STATE ---
     const MAX_LIFT_INCHES = 50.0;
     const LIFT_UP_SPEED_INCHES_PER_SEC = 50.0 / 0.9;
     const LIFT_DOWN_SPEED_INCHES_PER_SEC = 50.0 / 0.65;
@@ -768,16 +794,14 @@
       isManualDown: false
     };
 
-    // --- 48T GEAR MECHANISM STATE (0.5s per 360° = 120 RPM) ---
     let gear48TState = {
       angleRad: 0.0,
       isRotating: false
     };
     const GEAR_ROTATE_SPEED_RAD_PER_SEC = (2.0 * Math.PI) / 0.5;
 
-    // --- MOTORIZED FLEX WHEEL CLAW STATE ---
     let claw = {
-      isOpen: false, // Closed around preload pin on start
+      isOpen: false,
       isSpinning: false,
       isR2Held: false,
       currentPivotAngle: 0.08,
@@ -793,9 +817,13 @@
     let serialReader = null;
     let serialAxes = { lx: 0, ly: 0, rx: 0, ry: 0 };
 
-    let keys = { r: false, f: false, b: false, e: false, q: false, arrowDown: false };
+    // KEYBOARD INPUT TRACKING
+    let keys = {
+      w: false, a: false, s: false, d: false,
+      r: false, f: false, b: false, e: false, q: false, g: false,
+      arrowUp: false, arrowDown: false, arrowLeft: false, arrowRight: false
+    };
 
-    // ANIMATED DROP/STACKING ENGINE
     const animatingScores = [];
 
     function triggerRelease() {
@@ -814,10 +842,9 @@
         const goal = goalsList[g];
         const distToGoal = Math.hypot(clawWorldX - goal.x, clawWorldZ - goal.z);
 
-        if (distToGoal <= 0.25) { // Lined up with aligner right against goal
+        if (distToGoal <= 0.25) {
           const goalTopWorldY = FIELD_RAISE_HEIGHT + goal.currentY;
 
-          // Lift height requirement: holding element above current stack top
           if (clawWorldY >= goalTopWorldY - 0.02) {
             const held = claw.heldStack;
             let canScore = false;
@@ -826,7 +853,6 @@
             let nextTopType = goal.topType;
 
             if (goal.topType === 'none') {
-              // 1. EMPTY GOAL: Single pin required first
               if (held.type === 'pin' && (goal.pinCount + 1 <= goal.maxPins)) {
                 canScore = true;
                 scoredMesh = createPinMesh(held.colorTop, held.colorBot);
@@ -839,7 +865,6 @@
                 goal.scoredPins.push({ type: 'pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
               }
             } else if (goal.topType === 'pin') {
-              // 2. ON TOP OF A PIN
               if (held.type === 'stack' && (goal.cupCount + 1 <= goal.maxCups) && (goal.pinCount + 1 <= goal.maxPins)) {
                 canScore = true;
                 scoredMesh = (held.isInverted) ? createInvertedWallStackMesh() : createStackMesh(held.colorTop, held.colorBot);
@@ -872,7 +897,6 @@
                 goal.scoredPins.push({ type: 'pin', colorTop: held.colorTop, colorBot: held.colorBot, coveredByOpaque: false });
               }
             } else if (goal.topType === 'cup') {
-              // 3. ON TOP OF A SINGLE CUP: Single pin only
               if (held.type === 'pin' && (goal.pinCount + 1 <= goal.maxPins)) {
                 canScore = true;
                 scoredMesh = createPinMesh(held.colorTop, held.colorBot);
@@ -898,7 +922,6 @@
                 targetY: targetY
               });
 
-              // Animate falling into place smoothly
               const initialLocalY = clawWorldY - FIELD_RAISE_HEIGHT;
               scoredMesh.position.y = initialLocalY;
 
@@ -929,7 +952,6 @@
         }
       }
 
-      // Standard ground release if not scored into goal
       if (!scoredInGoal) {
         clawPayloadGroup.remove(claw.heldStack.mesh);
 
@@ -988,9 +1010,35 @@
       }
     }
 
+    function triggerLoaderToggle(loaderId) {
+      const ldr = loadersList.find(l => l.id === loaderId);
+      if (ldr) {
+        ldr.isOpen = !ldr.isOpen;
+        const btn = document.getElementById(`loaderBtn${ldr.id}`);
+        if (btn) {
+          if (ldr.isOpen) {
+            btn.classList.add('active');
+            btn.textContent = `${ldr.name} [UP]`;
+          } else {
+            btn.classList.remove('active');
+            btn.textContent = `${ldr.name} [DN]`;
+          }
+        }
+      }
+    }
+
+    // KEYBOARD EVENT LISTENERS
     window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
       const k = e.key;
       const kl = k.toLowerCase();
+
+      if (kl === 'w' || k === 'ArrowUp') keys.w = true;
+      if (kl === 's' || k === 'ArrowDown') keys.s = true;
+      if (kl === 'a' || k === 'ArrowLeft') keys.a = true;
+      if (kl === 'd' || k === 'ArrowRight') keys.d = true;
+
       if (kl === 'r') keys.r = true;
       if (kl === 'f') keys.f = true;
       if (kl === 'b') cascadeLift.isAutoReturning = true;
@@ -999,25 +1047,34 @@
         claw.isR2Held = true;
         claw.targetPivotAngle = 0.35;
       }
-      if (kl === 'q') {
-        triggerRelease();
-      }
-      if (k === 'ArrowDown' || e.code === 'ArrowDown') {
-        keys.arrowDown = true;
+      if (kl === 'q') triggerRelease();
+
+      if (kl === 'g') keys.g = true;
+
+      if (k === '1') triggerLoaderToggle(0);
+      if (k === '2') triggerLoaderToggle(1);
+      if (k === '3') triggerLoaderToggle(2);
+      if (k === '4') triggerLoaderToggle(3);
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        resetSimForMode(gameMode);
       }
     });
 
     window.addEventListener('keyup', (e) => {
       const k = e.key;
       const kl = k.toLowerCase();
+
+      if (kl === 'w' || k === 'ArrowUp') keys.w = false;
+      if (kl === 's' || k === 'ArrowDown') keys.s = false;
+      if (kl === 'a' || k === 'ArrowLeft') keys.a = false;
+      if (kl === 'd' || k === 'ArrowRight') keys.d = false;
+
       if (kl === 'r') keys.r = false;
       if (kl === 'f') keys.f = false;
-      if (kl === 'e') {
-        claw.isR2Held = false;
-      }
-      if (k === 'ArrowDown' || e.code === 'ArrowDown') {
-        keys.arrowDown = false;
-      }
+      if (kl === 'e') claw.isR2Held = false;
+      if (kl === 'g') keys.g = false;
     });
 
     btnLiftUp.addEventListener('mousedown', () => { cascadeLift.isManualUp = true; });
@@ -1046,7 +1103,14 @@
     btnClawOpen.addEventListener('mouseup', () => { claw.isR2Held = false; });
     btnClawOpen.addEventListener('mouseleave', () => { claw.isR2Held = false; });
 
-    // --- THREE.JS SCENE SETUP ---
+    for (let i = 0; i < 4; i++) {
+      const btn = document.getElementById(`loaderBtn${i}`);
+      if (btn) {
+        btn.addEventListener('click', () => triggerLoaderToggle(i));
+      }
+    }
+
+    // THREE.JS SCENE SETUP
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0c10);
 
@@ -1076,7 +1140,6 @@
     fillLight.position.set(-4, FIELD_RAISE_HEIGHT + 5, -4);
     scene.add(fillLight);
 
-    // Floor Carpet
     const venueFloorGeo = new THREE.PlaneGeometry(22, 22);
     const venueFloorMat = new THREE.MeshStandardMaterial({ color: 0x161922, roughness: 0.9, metalness: 0.1 });
     const venueFloor = new THREE.Mesh(venueFloorGeo, venueFloorMat);
@@ -1085,7 +1148,6 @@
     venueFloor.receiveShadow = true;
     scene.add(venueFloor);
 
-    // Driver Station Backdrop
     const backdropGroup = new THREE.Group();
     backdropGroup.position.set(0, 0, -HALF_FIELD - 0.85);
 
@@ -1109,7 +1171,6 @@
 
     scene.add(backdropGroup);
 
-    // --- 3D RAISED FIELD SETUP ---
     const fieldGroup = new THREE.Group();
     fieldGroup.position.y = FIELD_RAISE_HEIGHT;
     scene.add(fieldGroup);
@@ -1127,7 +1188,6 @@
     trimMesh.position.set(0, -0.015, 0);
     fieldGroup.add(trimMesh);
 
-    // Tiles
     for (let r = 0; r < 6; r++) {
       for (let c = 0; c < 6; c++) {
         const isEven = (r + c) % 2 === 0;
@@ -1145,7 +1205,6 @@
       }
     }
 
-    // --- FIELD TAPE LAYOUT ---
     const tapeMatWhite = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
     const tapeMatRed   = new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide });
     const tapeMatBlue  = new THREE.MeshBasicMaterial({ color: 0x3b82f6, side: THREE.DoubleSide });
@@ -1197,7 +1256,6 @@
     addTapeSegment(2 * S, -3 * S, 2 * S, -2 * S, tapeMatBlue);
     addTapeSegment(2 * S, -2 * S, 3 * S, -2 * S, tapeMatBlue);
 
-    // White Perimeter Walls
     const wallHeight = 0.28;
     const wallThickness = 0.025;
 
@@ -1237,7 +1295,6 @@
       fieldGroup.add(wallGroup);
     });
 
-    // --- HIGH STAKES 3-FACED WALL TOGGLES ---
     const wallTogglesList = [];
 
     function createWallToggle(x, z, axisAligned, quadIndex) {
@@ -1265,11 +1322,7 @@
       const rollerGroup = new THREE.Group();
       toggleGroup.add(rollerGroup);
 
-      const face0Mat = yellowMat;
-      const face1Mat = blueMat;
-      const face2Mat = redMat;
-
-      const faceMats = [face0Mat, face1Mat, face2Mat];
+      const faceMats = [yellowMat, blueMat, redMat];
       const faceAngleStep = (Math.PI * 2) / 3;
 
       for (let i = 0; i < 3; i++) {
@@ -1308,7 +1361,7 @@
         x: x,
         y: FIELD_RAISE_HEIGHT + wallHeight + 0.032,
         z: z,
-        quadIndex: quadIndex, // 1 (Q1), 2 (Q2), 3 (Q3), 4 (Q4)
+        quadIndex: quadIndex,
         axisAligned: axisAligned,
         length: length,
         radius: radius,
@@ -1323,19 +1376,17 @@
       return toggleObj;
     }
 
-    // Assign each wall toggle to its corresponding quadrant
-    createWallToggle(0, HALF_FIELD - 0.01, 'X', 2);                 // Front Toggle (Q2)
-    createWallToggle(HALF_FIELD - 0.01, 0, 'Z', 1);                 // Right Toggle (Q1)
-    createWallToggle(0, -HALF_FIELD + 0.01, 'X', 4);                // Back Toggle  (Q4)
-    createWallToggle(-HALF_FIELD + 0.01, 0, 'Z', 3);                // Left Toggle  (Q3)
+    createWallToggle(0, HALF_FIELD - 0.01, 'X', 2);
+    createWallToggle(HALF_FIELD - 0.01, 0, 'Z', 1);
+    createWallToggle(0, -HALF_FIELD + 0.01, 'X', 4);
+    createWallToggle(-HALF_FIELD + 0.01, 0, 'Z', 3);
 
     function isToggleRedActive(tgl) {
       const faceIndex = Math.round((tgl.targetAngle % (Math.PI * 2)) / ((Math.PI * 2) / 3)) % 3;
       const normalizedFace = (faceIndex + 3) % 3;
-      return normalizedFace === 2; // Face 2 is Red
+      return normalizedFace === 2;
     }
 
-    // --- GAME PIECE MESH FACTORIES ---
     function createPinMesh(colorTop = COLOR_YELLOW, colorBot = COLOR_YELLOW) {
       const group = new THREE.Group();
 
@@ -1363,7 +1414,6 @@
       return group;
     }
 
-    // REVERTED STANDARD UPRIGHT CUP (Dark Grey Base on Bottom, Transparent Cylinder on Top)
     function createCupMesh() {
       const group = new THREE.Group();
 
@@ -1393,7 +1443,6 @@
       return group;
     }
 
-    // INVERTED CUP (Dark Opaque Base on top, Transparent cone below)
     function createInvertedCupMesh() {
       const group = new THREE.Group();
 
@@ -1423,7 +1472,6 @@
       return group;
     }
 
-    // REVERTED STANDARD STACK (Standard Upright Cup + Pin Elevated Higher)
     function createStackMesh(colorTop = COLOR_YELLOW, colorBot = COLOR_YELLOW) {
       const group = new THREE.Group();
 
@@ -1437,7 +1485,6 @@
       return group;
     }
 
-    // INVERTED WALL STACK (Opaque Top Cup + Yellow-Yellow Pin)
     function createInvertedWallStackMesh() {
       const group = new THREE.Group();
 
@@ -1451,7 +1498,6 @@
       return group;
     }
 
-    // --- OPAQUE FIELD GOALS & SCORING MECHANICS SETUP ---
     const BASE_RADIUS = 0.07125;
     const TOP_RADIUS = 0.0444;
     const HOLE_RADIUS = 0.0300;
@@ -1471,10 +1517,10 @@
     const goalsList = [];
 
     function getQuadrantIndex(x, z) {
-      if (x >= 0 && z >= 0) return 1; // Q1 Front-Right
-      if (x < 0  && z >= 0) return 2; // Q2 Front-Left
-      if (x < 0  && z < 0)  return 3; // Q3 Back-Left
-      return 4;                       // Q4 Back-Right
+      if (x >= 0 && z >= 0) return 1;
+      if (x < 0  && z >= 0) return 2;
+      if (x < 0  && z < 0)  return 3;
+      return 4;
     }
 
     function createCadGoalMesh(cfg) {
@@ -1546,11 +1592,10 @@
       };
 
       goalsList.push(goalObj);
-      resetGoalContents(goalObj, false); // Default empty until reset mode
+      resetGoalContents(goalObj, false);
     }
 
     function resetGoalContents(goal, includePreloadPin) {
-      // Base goal CAD meshes consist of the first 6 meshes
       while (goal.goalGroup.children.length > 6) {
         goal.goalGroup.remove(goal.goalGroup.children[goal.goalGroup.children.length - 1]);
       }
@@ -1580,7 +1625,6 @@
 
     goalConfigs.forEach(cfg => createCadGoalMesh(cfg));
 
-    // --- MATCH LOADERS ---
     const LOADER_WIDTH = 0.1021;
     const LOADER_DEPTH = 0.095;
     const LOADER_HEIGHT = 0.5835;
@@ -1596,7 +1640,6 @@
 
     const loadersList = [];
 
-    // MATCHLOAD STACKS: OPAQUE ON TOP WITH YELLOW-YELLOW PIN (WALL STACK STYLE)
     function buildLoaderItemMesh(itemType, botPinColor) {
       if (itemType === 'pin') {
         return createPinMesh(COLOR_YELLOW, botPinColor);
@@ -1686,7 +1729,6 @@
 
     matchloaderTypeSelect.addEventListener('change', reloadMatchloaders);
 
-    // --- DYNAMIC GAME OBJECT ENGINE & PHYSICS ---
     const dynamicObjects = [];
 
     function spawnDynamicObject(type, x, z, configOpts = {}) {
@@ -1742,11 +1784,6 @@
       return dynObj;
     }
 
-    // =========================================================================
-    // ACCURATE OFFICIAL HIGH STAKES FIELD INITIAL SETUP
-    // =========================================================================
-
-    // 1. FOUR FLOWER PARTS (FLOWER CENTER CUPS ARE STANDARD UPRIGHT CUPS)
     const flowerPositions = [
       { x: -S * 2.2, z:  S * 2.2 },
       { x: -S * 1.3, z:  S * 1.3 },
@@ -1779,7 +1816,6 @@
       });
     });
 
-    // 2. VERTICES OF THE CENTER LITTLE WHITE SQUARE
     const centerSquareVertices = [
       { x: 0,  z:  S, top: COLOR_RED,  bot: COLOR_BLUE },
       { x: -S, z:  0, top: COLOR_BLUE, bot: COLOR_RED },
@@ -1795,7 +1831,6 @@
       });
     });
 
-    // 3. WALL GOAL STACKS - BEHIND EACH GOAL
     const WALL_TOUCH = HALF_FIELD - 0.0675;
 
     const wallGoalLocations = [
@@ -1820,7 +1855,6 @@
       spawnDynamicObject('cup', loc.x - dx, loc.z - dz, { isVertical: true, isInverted: true });
     });
 
-    // 4. ALLIANCE GOAL STACKS
     const allianceGoalStacks = [
       { x: 1 * S, z: 1 * S },
       { x: 2 * S, z: 2 * S },
@@ -1836,7 +1870,6 @@
       });
     });
 
-    // --- DRIVETRAIN & ROBOT ASSEMBLY ---
     const robotGroup = new THREE.Group();
     robotGroup.position.y = FIELD_RAISE_HEIGHT;
     scene.add(robotGroup);
@@ -1990,7 +2023,6 @@
     rearShaftMesh.castShadow = true;
     chassisGroup.add(rearShaftMesh);
 
-    // STRUCTURAL DELRIN ALIGNER
     const alignerGroup = new THREE.Group();
     const alignerXOffset = -0.180;
     const alignerRadius = BASE_RADIUS + 0.006;
@@ -2060,7 +2092,6 @@
       chassisGroup.add(lw);
     });
 
-    // --- CASCADE LIFT ASSEMBLY ---
     const cascadeMountGroup = new THREE.Group();
     cascadeMountGroup.position.set(0.02, 0.05, 0);
     cascadeMountGroup.rotation.y = Math.PI / 2;
@@ -2107,7 +2138,6 @@
     stage3Group.position.set(0, 0, REAR_DEPTH_STAGE_OFFSET);
     stage2Group.add(stage3Group);
 
-    // --- REAR LONG L-CHANNELS, CROSS C-CHANNEL & SYMMETRICAL 48T GEAR SPINNER ---
     const rearSupportGroup = new THREE.Group();
     robotGroup.add(rearSupportGroup);
 
@@ -2174,7 +2204,6 @@
       else rightGearRotatingGroup = gearRotGroup;
     });
 
-    // --- COMPACT CLAW & CARRIAGE ---
     const clawYPos = 0.06;
     const PIVOT_SPACING = 0.14;
 
@@ -2217,7 +2246,6 @@
     clawPayloadGroup.position.set(0, clawYPos - 0.035, -0.135);
     stage3Group.add(clawPayloadGroup);
 
-    // --- INITIAL SINGLE PIN PRELOAD AT SPAWN ---
     function attachSpawnPreloadPin() {
       clawPayloadGroup.clear();
       const preloadPinMesh = createPinMesh(COLOR_YELLOW, COLOR_RED);
@@ -2237,7 +2265,6 @@
 
     attachSpawnPreloadPin();
 
-    // BUMPER BOUNDING BOXES
     const chassisSubBoxes = [
       { minX: -0.24, maxX: OUT_CH_LEN / 2, minZ: rightInnerZ, maxZ: rightOuterZ },
       { minX: -0.24, maxX: OUT_CH_LEN / 2, minZ: leftOuterZ, maxZ: leftInnerZ },
@@ -2257,7 +2284,6 @@
       document.getElementById(tabId).classList.add('active');
     }
 
-    // --- GAME FLOW, COUNTDOWN & SKILLS SCORING LOGIC ---
     function resetSimForMode(mode) {
       gameMode = mode;
       robot.x = START_X;
@@ -2281,8 +2307,6 @@
       attachSpawnPreloadPin();
       reloadMatchloaders();
 
-      // IN DRIVER SKILLS: NEUTRAL & CENTER GOALS START EMPTY (NO PRELOAD PIN)
-      // IN HEAD-TO-HEAD (FREEPLAY): NEUTRAL & CENTER GOALS START WITH PRELOAD PIN
       const isSkills = (mode === 'skills' || mode === 'countdown');
       goalsList.forEach(goal => {
         resetGoalContents(goal, !isSkills);
@@ -2346,7 +2370,7 @@
     }
 
     function checkRobotPlaneBreakMiddle() {
-      const centerTileHalfSize = S / 2; // 0.3048m
+      const centerTileHalfSize = S / 2;
       const rx = Math.abs(robot.x);
       const rz = Math.abs(robot.z);
       return (rx <= centerTileHalfSize + 0.18) && (rz <= centerTileHalfSize + 0.18);
@@ -2441,7 +2465,7 @@
     window.addEventListener('gamepaddisconnected', (e) => {
       if (gamepadIndex === e.gamepad.index) {
         gamepadIndex = null;
-        statusBadge.textContent = 'Controller Disconnected';
+        statusBadge.textContent = 'Keyboard + Controller Active';
         statusBadge.classList.remove('status-connected');
       }
     });
@@ -2548,12 +2572,20 @@
         }
       }
 
+      let kbForward = 0;
+      if (keys.w) kbForward += 1.0;
+      if (keys.s) kbForward -= 1.0;
+
+      let kbTurn = 0;
+      if (keys.a) kbTurn += 1.0;
+      if (keys.d) kbTurn -= 1.0;
+
+      const forward = Math.max(-1.0, Math.min(1.0, -axisLY + kbForward));
+      const turn = Math.max(-1.0, Math.min(1.0, -axisRX * config.turnSensitivity + (kbTurn * config.turnSensitivity)));
+
       if (keys.r || cascadeLift.isManualUp) btnL2Held = true;
       if (keys.f || cascadeLift.isManualDown) btnL1Held = true;
-      if (keys.arrowDown || gear48TState.isRotating) btnGearDown = true;
-
-      const forward = -axisLY;
-      const turn = -axisRX * config.turnSensitivity;
+      if (keys.g || gear48TState.isRotating) btnGearDown = true;
 
       let targetLeftPct = Math.max(-1.0, Math.min(1.0, forward + turn));
       let targetRightPct = Math.max(-1.0, Math.min(1.0, forward - turn));
@@ -2589,7 +2621,6 @@
     function updatePhysics(dt, targets) {
       if (dt <= 0) return;
 
-      // REPLAY PLAYBACK ENGINE
       if (gameMode === 'replay') {
         replayPlaybackTime += dt;
         if (replayPlaybackTime >= 60.0 || recordedMatchFrames.length === 0) {
@@ -2609,7 +2640,6 @@
           }
         }
 
-        // Apply Frame Pose to 3D Scene
         robot.x = frame.robot.x;
         robot.z = frame.robot.z;
         robot.heading = frame.robot.heading;
@@ -2637,7 +2667,6 @@
           ldr.itemGroup.visible = frame.loaders[idx].visible;
         });
 
-        // Recreate Payload Mesh
         clawPayloadGroup.clear();
         if (frame.held) {
           let heldMesh;
@@ -2647,7 +2676,6 @@
           clawPayloadGroup.add(heldMesh);
         }
 
-        // Recreate Dynamic Objects
         dynamicObjects.forEach(d => scene.remove(d.group));
         dynamicObjects.length = 0;
 
@@ -2661,7 +2689,6 @@
           });
         });
 
-        // Recreate Goals
         goalsList.forEach(goal => {
           const gFrame = frame.goals.find(g => g.id === goal.id);
           if (gFrame) {
@@ -2674,13 +2701,12 @@
         return;
       }
 
-      // SKILLS MATCH RECORDING
       if (gameMode === 'skills') {
         timerRemaining = Math.max(0.0, timerRemaining - dt);
         updateTimerDisplay();
 
         recordSampleTimer += dt;
-        if (recordSampleTimer >= 0.033) { // 30 FPS Sampling
+        if (recordSampleTimer >= 0.033) {
           recordSampleTimer = 0;
           recordedMatchFrames.push({
             time: 60.0 - timerRemaining,
@@ -2713,7 +2739,6 @@
         }
       }
 
-      // ANIMATED STACKING DROP INTERPOLATION
       for (let i = animatingScores.length - 1; i >= 0; i--) {
         const anim = animatingScores[i];
         anim.currentY -= anim.speed * dt;
@@ -2724,7 +2749,6 @@
         anim.mesh.position.y = anim.currentY;
       }
 
-      // 48T GEAR ROTATION
       if (targets.btnGearDown) {
         gear48TState.angleRad += GEAR_ROTATE_SPEED_RAD_PER_SEC * dt;
       }
@@ -2734,7 +2758,6 @@
       leftGearRotatingGroup.updateMatrixWorld(true);
       rightGearRotatingGroup.updateMatrixWorld(true);
 
-      // ALL-ANGLE TOGGLE ROTATION
       const tipRadius = DOUBLE_SPINNER_BAR_LEN / 2;
 
       const leftTip0  = new THREE.Vector3( tipRadius, 0, 0).applyMatrix4(leftGearRotatingGroup.matrixWorld);
@@ -2790,7 +2813,6 @@
         }
       });
 
-      // CASCADE LIFT MOVEMENT
       if (targets.btnBBPressed) cascadeLift.isAutoReturning = true;
 
       if (targets.btnL2Held) {
@@ -2812,7 +2834,6 @@
       stage2Group.position.y = (12.0 * 0.0254) * liftRatio;
       stage3Group.position.y = (10.0 * 0.0254) * liftRatio;
 
-      // MOTORIZED CLAW ANIMATION
       claw.currentPivotAngle += (claw.targetPivotAngle - claw.currentPivotAngle) * Math.min(1.0, 10.0 * dt);
       leftArmGroup.rotation.y = -claw.currentPivotAngle;
       rightArmGroup.rotation.y = claw.currentPivotAngle;
@@ -2823,7 +2844,6 @@
         rightFlexWheel1.rotation.y = -claw.wheelSpinAngle;
       }
 
-      // AUTOMATIC PROXIMITY MATCHLOADER LIFTING
       const AUTO_LOADER_DIST = TILE_SIZE * 1.15;
       loadersList.forEach(ldr => {
         const distToRobot = Math.hypot(robot.x - ldr.x, robot.z - ldr.z);
@@ -2848,7 +2868,6 @@
         ldr.chuteGroup.position.y = ldr.currentLift;
       });
 
-      // DRIVETRAIN DYNAMICS
       const calculateWheelAcceleration = (currentSpeed, targetSpeed) => {
         const speedError = targetSpeed - currentSpeed;
         if (Math.abs(speedError) < 0.0001) return 0;
@@ -2888,7 +2907,6 @@
       robot.x += robot.vx * dt;
       robot.z += robot.vz * dt;
 
-      // REAL-TIME 3D WORLD POSITION OF CLAW TIP & PAYLOAD
       const payloadWorldVec = new THREE.Vector3();
       clawPayloadGroup.getWorldPosition(payloadWorldVec);
       const clawWorldX = payloadWorldVec.x;
@@ -2896,7 +2914,6 @@
 
       const isLiftAtBase = cascadeLift.currentInches <= 0.5;
 
-      // 1. Smooth Suction Intake
       if (claw.intakingObject) {
         claw.intakeProgress += dt / 0.25;
         claw.intakingObject.x += (clawWorldX - claw.intakingObject.x) * Math.min(1.0, 14.0 * dt);
@@ -2940,7 +2957,6 @@
         }
       }
 
-      // 2. INTAKE TRIGGER
       if (claw.isR2Held && claw.isOpen && !claw.heldStack && !claw.intakingObject && isLiftAtBase && gameMode !== 'countdown' && gameMode !== 'gameover') {
         for (let i = 0; i < dynamicObjects.length; i++) {
           const obj = dynamicObjects[i];
@@ -2995,7 +3011,6 @@
         }
       }
 
-      // PIN & CUP DYNAMIC COLLISION RESOLUTION
       for (let i = 0; i < dynamicObjects.length; i++) {
         for (let j = i + 1; j < dynamicObjects.length; j++) {
           const o1 = dynamicObjects[i];
@@ -3031,7 +3046,6 @@
         }
       }
 
-      // Dynamic Object Physics
       const BOUND = HALF_FIELD - 0.015;
 
       for (let i = dynamicObjects.length - 1; i >= 0; i--) {
@@ -3119,7 +3133,6 @@
           }
         });
 
-        // BUMPER & ALIGNER COLLISION PHYSICS
         if (obj.releaseImmunityTimer <= 0) {
           const rdx = obj.x - robot.x;
           const rdz = obj.z - robot.z;
@@ -3167,7 +3180,6 @@
         obj.group.position.set(obj.x, worldY, obj.z);
       }
 
-      // Wall Perimeter Collisions
       const w2Front = 0.265;
       const w2Rear = OUT_CH_LEN / 2;
       const h2 = (rightOuterZ - leftOuterZ) / 2;
@@ -3190,7 +3202,6 @@
         else if (wz > BOUND) { robot.z = BOUND - rz; robot.vx = 0; }
       });
 
-      // Goal Collisions
       goalsList.forEach(goal => {
         const dx = goal.x - robot.x;
         const dz = goal.z - robot.z;
@@ -3268,7 +3279,6 @@
         }
       });
 
-      // Matchloaders Collisions
       loadersList.forEach(ldr => {
         const dx = ldr.x - robot.x;
         const dz = ldr.z - robot.z;
