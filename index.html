@@ -47,7 +47,7 @@
     #hub-back:hover, #hub-back:focus-visible, #webapps-back:hover, #webapps-back:focus-visible { background: #22303c; outline: none; }
     /* Hero: a tall media banner. Games/apps get a blurred backdrop of their icon with the crisp icon beside
        the text (icons are small, so they are never stretched full-bleed); videos play muted behind the text. */
-    #featured-banner { position: relative; overflow: hidden; isolation: isolate; display: flex; gap: 32px; align-items: center; justify-content: space-between; min-height: clamp(280px, 40vh, 420px); border: 2px solid transparent; background: linear-gradient(120deg, #1d3a44 0, #18212b 60%); border-radius: 20px; padding: 40px 48px; margin-bottom: 32px; box-shadow: 0 18px 44px #0007; cursor: pointer; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    #featured-banner { position: relative; overflow: hidden; isolation: isolate; display: flex; gap: 32px; align-items: center; justify-content: space-between; min-height: clamp(280px, 40vh, 420px); border: 2px solid transparent; background: linear-gradient(120deg, #1d3a44 0, #18212b 60%); border-radius: 20px; padding: 40px 88px; margin-bottom: 32px; box-shadow: 0 18px 44px #0007; cursor: pointer; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
     #featured-banner:hover, #featured-banner:focus-visible { transform: translateY(-4px); border-color: var(--focus); box-shadow: 0 22px 54px #000a; outline: none; }
     .hero-media, .hero-shade { position: absolute; inset: 0; z-index: -2; }
     .hero-shade { z-index: -1; background: linear-gradient(90deg, #0b1016f0 0, #0b1016c4 40%, #0b101630 100%); }
@@ -59,6 +59,13 @@
     .featured-icon img { width: 100%; height: 100%; object-fit: cover; }
     .featured-info, .featured-icon, .hero-media { transition: opacity .35s ease; }
     #featured-banner.swapping .featured-info, #featured-banner.swapping .featured-icon, #featured-banner.swapping .hero-media { opacity: 0; }
+    .hero-arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: #0b1016a6; border: 2px solid #ffffff3d; color: var(--ink); cursor: pointer; transition: background .16s ease, color .16s ease, opacity .16s ease, transform .16s ease; }
+    .hero-arrow.prev { left: 16px; }
+    .hero-arrow.next { right: 16px; }
+    .hero-arrow:hover { background: var(--focus); border-color: var(--focus); color: #0b1016; transform: translateY(-50%) scale(1.08); }
+    .hero-arrow.off { opacity: .3; cursor: default; }
+    .hero-arrow.off:hover { background: #0b1016a6; border-color: #ffffff3d; color: var(--ink); transform: translateY(-50%); }
+    .hero-arrow svg { width: 26px; height: 26px; }
     #featured-banner.is-video .featured-icon { display: none; }
     #featured-banner.is-video .featured-info { max-width: 62%; }
     .featured-label { margin: 0; color: var(--accent); font-size: .95rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
@@ -84,7 +91,7 @@
     .new-pill { position: absolute; top: 14px; right: 14px; border-radius: 999px; background: var(--focus); color: #10151c; font-size: .7rem; font-weight: 800; letter-spacing: .1em; padding: 3px 10px; }
     .coming-soon-badge { position: absolute; top: 14px; right: 14px; border: 1px solid #ffffff33; border-radius: 999px; background: #10151c99; color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; white-space: nowrap; }
     @media (max-width: 900px) { #categories { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; min-height: 0; padding: 28px 22px; } .featured-info, #featured-banner.is-video .featured-info { max-width: 100%; } .featured-icon { width: 110px; font-size: 3rem; } }
+    @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; min-height: 0; padding: 28px 56px; } .hero-arrow { width: 38px; height: 38px; } .hero-arrow.prev { left: 8px; } .hero-arrow.next { right: 8px; } .hero-arrow svg { width: 20px; height: 20px; } .featured-info, #featured-banner.is-video .featured-info { max-width: 100%; } .featured-icon { width: 110px; font-size: 3rem; } }
     #empty, #error { color: var(--muted); padding: 30px 0; font-size: 1.2rem; }
     #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
     #player.open { display: block; }
@@ -181,6 +188,8 @@
           <span class="hero-cta" id="hero-cta">&#9654; Play</span>
         </div>
         <div class="featured-icon" id="featured-icon" aria-hidden="true"></div>
+        <span class="hero-arrow prev off" id="hero-prev" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span>
+        <span class="hero-arrow next" id="hero-next" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></span>
       </div>
       <div id="categories" aria-live="polite"></div>
       <section id="home-stats" aria-label="This week at the kiosk" hidden></section>
@@ -283,6 +292,8 @@
     const heroMedia = document.getElementById("hero-media");
     const featuredLabel = document.getElementById("featured-label");
     const heroCta = document.getElementById("hero-cta");
+    const heroPrev = document.getElementById("hero-prev");
+    const heroNext = document.getElementById("hero-next");
     const featuredTitle = document.getElementById("featured-title");
     const featuredStudent = document.getElementById("featured-student");
     const featuredBlurb = document.getElementById("featured-blurb");
@@ -788,6 +799,7 @@
     let heroTimer = null;
     let heroAdvancing = false;
     const heroSeen = new Set();
+    const heroHistory = [];   // what the hero has shown, newest last, so Back can return to it
     let heroLastKind = null;
     let heroVideos = [];
     let heroVideo = null;
@@ -864,6 +876,32 @@
       });
     }
 
+    // The arrows and the left/right keys (or d-pad) on the hero. Next follows the shuffled
+    // order; Back returns to what was shown before. Either one restarts the full timer.
+    function heroStep(direction) {
+      if (heroAdvancing) return;
+      let target = null;
+      if (direction < 0) {
+        if (heroHistory.length < 2) return;
+        target = heroHistory[heroHistory.length - 2];
+      }
+      heroAdvancing = true;
+      clearTimeout(heroTimer);
+      (direction > 0 ? refreshHeroVideos() : Promise.resolve()).then(() => {
+        featuredBanner.classList.add("swapping");
+        setTimeout(() => {
+          if (direction < 0) heroHistory.pop();
+          renderFeatured(target);
+          updateLandingFocusables();
+          requestAnimationFrame(() => featuredBanner.classList.remove("swapping"));
+        }, 350);
+      });
+    }
+    [[heroPrev, -1], [heroNext, 1]].forEach(([arrow, direction]) => arrow.addEventListener("click", event => {
+      event.stopPropagation();   // don't also launch the featured item
+      heroStep(direction);
+    }));
+
     function mountHeroVideo(item) {
       const video = document.createElement("video");
       video.className = "hero-video";
@@ -888,10 +926,12 @@
       video.src = "/" + item.gallery + "/" + encodeURIComponent(item.file);
     }
 
-    function renderFeatured() {
+    function renderFeatured(forced) {
       clearTimeout(heroTimer);
       heroAdvancing = false;
-      const item = featuredGame();
+      const item = forced || featuredGame();
+      if (item && !forced) { heroHistory.push(item); if (heroHistory.length > 30) heroHistory.shift(); }
+      heroPrev.classList.toggle("off", heroHistory.length < 2);
       currentFeaturedGame = item;
       featuredBanner.hidden = !item;
       if (heroVideo) { heroVideo.pause(); heroVideo = null; }
@@ -1495,6 +1535,7 @@
         const columns = window.innerWidth <= 600 ? 1 : window.innerWidth <= 900 ? 2 : 3;
         if (index < gridStart) {
           if (direction === "down") next = gridStart;
+          else if (direction === "left" || direction === "right") { heroStep(direction === "left" ? -1 : 1); return true; }
         } else {
           const gridIndex = index - gridStart;
           if (direction === "right") next = index + 1;
