@@ -13,6 +13,6 @@ python3 "$HUB_DIR/server.py" --port "$PORT" &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null' EXIT INT TERM
 
-open -a "Google Chrome" --args --kiosk "http://127.0.0.1:$PORT/"
+open -a "Google Chrome" --args --kiosk --mute-audio "http://127.0.0.1:$PORT/"
 echo "The hub is running. Leave this window open."
 wait "$SERVER_PID"
