@@ -246,10 +246,39 @@ different one every 5 minutes (it never repeats the same one back to back).
 
 After 20 seconds with nobody touching the hub, it fades into attract mode and
 cycles through the featured list, six seconds each, showing the icon, title,
-student and blurb. If nothing is marked featured yet it cycles through every
+student and blurb (mixed in with the code, SQL and video slides described below). If nothing is marked featured yet it cycles through every
 game instead, so the screen is never blank. Any mouse movement, click, key or
 controller input returns to the tile grid immediately. Attract mode never
 appears while a game is actually being played.
+
+## Standby slides: code, SQL and video clips
+
+Besides the featured games and apps, standby mode (attract mode) also shows
+three other kinds of slide, dealt out in turn so each pass is a mix. Every
+pass is reshuffled, with at most 8 games/apps, 6 code, 5 SQL and 4 video slides.
+
+- **Student code** – a whole Python function from `python_projects/` or
+  `db_projects/`, syntax-highlighted, with its lines appearing one by one.
+- **SQL** – `SELECT` queries and `CREATE TABLE` schemas from the database
+  projects (found in `.sql` files, in the Python code, and in the `.db` files).
+- **Video clips** – an 8 second muted clip from a random point in one of the
+  escape-room videos in `escape-rooms/`. Add a video there and it joins the mix
+  the next time standby starts; with no videos, none are shown. A clip that
+  will not play is skipped.
+
+Code and SQL come from `snippets.json`, built by `snippet_scan.py` (it runs from
+`start.command` and after each update from GitHub; run it by hand with
+`python3 snippet_scan.py`). It never uses `INSERT` statements (that is the
+sample data) and skips anything that looks like an email address, a hard-coded
+password or a long number, plus teacher copies of files. Check the
+slides after adding a project, since a snippet can still be dull or contain a
+comment you would rather not show.
+
+To remove a snippet, set `"hidden": true` on it in `snippets.json`. To rename a
+project on its slides, add `"title": "..."`. Both survive re-scans. Code and
+SQL slide times grow with the number of lines (5 seconds plus 0.6 s per line,
+up to 12 s); clip length is `CLIP_SECONDS` and the per-pass mix is `DECK_CAPS`
+in `index.html`.
 
 ## Keep these files intact
 

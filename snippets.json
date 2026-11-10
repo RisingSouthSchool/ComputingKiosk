@@ -1,0 +1,529 @@
+[
+  {
+    "id": "apex-custom-garage:code:03c789d4",
+    "kind": "code",
+    "project": "Apex Custom Garage",
+    "year": 11,
+    "file": "divgame.py",
+    "text": "def show_menu(money):\n    print(\"\\nMoney:\", money)\n    print(\"\\n1. Shop\")\n    print(\"2. Dyno Test\")\n    print(\"3. Race\")\n    print(\"4. Exit\")"
+  },
+  {
+    "id": "apex-custom-garage:code:236c0ab5",
+    "kind": "code",
+    "project": "Apex Custom Garage",
+    "year": 11,
+    "file": "divgame.py",
+    "text": "def dyno(speed, power):\n\n    total = speed + power\n\n    print(\"\\n--- DYNO RESULTS ---\")\n    print(\"Speed:\", speed)\n    print(\"Power:\", power)\n    print(\"Total Score\", total)"
+  },
+  {
+    "id": "artist-tracker:code:2c7cde67",
+    "kind": "code",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "def sort_tracks():\n    cursor.execute(\"\"\"\n        SELECT TrackName, Duration\n        FROM Track\n        ORDER BY Duration DESC\n    \"\"\")\n    results = cursor.fetchall()\n    for track in results:\n        print(track)"
+  },
+  {
+    "id": "artist-tracker:code:710142db",
+    "kind": "code",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "def count_tracks(): #function to count the number of tracks per person\n    cursor.execute(\"\"\"\n        SELECT Artist.ArtistName,\n            COUNT(DISTINCT Collaboration.TrackID)\n        FROM Artist\n        LEFT JOIN Collaboration\n        ON Artist.ArtistID = Collaboration.ArtistID\n        GROUP BY Artist.ArtistID, Artist.ArtistName\n    \"\"\")\n    results = cursor.fetchall() #gets every result\n\n    for artist in results:\n        print(artist) #prints every artist"
+  },
+  {
+    "id": "artist-tracker:code:99195725",
+    "kind": "code",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "def view_tracks(): #function to view all tracks\n#selects track ID, track name, album name and duration\n#gets this info FROM the track table\n#joins the album table to display the album that each track is in\n    cursor.execute(\"\"\"\n        SELECT Track.TrackID, Track.TrackName,\n            Album.AlbumName, Track.Duration\n        FROM Track\n        INNER JOIN Album\n        ON Track.AlbumID = Album.AlbumID\n    \"\"\")\n\n    tracks = cursor.fetchall() # gets every track\n\n    for track in tracks: #loops each track\n        print(track) #prints each track in the loop"
+  },
+  {
+    "id": "artist-tracker:code:c45f6aa9",
+    "kind": "code",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "def view_artists(): #function to view all artists in the database\n    cursor.execute(\"SELECT * FROM Artist\") #Selects every artist\n    artists = cursor.fetchall()\n\n    for artist in artists: #loops for each artist\n        print(artist) #prints each artist"
+  },
+  {
+    "id": "blackjack:code:0b6a7726",
+    "kind": "code",
+    "project": "Blackjack",
+    "year": 11,
+    "file": "functions.py",
+    "text": "def player_win_check():\n    global bet_size\n    global playerfunds\n\n    if player_win == True:\n        print(f\"You won {bet_size}!\")\n        print()\n\n        playerfunds = playerfunds + bet_size\n        print(f\"Total Funds ${playerfunds}!\")\n        print()"
+  },
+  {
+    "id": "blackjack:code:e26151f7",
+    "kind": "code",
+    "project": "Blackjack",
+    "year": 11,
+    "file": "functions.py",
+    "text": "def validate_score(player_hand):\n    global bet_size\n    global playerfunds\n\n    if calculate_hand(player_hand) > 21:\n        print(\"You bust!\")\n        playerfunds = playerfunds - bet_size\n\n        print(f\"You lost ${bet_size}\")\n        print(f\"Total Funds: ${playerfunds}\")\n        print()\n\n        return False\n    return True"
+  },
+  {
+    "id": "chopsticks:code:1a1260f0",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 1.0.py",
+    "text": "def shutdown():\n    print(\"The game will now shut down Via Forced Error.\")\n    print(\"Executing Forced Error...\")\n    print(\"...\")\n    print(\"Have A Nice Day!\")\n    print(\"\")\n    print(force_error.lower) # Will force an error, stopping the code. #"
+  },
+  {
+    "id": "chopsticks:code:1a1260f0",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 2.0 copy.py",
+    "text": "def shutdown():\n    print(\"The game will now shut down Via Forced Error.\")\n    print(\"Executing Forced Error...\")\n    print(\"...\")\n    print(\"Have A Nice Day!\")\n    print(\"\")\n    print(force_error.lower) # Will force an error, stopping the code. #"
+  },
+  {
+    "id": "chopsticks:code:307d94d6",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 1.0.py",
+    "text": "def P1_surrender():\n    print(\"Player 1 surrenders!\")\n    print(\"Player 2 Wins!\")\n    print(\"Now Commencing Auto Shutdown...\")\n    close_game()"
+  },
+  {
+    "id": "chopsticks:code:307d94d6",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 2.0 copy.py",
+    "text": "def P1_surrender():\n    print(\"Player 1 surrenders!\")\n    print(\"Player 2 Wins!\")\n    print(\"Now Commencing Auto Shutdown...\")\n    close_game()"
+  },
+  {
+    "id": "chopsticks:code:dddee114",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 1.0.py",
+    "text": "def terminate_code():\n    print(\"\")\n    print(\"Preparing Termination...\")\n    print(\"...\")\n    print(\"Preperations Complete!\")\n    print(\"\")\n    shutdown"
+  },
+  {
+    "id": "chopsticks:code:dddee114",
+    "kind": "code",
+    "project": "Chopsticks",
+    "year": 11,
+    "file": "Chopsticks 2.0 copy.py",
+    "text": "def terminate_code():\n    print(\"\")\n    print(\"Preparing Termination...\")\n    print(\"...\")\n    print(\"Preperations Complete!\")\n    print(\"\")\n    shutdown"
+  },
+  {
+    "id": "piano-store:code:4cd50d8f",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def fetchList():\n    results = cursor.fetchall()\n    n: int = 0\n\n    if not results:\n        print(\"No data found.\")\n        return\n\n    QOLext(results[0])\n    for row in results:\n        # have n increase for each print of the for statement.\n        print(f\"{n+1}: {row}\")\n        n += 1\n    QOLext(results[0])"
+  },
+  {
+    "id": "piano-store:code:719d9b06",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def validateEmptyTable(table):\n    if not table:  # if there are no rows detected it returns false\n        print(\"No data available.\")\n        return False\n\n    return True"
+  },
+  {
+    "id": "piano-store:code:a92c4eb6",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def fetchdata():\n    results = cursor.fetchall()  # fetch all of the results in a given table\n    count: int = 0\n\n    if not results:\n        print(\"No data found.\")\n        return\n\n    QOL(results[0])  # gathers the data of row one in the database\n    for row in results:\n        print(f\"{row}\")  # print each row of data from SQL\n    QOL(results[0])\n    while count < 3:\n        print(f\".\", end=\" \", flush=True)\n        count += 1\n        time.sleep(1)"
+  },
+  {
+    "id": "piano-store:code:b98df60e",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def validateDate(date):\n    try:\n        datetime.strptime(\n            date, \"%d/%m/%Y\"\n        )  # checks to see if the input matches the date format\n        return True\n    except ValueError:\n        return False"
+  },
+  {
+    "id": "piano-store:code:be8df803",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def viewTables(requestedID, requestedTable):\n    cursor.execute(f\"\"\"SELECT {requestedID} FROM {requestedTable}\"\"\")\n    fetchList()\n\n    cursor.execute(f\"\"\"SELECT {requestedID} FROM {requestedTable}\"\"\")\n    allRows = cursor.fetchall()\n    if not allRows:  # if theres no rows detected it returns false\n        print(\"No data available.\")\n        return\n    return allRows"
+  },
+  {
+    "id": "piano-store:code:d57ede62",
+    "kind": "code",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "bridge.py",
+    "text": "def autoInsertPrimaryKey(requestedID, requestedTable):\n    cursor.execute(f\"\"\"SELECT MAX({requestedID}) FROM {requestedTable}\"\"\")\n    result = cursor.fetchone()[0]  # fetches the highest primary key\n\n    # adds 1 to the current highest primary key\n    valueOne = 1 if result is None else result + 1\n\n    print(f\"Automatic primary key selected: {valueOne}\")\n    return valueOne  # returns the primary key"
+  },
+  {
+    "id": "restaurant-orders:code:67425060",
+    "kind": "code",
+    "project": "Restaurant Orders",
+    "year": 11,
+    "file": "restaurant.py",
+    "text": "def ask_question(question, correct_answer):\n   print(\"\\n\" + question)\n   user_answer =  input(\"Your answer: \")\n\n\n   if user_answer.strip().replace(\".\", \"\").lower() == correct_answer.lower():\n       print(\"Correct! You have earned 10 dollars Congratulations!\")\n       return 10\n   else:\n       print(f\"Wrong! The Correct answer was!: {correct_answer}.\")\n       return 0"
+  },
+  {
+    "id": "rock-paper-scissors:code:4a8cad95",
+    "kind": "code",
+    "project": "Rock Paper Scissors",
+    "year": 11,
+    "file": "paper_scissors_rock.py",
+    "text": "def start_game():\n\n    print(\"Actions = 'rock' 'paper' 'scissors' or 'quit'\")\n    action = input(\"Enter a move: \").lower()\n\n    while validate_user_input(action):\n        action = input(\"Enter a move: \").lower()\n\n    if action == \"quit\":\n        print(\"See you later!\")\n        sys.exit()\n\n    return action"
+  },
+  {
+    "id": "rock-paper-scissors:code:6966f574",
+    "kind": "code",
+    "project": "Rock Paper Scissors",
+    "year": 11,
+    "file": "paper_scissors_rock.py",
+    "text": "def validate_user_input(action_function):\n\n    if action_function not in actions:\n        print(\"Please enter a valid command.\")\n        print()\n        return True\n\n    else:\n        return False"
+  },
+  {
+    "id": "rock-paper-scissors:code:b6fa8087",
+    "kind": "code",
+    "project": "Rock Paper Scissors",
+    "year": 11,
+    "file": "paper_scissors_rock.py",
+    "text": "def countdown(seconds):\n\n    while seconds > 0:\n        print(f\"Outcome pending: {seconds:02d}\", end=\"\\r\")\n        time.sleep(1)\n        seconds -= 1\n    print(\"Outcome decided         \")\n\n    time.sleep(0.5)\n    suspense = \"...\"\n    for char in suspense:\n        print(char, end='', flush=True)\n        time.sleep(0.7)"
+  },
+  {
+    "id": "steam-library:code:2d59a316",
+    "kind": "code",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steam_database.py",
+    "text": "def view_users(): #views and prints all information in the users entity\n    query = \"\"\"\n    SELECT * FROM Users;\n    \"\"\"\n\n    print(\"UserID, UserName, DateOfBirth, CreditCardNumber:\")\n    cursor.execute(query)\n\n    for row in cursor.fetchall():\n        print(row)"
+  },
+  {
+    "id": "steam-library:code:343599e6",
+    "kind": "code",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steam_database.py",
+    "text": "def view_games(): #views and prints all information in the games entity\n    query = \"\"\"\n    SELECT * FROM Games;\n    \"\"\"\n    print(\"GameID, GameName, GenreID, Cost:\")\n    cursor.execute(query)\n\n    for row in cursor.fetchall():\n        print(row)"
+  },
+  {
+    "id": "steam-library:code:c8cbd3e6",
+    "kind": "code",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steam_database.py",
+    "text": "def view_genres(): #views and prints all information in the genres entity\n    query = \"\"\"\n    SELECT * FROM Genre;\n    \"\"\"\n\n    print(\"GenreID, GenreName:\")\n    cursor.execute(query)\n\n    for row in cursor.fetchall():\n        print(row)"
+  },
+  {
+    "id": "terminal-space-shooter:code:1307e3be",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def shoot(bullets, ship_x, height, has_wingmen):\n    bullets.append([height - 3, ship_x])\n    if has_wingmen:\n        if ship_x - 2 > 0:\n            bullets.append([height - 3, ship_x - 2])\n        if ship_x + 2 < curses.COLS - 1:\n            bullets.append([height - 3, ship_x + 2])"
+  },
+  {
+    "id": "terminal-space-shooter:code:39dddd7e",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def check_collisions(bullets, enemies):\n    score = 0\n    for b in bullets[:]:\n        for e in enemies[:]:\n            if b[0] == e[0] and b[1] == e[1]:\n                bullets.remove(b)\n                enemies.remove(e)\n                score += 10\n                break\n    return score"
+  },
+  {
+    "id": "terminal-space-shooter:code:3ccc2333",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def spawn_round_enemies(height, width, count):\n    enemies = []\n    for i in range(count):\n        x = random.randint(1, width - 2)\n        y = random.randint(1, height // 4)\n        enemies.append([y, x])\n    return enemies"
+  },
+  {
+    "id": "terminal-space-shooter:code:4ee1abf0",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def setup_colors():\n    curses.start_color()\n    curses.init_pair(1, curses.COLOR_CYAN, curses.COLOR_BLACK)\n    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)\n    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)\n    curses.init_pair(4, curses.COLOR_RED, curses.COLOR_BLACK)\n    curses.init_pair(5, curses.COLOR_YELLOW, curses.COLOR_BLACK)"
+  },
+  {
+    "id": "terminal-space-shooter:code:59847c3c",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def check_enemy_hit_player(enemies, ship_x, height, has_wingmen):\n    for e in enemies[:]:\n        if e[0] >= height - 2:\n            enemies.remove(e)\n            return True\n        if e[0] == height - 2 and e[1] == ship_x:\n            enemies.remove(e)\n            return True\n        if has_wingmen:\n            if e[0] == height - 2 and e[1] == ship_x - 2:\n                enemies.remove(e)\n                return True\n            if e[0] == height - 2 and e[1] == ship_x + 2:\n                enemies.remove(e)\n                return True\n    return False"
+  },
+  {
+    "id": "terminal-space-shooter:code:a58e72c6",
+    "kind": "code",
+    "project": "Terminal Space Shooter",
+    "year": 11,
+    "file": "main.py",
+    "text": "def draw_ship(stdscr, ship_x, height, has_wingmen):\n    if has_wingmen and ship_x - 2 > 0:\n        stdscr.addstr(height - 2, ship_x - 2, SHIP, curses.color_pair(5))\n    stdscr.addstr(height - 2, ship_x, SHIP, curses.color_pair(1))\n    if has_wingmen and ship_x + 2 < curses.COLS - 1:\n        stdscr.addstr(height - 2, ship_x + 2, SHIP, curses.color_pair(5))"
+  },
+  {
+    "id": "texas-holdem:code:93ad7d7d",
+    "kind": "code",
+    "project": "Texas Holdem",
+    "year": 11,
+    "file": "main.py",
+    "text": "def hand_rank(cards): # ranks of each hand\n    if fullhouse(cards):\n        return 6 # highest rank\n    elif flush(cards):\n        return 5 # 2nd highest\n    elif straight(cards):\n        return 4 #3rd highest\n    elif threeofakindfinder(cards):\n        return 3 #4th highest\n    elif pairfinder(cards):\n        return 2 #5th highest\n    else:\n        return 1 #6th highest"
+  },
+  {
+    "id": "card-marketplace:code:48bca29a",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def get_quantity(): #get quantity and return it as an input\n   while True:\n    try:\n      print(\"\")\n      quantity = int(input(\"Enter Quantity: \"))\n      print(f\"Entered Cardname {quantity}\")\n      print(\"\")\n      return quantity\n    except ValueError:\n      define_error(1)"
+  },
+  {
+    "id": "card-marketplace:code:526e6afb",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def view_collections(): # a repeatable function that shows all collection data\n  conn = get_connection()\n  cursor = conn.cursor()\n  print(\"\")\n  cursor.execute(\"SELECT * FROM Collections ORDER BY CollectionID ASC\")\n  collections =cursor.fetchall()\n  print(collections)"
+  },
+  {
+    "id": "card-marketplace:code:9635170a",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def add_email(): # a repeatablke function that gets a email as an input\n   while True:\n    try:\n      print(\"\")\n      email = str(input(\"Enter Email: \"))\n      print(f\"Entered Email {email}\")\n      print(\"\")\n      return email\n    except ValueError:\n      define_error(9)"
+  },
+  {
+    "id": "card-marketplace:code:c7426e1a",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def get_cardname(): # a repeatable function that returns card name as an input\n   while True:\n    try:\n      print(\"\")\n      cardname = str(input(\"Enter Cardname: \"))\n      print(f\"Entered Cardname {cardname}\")\n      print(\"\")\n      return cardname\n    except ValueError:\n      define_error(9)"
+  },
+  {
+    "id": "card-marketplace:code:dc2d70b4",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def sign_up(): # a function used to sign up a new account & link it to a user\n accountID = new_account()\n if accountID == -1:\n  return\n else:\n  main_menu(accountID)"
+  },
+  {
+    "id": "card-marketplace:code:f6e9fef7",
+    "kind": "code",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "pythonsql.py",
+    "text": "def disclaimer():\n  print(\"\")\n  print(\"This is a Test for our database.\")\n  print(\"Due to this the data is limited.\")\n  print(\"And only few actions can be done.\")\n  print(\"Thank you for understanding.\")\n  print(\"\")"
+  },
+  {
+    "id": "artist-tracker:sql:36ff880b",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "SELECT DISTINCT Track.TrackName, Artist.ArtistName\nFROM Track\nINNER JOIN Collaboration\nON Track.TrackID = Collaboration.TrackID\nINNER JOIN Artist\nON Collaboration.ArtistID = Artist.ArtistID\nWHERE Artist.Genre LIKE ?;",
+    "label": "Query"
+  },
+  {
+    "id": "artist-tracker:sql:41edf879",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "SELECT Track.TrackName, Collaboration.Contribution\nFROM Track\nINNER JOIN Collaboration\nON Track.TrackID = Collaboration.TrackID\nINNER JOIN Artist\nON Collaboration.ArtistID = Artist.ArtistID\nWHERE Artist.ArtistName LIKE ?;",
+    "label": "Query"
+  },
+  {
+    "id": "artist-tracker:sql:87838a2e",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "SELECT Artist.ArtistName,\n    COUNT(DISTINCT Collaboration.TrackID)\nFROM Artist\nLEFT JOIN Collaboration\nON Artist.ArtistID = Collaboration.ArtistID\nGROUP BY Artist.ArtistID, Artist.ArtistName;",
+    "label": "Query"
+  },
+  {
+    "id": "artist-tracker:sql:9fa1635c",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "tracker.py",
+    "text": "SELECT Track.TrackID, Track.TrackName,\n    Album.AlbumName, Track.Duration\nFROM Track\nINNER JOIN Album\nON Track.AlbumID = Album.AlbumID;",
+    "label": "Query"
+  },
+  {
+    "id": "artist-tracker:sql:a17eb3c0",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "ArtistTracker.db",
+    "text": "CREATE TABLE Artist (\n    ArtistID INTEGER PRIMARY KEY,\n    ArtistName TEXT NOT NULL,\n    Nationality TEXT NOT NULL,\n    Genre TEXT\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "artist-tracker:sql:c6971b33",
+    "kind": "sql",
+    "project": "Artist Tracker",
+    "year": 11,
+    "file": "ArtistTracker.db",
+    "text": "CREATE TABLE Track (\n    TrackID INTEGER PRIMARY KEY,\n    AlbumID INTEGER NOT NULL,\n    TrackName TEXT NOT NULL,\n    Duration TEXT NOT NULL,\n    ReleaseDate);",
+    "label": "Schema"
+  },
+  {
+    "id": "pedalboard:sql:0a056021",
+    "kind": "sql",
+    "project": "Pedalboard Database",
+    "year": 11,
+    "file": "pedalboard_database.py",
+    "text": "SELECT Song.SongTitle, COUNT(Song_Pedal_Setting.PedalID)\nFROM Song\nLEFT JOIN Song_Pedal_Setting\nON Song.SongID = Song_Pedal_Setting.SongID\nGROUP BY Song.SongID, Song.SongTitle\nORDER BY Song.SongTitle ASC;",
+    "label": "Query"
+  },
+  {
+    "id": "pedalboard:sql:3af9053a",
+    "kind": "sql",
+    "project": "Pedalboard Database",
+    "year": 11,
+    "file": "pedalboard_database.py",
+    "text": "SELECT Pedal.PedalName,\nSong_Pedal_Setting.ChainOrder,\nSong_Pedal_Setting.KnobPreset\nFROM Song_Pedal_Setting\nINNER JOIN Pedal\nON Song_Pedal_Setting.PedalID = Pedal.PedalID\nWHERE Song_Pedal_Setting.SongID = ?\nORDER BY Song_Pedal_Setting.ChainOrder;",
+    "label": "Query"
+  },
+  {
+    "id": "pedalboard:sql:3ed608e1",
+    "kind": "sql",
+    "project": "Pedalboard Database",
+    "year": 11,
+    "file": "pedalboard.db",
+    "text": "CREATE TABLE Song (\n    SongID TEXT PRIMARY KEY,\n    SongTitle TEXT,\n    TempoBPM INTEGER,\n    TimeSignature TEXT,\n    BandID TEXT,\n    FOREIGN KEY (BandID) REFERENCES Band(BandID)\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "pedalboard:sql:63cf126e",
+    "kind": "sql",
+    "project": "Pedalboard Database",
+    "year": 11,
+    "file": "pedalboard.db",
+    "text": "CREATE TABLE Band (\n    BandID TEXT PRIMARY KEY,\n    BandName TEXT,\n    Genre TEXT,\n    ContactEmail TEXT\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "piano-store:sql:3e4b8cc7",
+    "kind": "sql",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "store.db",
+    "text": "CREATE TABLE Employees (\n        EmployeeID INTEGER PRIMARY KEY,\n        EmployeeName TEXT NOT NULL,\n        EmployeeSales INTEGER,\n        EmployeeRole TEXT NOT NULL\n    );",
+    "label": "Schema"
+  },
+  {
+    "id": "piano-store:sql:401cb330",
+    "kind": "sql",
+    "project": "Piano Store",
+    "year": 11,
+    "file": "store.db",
+    "text": "CREATE TABLE PianoInfomation (\n    PianoID INTEGER PRIMARY KEY,\n    PianoModel TEXT NOT NULL,\n    CashBack BOOLEAN NOT NULL\n    );",
+    "label": "Schema"
+  },
+  {
+    "id": "restaurant-orders:sql:012f3a7a",
+    "kind": "sql",
+    "project": "Restaurant Orders",
+    "year": 11,
+    "file": "restaurant.sql",
+    "text": "CREATE TABLE Restaurant(\n    RestaurantID INTEGER PRIMARY KEY AUTOINCREMENT,\n    Restaurant_Name TEXT NOT NULL,\n    Address TEXT NOT NULL,\n    Phone_Number TEXT\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "restaurant-orders:sql:5abf3df6",
+    "kind": "sql",
+    "project": "Restaurant Orders",
+    "year": 11,
+    "file": "restaurant.sql",
+    "text": "CREATE TABLE Customer(\n    CustomerID INTEGER PRIMARY KEY AUTOINCREMENT,\n    First_Name TEXT NOT NULL,\n    Last_Name TEXT NOT NULL,\n    Phone_Number TEXT\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "restaurant-orders:sql:9ad16e9e",
+    "kind": "sql",
+    "project": "Restaurant Orders",
+    "year": 11,
+    "file": "restaurant.py",
+    "text": "SELECT SUM(Menu.price) AS lifetime_total\nFROM Order_Items\nINNER JOIN Menu ON Order_Items.MenuID = Menu.MenuID\nINNER JOIN Orders ON Order_Items.OrderID = Orders.OrderID\nWHERE Orders.CustomerID = ?;",
+    "label": "Query"
+  },
+  {
+    "id": "steam-library:sql:463dcec3",
+    "kind": "sql",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steamdatabase.db",
+    "text": "CREATE TABLE Games (\n    GameID INTEGER PRIMARY KEY,\n    GameName TEXT,\n    GenreID INTEGER,\n    GamePrice TEXT,\n\n    FOREIGN KEY (GenreID) REFERENCES Genre(GenreID)\n    );",
+    "label": "Schema"
+  },
+  {
+    "id": "steam-library:sql:82729e5f",
+    "kind": "sql",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steamdatabase.db",
+    "text": "CREATE TABLE Users (\n    UserID INTEGER PRIMARY KEY,\n    UserName TEXT NOT NULL,\n    DateOfBirth TEXT NOT NULL,\n    CreditCardNumber TEXT NOT NULL\n\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "steam-library:sql:c608571b",
+    "kind": "sql",
+    "project": "Steam Game Library",
+    "year": 11,
+    "file": "steam_database.py",
+    "text": "SELECT Users.UserName, COUNT(*) AS TotalGames\nFROM SteamLibrary\nINNER JOIN Users ON SteamLibrary.UserID = Users.UserID\nGROUP BY Users.UserName\nORDER BY TotalGames DESC;",
+    "label": "Query"
+  },
+  {
+    "id": "card-marketplace:sql:5e566c1f",
+    "kind": "sql",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "create.sql",
+    "text": "CREATE TABLE Users(\n    UserID INTEGER PRIMARY KEY,\n    FirstName TEXT NOT NULL,\n    LastName TEXT NOT NULL,\n    Email TEXT NOT NULL,\n    PassKey TEXT NOT NULL\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "card-marketplace:sql:92014350",
+    "kind": "sql",
+    "project": "Trading Card Marketplace",
+    "year": 11,
+    "file": "create.sql",
+    "text": "CREATE TABLE Accounts(\n    AccountID INTEGER PRIMARY KEY,\n    AccountName TEXT NOT NULL,\n    JoinDate TEXT NOT NULL,\n    Password TEXT NOT NULL,\n    EditAccess BOOLEAN NOT NULL,\n    UserID INTEGER,\n    FOREIGN KEY (UserID) REFERENCES Users(UserID)\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "world-cup-2026:sql:63301032",
+    "kind": "sql",
+    "project": "World Cup 2026",
+    "year": 11,
+    "file": "WorldCup2026.db",
+    "text": "CREATE TABLE Groups (\n    GroupID INTEGER,\n    TeamID INTEGER,\n    Points INTEGER,\n    Qualified TEXT,\n    PRIMARY KEY (GroupID, TeamID)\n);",
+    "label": "Schema"
+  },
+  {
+    "id": "world-cup-2026:sql:78dcf998",
+    "kind": "sql",
+    "project": "World Cup 2026",
+    "year": 11,
+    "file": "WorldCup2026viewer.py",
+    "text": "SELECT Teams.TeamName, Groups.Points, Groups.Qualified\nFROM Groups\nJOIN Teams ON Groups.TeamID = Teams.TeamID\nWHERE Groups.GroupID = ?\nORDER BY Groups.Points DESC;",
+    "label": "Query"
+  },
+  {
+    "id": "world-cup-2026:sql:f8924ad3",
+    "kind": "sql",
+    "project": "World Cup 2026",
+    "year": 11,
+    "file": "WorldCup2026.db",
+    "text": "CREATE TABLE MatchEvents (\n    PlayerID INTEGER NOT NULL,\n    MatchID INTEGER NOT NULL,\n    Goals INTEGER NOT NULL DEFAULT 0,\n    Assists INTEGER NOT NULL DEFAULT 0,\n    PRIMARY KEY (PlayerID, MatchID),\n    FOREIGN KEY (PlayerID) REFERENCES Players(PlayerID),\n    FOREIGN KEY (MatchID) REFERENCES Matches(MatchID)\n);",
+    "label": "Schema"
+  }
+]

@@ -65,7 +65,7 @@ fi
 
 # Rebuild the lists from whatever arrived (no-ops when nothing is new). Same
 # steps as start.command; each is skipped if the repo doesn't have it.
-for step in scan_and_build.py python_scan.py webapp_scan.py cache_remote_images.py; do
+for step in scan_and_build.py python_scan.py webapp_scan.py snippet_scan.py cache_remote_images.py; do
     [[ -f "$step" ]] && "$PYTHON" "$step"
 done
 

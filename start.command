@@ -14,6 +14,9 @@ echo
 echo "Scanning web apps..."
 python3 "$HUB_DIR/webapp_scan.py"
 echo
+echo "Collecting code and SQL snippets for standby mode..."
+python3 "$HUB_DIR/snippet_scan.py"
+echo
 echo "Saving web app photos for offline use..."
 python3 "$HUB_DIR/cache_remote_images.py"
 echo
