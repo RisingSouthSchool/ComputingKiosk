@@ -131,8 +131,22 @@
     .code-line::before { content: counter(line); display: inline-block; width: 2.2em; margin-right: 1.2em; text-align: right; color: #ffffff40; }
     .tok-kw { color: #ff8fa3; } .tok-str { color: #ffd166; } .tok-num { color: #9ad1ff; } .tok-com { color: #7f8c9b; font-style: italic; } .tok-fn { color: #52d6b5; } .tok-bi { color: #b69cff; }
     @keyframes code-line-in { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
+    .attract-slide.stat { gap: 18px; }
+    .stat-big { font-size: min(22vh, 18vw); font-weight: 700; line-height: 1; color: var(--accent); }
+    .stat-line { margin: 0; color: var(--muted); font-size: clamp(1.1rem, 2.6vw, 1.9rem); line-height: 1.35; max-width: 30ch; }
+    .stat-line b { color: var(--ink); }
+    .stat-rows { display: grid; gap: 14px; width: min(78vw, 900px); text-align: left; }
+    .stat-row { display: grid; grid-template-columns: 1.6em minmax(0, 1fr) auto; align-items: center; gap: 0 16px; font-size: clamp(1.2rem, 3vw, 2.2rem); font-weight: 600; }
+    .stat-row .rank { color: var(--accent); font-weight: 700; }
+    .stat-row .count { color: var(--muted); font-size: .7em; font-weight: 500; white-space: nowrap; }
+    .stat-bar { grid-column: 2 / -1; height: 10px; border-radius: 99px; background: #ffffff14; overflow: hidden; }
+    .stat-bar i { display: block; height: 100%; border-radius: inherit; background: var(--accent); transform-origin: left; animation: stat-grow .9s ease-out .3s backwards; }
+    @keyframes stat-grow { from { transform: scaleX(0); } }
+    .stat-heat { display: grid; gap: 4px; width: min(70vw, 760px); }
+    .stat-heat span { color: var(--muted); font-size: clamp(.7rem, 1.4vw, 1rem); text-align: center; align-self: center; }
+    .stat-heat .cell { height: min(5.5vh, 5vw); border-radius: 5px; background: #ffffff0f; }
     .attract-video { display: block; width: auto; height: auto; max-width: 78vw; max-height: 56vh; background: #000; border-radius: 16px; box-shadow: 0 20px 60px #0008; }
-    @media (prefers-reduced-motion: reduce) { #attract, .attract-slide { transition-duration: .01s; } #attract-prompt span { animation: none; } .code-line { animation: none; opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { #attract, .attract-slide { transition-duration: .01s; } #attract-prompt span { animation: none; } .code-line, .stat-bar i { animation: none; opacity: 1; } }
   </style>
 </head>
 <body>
@@ -900,9 +914,10 @@
     // the screen is never blank.
     let snippets = [];          // snippets.json (made by snippet_scan.py)
     let escapeVideos = [];      // /api/escape-rooms, fetched each time standby starts
+    let statSlides = [];        // built from /api/stats each time standby starts (empty until there is enough data)
     let attractRun = 0;         // bumped on every enter/exit so late async work can tell it is stale
     const CLIP_SECONDS = 8;
-    const DECK_CAPS = { project: 8, code: 6, sql: 5, video: 4 };   // per pass, so no kind drowns the rest
+    const DECK_CAPS = { project: 8, code: 6, sql: 5, video: 4, stat: 4 };   // per pass, so no kind drowns the rest
 
     function shuffled(list) {
       const copy = list.slice();
@@ -917,6 +932,7 @@
       const groups = [
         shuffled(featuredPool()).slice(0, DECK_CAPS.project).map(item => ({ type: "project", item })),
         shuffled(visible.filter(item => item.kind === "code")).slice(0, DECK_CAPS.code).map(item => ({ type: "code", item })),
+        statSlides.slice(0, DECK_CAPS.stat).map(item => ({ type: "stat", item })),   // fixed order: headline, top, busiest, liked
         shuffled(escapeVideos).slice(0, DECK_CAPS.video).map(item => ({ type: "video", item })),
         shuffled(visible.filter(item => item.kind === "sql")).slice(0, DECK_CAPS.sql).map(item => ({ type: "sql", item }))
       ].filter(group => group.length);
@@ -927,6 +943,7 @@
 
     function slideDuration(entry) {
       if (entry.type === "video") return (CLIP_SECONDS + 2) * 1000;
+      if (entry.type === "stat") return 8000;
       if (entry.type === "code" || entry.type === "sql") return Math.min(5000 + entry.item.text.split("\n").length * 600, 12000);
       return SLIDE_MS;
     }
@@ -986,6 +1003,107 @@
         code.append(row);
       });
       slide.append(kind, name, code);
+    }
+
+    // ---- Stats slides: aggregate numbers only, nothing that identifies anyone ----
+    const STAT_MIN_PLAYS = 5;   // below this the numbers are too small to be worth a slide
+    const STAT_DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const statHour = hour => ((hour + 11) % 12 + 1) + (hour < 12 ? " am" : " pm");
+    const statLength = seconds => seconds < 60 ? Math.round(seconds) + " s" : Math.floor(seconds / 60) + " min" + (Math.round(seconds % 60) ? " " + Math.round(seconds % 60) + " s" : "");
+
+    function statTitle(kind, slug) {
+      const find = (list) => list.find(item => item.slug === slug);
+      const known = kind === "game" ? find(games) : kind === "webapp" ? find(webapps) : kind === "python" ? find(pythonProjects) : kind === "db" ? find(dbProjects) : null;
+      if (known && known.title) return known.title;
+      return slug.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+    }
+
+    // Uses this week's numbers, or this term's when it is early in the week and
+    // there is not much yet. Returns [] when neither has enough to show.
+    function buildStatSlides(week, term) {
+      const enough = data => data && !data.error && data.total_plays >= STAT_MIN_PLAYS;
+      const data = enough(week) ? week : enough(term) ? term : null;
+      const slides = [];
+      if (data) {
+        const isWeek = data === week;
+        const when = isWeek ? "since Monday" : "in " + data.label;
+        let compare = null;
+        if (isWeek && data.previous_plays) {
+          const diff = data.total_plays - data.previous_plays;
+          compare = diff === 0 ? "The same as this point last week" : Math.abs(diff) + (diff > 0 ? " more" : " fewer") + " than at this point last week";
+        }
+        slides.push({ type: "headline", total: data.total_plays, when, average: data.avg_seconds, compare });
+        const top = data.items.slice(0, 3);
+        if (top.length) slides.push({ type: "top", heading: isWeek ? "Most played this week" : "Most played " + when, rows: top.map(entry => ({ title: statTitle(entry.kind, entry.slug), count: entry.plays + (entry.plays === 1 ? " play" : " plays"), value: entry.plays })) });
+        let busiest = { plays: 0 };
+        data.heatmap.slice(0, 5).forEach((row, day) => row.forEach((plays, hour) => { if (plays > busiest.plays) busiest = { plays, day, hour }; }));
+        if (busiest.plays) slides.push({ type: "busiest", label: STAT_DAYS[busiest.day] + ", " + statHour(busiest.hour), when, heat: data.heatmap.slice(0, 5), peak: busiest });
+      }
+      const liked = [...games, ...webapps].map(item => ({ title: item.title || item.slug, value: voteCount(voteKey(item)) })).filter(item => item.value > 0).sort((a, b) => b.value - a.value).slice(0, 3);
+      if (liked.length >= 2) slides.push({ type: "liked", heading: "Most liked", rows: liked.map(item => ({ title: item.title, count: item.value + " 👍", value: item.value })) });
+      return slides;
+    }
+
+    function statRows(rows) {
+      const max = Math.max(...rows.map(row => row.value), 1);
+      const list = document.createElement("div");
+      list.className = "stat-rows";
+      rows.forEach((row, index) => {
+        const line = document.createElement("div"); line.className = "stat-row";
+        const rank = document.createElement("span"); rank.className = "rank"; rank.textContent = index + 1;
+        const name = document.createElement("span"); name.textContent = row.title; name.style.cssText = "overflow:hidden;text-overflow:ellipsis;white-space:nowrap";
+        const count = document.createElement("span"); count.className = "count"; count.textContent = row.count;
+        const bar = document.createElement("div"); bar.className = "stat-bar";
+        const fill = document.createElement("i"); fill.style.width = Math.max(4, row.value / max * 100) + "%"; bar.append(fill);
+        line.append(rank, name, count, bar);
+        list.append(line);
+      });
+      return list;
+    }
+
+    function statHeat(entry) {
+      let low = 8, high = 15;
+      entry.heat.forEach(row => row.forEach((plays, hour) => { if (plays) { low = Math.min(low, hour); high = Math.max(high, hour); } }));
+      const hours = Array.from({ length: high - low + 1 }, (_, index) => low + index);
+      const grid = document.createElement("div");
+      grid.className = "stat-heat";
+      grid.style.gridTemplateColumns = `3em repeat(${hours.length}, minmax(0, 1fr))`;
+      grid.setAttribute("role", "img"); grid.setAttribute("aria-label", "Plays by weekday and hour");
+      const blank = document.createElement("span"); grid.append(blank);
+      hours.forEach(hour => { const label = document.createElement("span"); label.textContent = (hour + 11) % 12 + 1; grid.append(label); });
+      ["Mon", "Tue", "Wed", "Thu", "Fri"].forEach((name, day) => {
+        const label = document.createElement("span"); label.textContent = name; grid.append(label);
+        hours.forEach(hour => {
+          const plays = entry.heat[day][hour];
+          const cell = document.createElement("div"); cell.className = "cell";
+          if (plays) cell.style.background = `rgba(82, 214, 181, ${(0.2 + plays / entry.peak.plays * 0.8).toFixed(2)})`;
+          grid.append(cell);
+        });
+      });
+      return grid;
+    }
+
+    function fillStatSlide(slide, entry) {
+      slide.replaceChildren();
+      slide.classList.add("stat");
+      const kind = document.createElement("p");
+      kind.className = "attract-kind";
+      const line = (...parts) => { const p = document.createElement("p"); p.className = "stat-line"; parts.forEach(part => p.append(part)); return p; };
+      const bold = text => { const b = document.createElement("b"); b.textContent = text; return b; };
+      if (entry.type === "headline") {
+        kind.textContent = "At the kiosk";
+        const big = document.createElement("div"); big.className = "stat-big"; big.textContent = entry.total;
+        slide.append(kind, big, line(entry.total === 1 ? "play " : "plays ", entry.when));
+        slide.append(line("The average play lasts ", bold(statLength(entry.average))));
+        if (entry.compare) slide.append(line(entry.compare));
+      } else if (entry.type === "busiest") {
+        kind.textContent = "Busiest time";
+        const big = document.createElement("h2"); big.className = "attract-name"; big.textContent = entry.label;
+        slide.append(kind, big, statHeat(entry), line("Brighter squares are busier (", entry.when, ")"));
+      } else {
+        kind.textContent = entry.heading;
+        slide.append(kind, statRows(entry.rows));
+      }
     }
 
     // Resolves true when the clip is ready to show, false if it cannot play
@@ -1052,8 +1170,10 @@
       const next = (activeSlide + 1) % attractSlides.length;
       const slide = attractSlides[next];
       stopSlideMedia(slide);
+      slide.classList.remove("snippet", "stat");
       let ready = true;
       if (entry.type === "project") fillSlide(slide, entry.item);
+      else if (entry.type === "stat") fillStatSlide(slide, entry.item);
       else if (entry.type === "video") ready = await prepareVideoSlide(slide, entry);
       else fillSnippetSlide(slide, entry);
       if (run !== attractRun) { stopSlideMedia(slide); return; }   // woken (or restarted) while the clip loaded
@@ -1117,18 +1237,22 @@
       attract.setAttribute("aria-hidden", "false");
       void attract.offsetWidth; // flush the display change so the fade-in runs
       attract.classList.add("visible");
-      // Fresh list of escape-room videos each time (files can be added any day).
-      // It comes from the local server so it is near-instant; if it is slow or
-      // fails, standby just starts without clips.
-      const controller = new AbortController();
-      const giveUp = setTimeout(() => controller.abort(), 1500);
-      fetch("/api/escape-rooms", { cache: "no-store", signal: controller.signal })
-        .then(response => response.ok ? response.json() : [])
-        .catch(() => [])
-        .then(list => {
-          clearTimeout(giveUp);
-          if (run !== attractRun) return;   // woken while the list loaded
+      // Fresh escape-room list and usage numbers each time (files and plays change
+      // every day). Both come from the local server so they are near-instant; if
+      // either is slow or fails, standby just starts without those slides.
+      const local = url => {
+        const controller = new AbortController();
+        const giveUp = setTimeout(() => controller.abort(), 1500);
+        return fetch(url, { cache: "no-store", signal: controller.signal })
+          .then(response => response.ok ? response.json() : null)
+          .catch(() => null)
+          .finally(() => clearTimeout(giveUp));
+      };
+      Promise.all([local("/api/escape-rooms"), local("/api/stats?period=week"), local("/api/stats?period=term")])
+        .then(([list, week, term]) => {
+          if (run !== attractRun) return;   // woken while these loaded
           escapeVideos = Array.isArray(list) ? list : [];
+          try { statSlides = buildStatSlides(week, term); } catch (error) { statSlides = []; }
           attractDeck = buildDeck();
           attractIndex = 0;
           advanceAttract(run);
@@ -1145,7 +1269,7 @@
       // grid is instant and re-entry never flashes the previous game.
       attract.classList.remove("visible", "open");
       attract.setAttribute("aria-hidden", "true");
-      attractSlides.forEach(slide => { stopSlideMedia(slide); slide.classList.remove("showing", "snippet"); slide.replaceChildren(); });
+      attractSlides.forEach(slide => { stopSlideMedia(slide); slide.classList.remove("showing", "snippet", "stat"); slide.replaceChildren(); });
       activeSlide = 0;
     }
 

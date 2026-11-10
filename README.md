@@ -246,21 +246,28 @@ different one every 5 minutes (it never repeats the same one back to back).
 
 After 20 seconds with nobody touching the hub, it fades into attract mode and
 cycles through the featured list, six seconds each, showing the icon, title,
-student and blurb (mixed in with the code, SQL and video slides described below). If nothing is marked featured yet it cycles through every
+student and blurb (mixed in with the code, SQL, stats and video slides described below). If nothing is marked featured yet it cycles through every
 game instead, so the screen is never blank. Any mouse movement, click, key or
 controller input returns to the tile grid immediately. Attract mode never
 appears while a game is actually being played.
 
-## Standby slides: code, SQL and video clips
+## Standby slides: code, SQL, stats and video clips
 
 Besides the featured games and apps, standby mode (attract mode) also shows
-three other kinds of slide, dealt out in turn so each pass is a mix. Every
-pass is reshuffled, with at most 8 games/apps, 6 code, 5 SQL and 4 video slides.
+four other kinds of slide, dealt out in turn so each pass is a mix. Every
+pass is reshuffled, with at most 8 games/apps, 6 code, 5 SQL, 4 video and 4 stats slides.
 
 - **Student code** – a whole Python function from `python_projects/` or
   `db_projects/`, syntax-highlighted, with its lines appearing one by one.
 - **SQL** – `SELECT` queries and `CREATE TABLE` schemas from the database
   projects (found in `.sql` files, in the Python code, and in the `.db` files).
+- **Stats** – up to four slides of kiosk usage: total plays and average play
+  length (with a comparison to the same point last week), the three most played,
+  the busiest weekday and hour on a small heatmap, and the most liked games and
+  apps. These use the same numbers as the stats dashboard and show nothing that
+  identifies anyone. They use this week's data, or this term's early in the
+  week, and are left out entirely until there are at least 5 plays (the liked
+  slide needs at least 2 liked items).
 - **Video clips** – an 8 second muted clip from a random point in one of the
   escape-room videos in `escape-rooms/`. Add a video there and it joins the mix
   the next time standby starts; with no videos, none are shown. A clip that
