@@ -168,6 +168,14 @@
       list.querySelector(".room")?.focus();
     }
 
+    // The home-screen hero opens this page with ?play=<file> to start that video straight away.
+    function playRequested(videos) {
+      let wanted = null;
+      try { wanted = new URLSearchParams(location.search).get("play"); } catch (error) { /* ignore */ }
+      const index = wanted ? videos.findIndex(video => video.file === wanted) : -1;
+      if (index >= 0) play(videos[index], list.children[index]);
+    }
+
     back.addEventListener("click", showList);
     player.addEventListener("error", () => { error.hidden = false; });
     player.addEventListener("play", startUsage);
@@ -182,7 +190,7 @@
       .then(result => new Set(Array.isArray(result.new) ? result.new : [])).catch(() => new Set());
     fetch("/api/microbit", { cache: "no-store" })
       .then(response => response.json())
-      .then(async videos => render(videos, await freshVideos))
+      .then(async videos => { render(videos, await freshVideos); playRequested(videos); })
       .catch(() => { empty.textContent = "Could not load the video list."; empty.hidden = false; });
   </script>
 </body>

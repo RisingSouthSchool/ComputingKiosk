@@ -45,14 +45,29 @@
     #webapps-view.open { display: block; }
     #hub-back, #webapps-back { display: inline-block; border: 2px solid var(--focus); border-radius: 8px; background: transparent; color: var(--ink); padding: 8px 14px; font-size: .95rem; font-weight: 600; cursor: pointer; margin-bottom: 8px; font-family: inherit; }
     #hub-back:hover, #hub-back:focus-visible, #webapps-back:hover, #webapps-back:focus-visible { background: #22303c; outline: none; }
-    #featured-banner { display: flex; gap: 24px; align-items: center; border: 2px solid transparent; background: var(--panel); border-radius: 16px; padding: 24px; margin-bottom: 32px; box-shadow: 0 10px 25px #0005; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
-    #featured-banner:hover, #featured-banner:focus-visible { transform: translateY(-4px); border-color: var(--focus); background: #22303c; outline: none; }
-    .featured-icon { width: 140px; height: 140px; flex: 0 0 auto; border-radius: 14px; background: #2b3945; display: grid; place-items: center; color: var(--accent); font-size: 3.5rem; font-weight: 700; overflow: hidden; }
+    /* Hero: a tall media banner. Games/apps get a blurred backdrop of their icon with the crisp icon beside
+       the text (icons are small, so they are never stretched full-bleed); videos play muted behind the text. */
+    #featured-banner { position: relative; overflow: hidden; isolation: isolate; display: flex; gap: 32px; align-items: center; justify-content: space-between; min-height: clamp(280px, 40vh, 420px); border: 2px solid transparent; background: linear-gradient(120deg, #1d3a44 0, #18212b 60%); border-radius: 20px; padding: 40px 48px; margin-bottom: 32px; box-shadow: 0 18px 44px #0007; cursor: pointer; transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease; }
+    #featured-banner:hover, #featured-banner:focus-visible { transform: translateY(-4px); border-color: var(--focus); box-shadow: 0 22px 54px #000a; outline: none; }
+    .hero-media, .hero-shade { position: absolute; inset: 0; z-index: -2; }
+    .hero-shade { z-index: -1; background: linear-gradient(90deg, #0b1016f0 0, #0b1016c4 40%, #0b101630 100%); }
+    .hero-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: blur(34px) saturate(1.35) brightness(.7); transform: scale(1.35); }
+    .hero-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .6s ease; }
+    .hero-video.ready { opacity: 1; }
+    .featured-info { min-width: 0; max-width: 56%; }
+    .featured-icon { width: clamp(150px, 20vw, 230px); aspect-ratio: 1; flex: 0 0 auto; border-radius: 22px; background: #2b3945; display: grid; place-items: center; color: var(--accent); font-size: 4.5rem; font-weight: 700; overflow: hidden; box-shadow: 0 0 0 2px #ffffff22, 0 18px 50px #000a, 0 0 80px #52d6b533; }
     .featured-icon img { width: 100%; height: 100%; object-fit: cover; }
-    .featured-label { margin: 0; color: var(--accent); font-size: .85rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-    .featured-info h2 { margin: 6px 0 0; font-size: clamp(1.4rem, 3vw, 2.2rem); }
-    .featured-student { margin: 6px 0 0; color: var(--accent); font-weight: 600; }
-    .featured-blurb { margin: 8px 0 0; color: var(--muted); max-width: 60ch; line-height: 1.4; }
+    #featured-banner.is-video .featured-icon { display: none; }
+    #featured-banner.is-video .featured-info { max-width: 62%; }
+    .featured-label { margin: 0; color: var(--accent); font-size: .95rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .featured-info h2 { margin: 10px 0 0; font-size: clamp(2rem, 4.6vw, 3.6rem); line-height: 1.05; text-shadow: 0 2px 18px #000a; overflow-wrap: anywhere; }
+    .featured-student { margin: 10px 0 0; color: var(--accent); font-size: 1.15rem; font-weight: 600; }
+    .featured-blurb { margin: 12px 0 0; color: #dbe3ec; font-size: 1.1rem; max-width: 52ch; line-height: 1.45; }
+    .hero-cta { display: inline-block; margin-top: 24px; padding: 12px 28px; border-radius: 999px; background: var(--accent); color: #0b1016; font-size: 1.15rem; font-weight: 800; letter-spacing: .02em; transition: background .16s ease, transform .16s ease; }
+    #featured-banner:hover .hero-cta, #featured-banner:focus-visible .hero-cta { background: var(--focus); transform: scale(1.05); }
+    #landing-view header { padding-top: 26px; padding-bottom: 16px; }
+    #landing-view header h1 { font-size: clamp(1.7rem, 3.4vw, 2.6rem); }
+    #landing-view header .subtitle { font-size: 1rem; margin-top: 4px; }
     #categories { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
     .category-tile { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; border: 2px solid transparent; border-radius: 14px; background: var(--panel); min-height: 170px; padding: 20px; box-shadow: 0 10px 25px #0005; color: var(--ink); text-align: left; font-family: inherit; appearance: none; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
     button.category-tile { cursor: pointer; }
@@ -67,7 +82,7 @@
     .new-pill { position: absolute; top: 14px; right: 14px; border-radius: 999px; background: var(--focus); color: #10151c; font-size: .7rem; font-weight: 800; letter-spacing: .1em; padding: 3px 10px; }
     .coming-soon-badge { position: absolute; top: 14px; right: 14px; border: 1px solid #ffffff33; border-radius: 999px; background: #10151c99; color: var(--muted); font-size: .7rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 4px 10px; white-space: nowrap; }
     @media (max-width: 900px) { #categories { grid-template-columns: repeat(2, 1fr); } }
-    @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; } .featured-icon { width: 100px; height: 100px; } }
+    @media (max-width: 600px) { #categories { grid-template-columns: 1fr; } #featured-banner { flex-direction: column; align-items: flex-start; min-height: 0; padding: 28px 22px; } .featured-info, #featured-banner.is-video .featured-info { max-width: 100%; } .featured-icon { width: 110px; font-size: 3rem; } }
     #empty, #error { color: var(--muted); padding: 30px 0; font-size: 1.2rem; }
     #player { position: fixed; inset: 0; display: none; background: #000; z-index: 2; }
     #player.open { display: block; }
@@ -154,13 +169,16 @@
     <header><h1>Computing @ Carey</h1><p class="subtitle">Explore student work</p></header>
     <main>
       <div id="featured-banner" tabindex="0" role="button" hidden>
-        <div class="featured-icon" id="featured-icon"></div>
+        <div class="hero-media" id="hero-media" aria-hidden="true"></div>
+        <div class="hero-shade" aria-hidden="true"></div>
         <div class="featured-info">
-          <p class="featured-label">Featured project</p>
+          <p class="featured-label" id="featured-label">Featured project</p>
           <h2 id="featured-title"></h2>
           <p id="featured-student" class="featured-student" hidden></p>
           <p id="featured-blurb" class="featured-blurb" hidden></p>
+          <span class="hero-cta" id="hero-cta">&#9654; Play</span>
         </div>
+        <div class="featured-icon" id="featured-icon" aria-hidden="true"></div>
       </div>
       <div id="categories" aria-live="polite"></div>
       <section id="home-stats" aria-label="This week at the kiosk" hidden></section>
@@ -260,6 +278,9 @@
     const endedDetail = document.getElementById("ended-detail");
     const featuredBanner = document.getElementById("featured-banner");
     const featuredIconWrap = document.getElementById("featured-icon");
+    const heroMedia = document.getElementById("hero-media");
+    const featuredLabel = document.getElementById("featured-label");
+    const heroCta = document.getElementById("hero-cta");
     const featuredTitle = document.getElementById("featured-title");
     const featuredStudent = document.getElementById("featured-student");
     const featuredBlurb = document.getElementById("featured-blurb");
@@ -752,34 +773,108 @@
       return featured.length ? featured : games.slice();
     }
 
-    // The banner shows a random featured item and swaps to a different one
-    // every FEATURED_ROTATE_MS. It never repeats the current item back to back
-    // unless it is the only one.
+    // The hero shows one featured thing at a time and swaps to a different one every
+    // FEATURED_ROTATE_MS: a featured game or web app, or a student video (escape room or
+    // Micro:bit). It picks the kind first, so a long video list can't crowd out the games,
+    // and never repeats the current item back to back unless it is the only one.
+    // Videos live only on the kiosk, so their list comes from the local server.
     const FEATURED_ROTATE_MS = 5 * 60 * 1000;
-    function featuredKey(item) { return item ? (item.base || "games/") + item.slug : null; }
+    let heroVideos = [];
+    let heroVideo = null;
+    function featuredKey(item) {
+      if (!item) return null;
+      return item.gallery ? "video:" + item.gallery + "/" + item.file : (item.base || "games/") + item.slug;
+    }
+    function refreshHeroVideos() {
+      const get = (url, gallery) => {
+        const controller = new AbortController();
+        const giveUp = setTimeout(() => controller.abort(), 1500);
+        return fetch(url, { cache: "no-store", signal: controller.signal })
+          .then(response => response.ok ? response.json() : [])
+          .then(list => (Array.isArray(list) ? list : []).filter(item => item && item.file).map(item => ({ ...item, gallery })))
+          .catch(() => [])
+          .finally(() => clearTimeout(giveUp));
+      };
+      return Promise.all([get("/api/escape-rooms", "escape-rooms"), get("/api/microbit", "microbit")])
+        .then(([escapeRooms, microbit]) => { heroVideos = escapeRooms.concat(microbit); });
+    }
     function featuredGame() {
-      const pool = featuredPool();
-      if (!pool.length) return null;
-      const others = pool.filter(item => featuredKey(item) !== featuredKey(currentFeaturedGame));
-      const options = others.length ? others : pool;
-      return options[Math.floor(Math.random() * options.length)];
+      const groups = [featuredPool(), heroVideos].filter(group => group.length);
+      if (!groups.length) return null;
+      const currentKey = featuredKey(currentFeaturedGame);
+      for (const group of groups.sort(() => Math.random() - 0.5)) {
+        const others = group.filter(item => featuredKey(item) !== currentKey);
+        if (others.length) return others[Math.floor(Math.random() * others.length)];
+      }
+      const only = groups[0];
+      return only[Math.floor(Math.random() * only.length)];
+    }
+
+    // The hero video only runs while the home screen is actually on show, so it
+    // isn't decoding behind a game, the gallery or standby.
+    let heroWatching = false;
+    function syncHeroVideo() {
+      if (!heroVideo) return;
+      const showing = landingView.classList.contains("open") && !player.classList.contains("open") && !attract.classList.contains("open");
+      if (showing) heroVideo.play().catch(() => {}); else heroVideo.pause();
+    }
+    function watchHeroVisibility() {
+      if (heroWatching) return;
+      heroWatching = true;
+      const observer = new MutationObserver(syncHeroVideo);
+      [landingView, player, attract].forEach(element => observer.observe(element, { attributes: true, attributeFilter: ["class"] }));
+    }
+    function mountHeroVideo(item) {
+      const video = document.createElement("video");
+      video.className = "hero-video";
+      video.muted = true; video.defaultMuted = true; video.volume = 0;
+      video.setAttribute("muted", ""); video.playsInline = true; video.loop = true; video.preload = "auto";
+      video.disablePictureInPicture = true; video.controls = false;
+      video.addEventListener("error", () => { if (heroVideo === video) heroVideo = null; video.remove(); });   // keep the plain backdrop
+      video.addEventListener("loadedmetadata", () => {
+        const length = video.duration;
+        // start somewhere in the middle rather than always the opening frame
+        if (isFinite(length) && length > 12) video.currentTime = length * 0.05 + Math.random() * (length * 0.7);
+      });
+      video.addEventListener("canplay", () => { video.classList.add("ready"); syncHeroVideo(); }, { once: true });
+      heroMedia.append(video);
+      heroVideo = video;
+      watchHeroVisibility();
+      video.src = "/" + item.gallery + "/" + encodeURIComponent(item.file);
     }
 
     function renderFeatured() {
-      const game = featuredGame();
-      currentFeaturedGame = game;
-      featuredBanner.hidden = !game;
-      if (!game) return;
+      const item = featuredGame();
+      currentFeaturedGame = item;
+      featuredBanner.hidden = !item;
+      if (heroVideo) { heroVideo.pause(); heroVideo = null; }
+      heroMedia.replaceChildren();
       featuredIconWrap.replaceChildren();
-      const source = iconUrl(game);
-      if (source) { const image = document.createElement("img"); image.src = source; image.alt = ""; featuredIconWrap.append(image); }
-      else featuredIconWrap.textContent = (game.title || "?").trim().charAt(0).toUpperCase();
-      featuredTitle.textContent = game.title;
-      const student = game.student || game.students || game.author;
+      if (!item) return;
+      const isVideo = !!item.gallery;
+      featuredBanner.classList.toggle("is-video", isVideo);
+      featuredTitle.textContent = item.title || item.slug || (isVideo ? item.file : "");
+      if (isVideo) {
+        featuredLabel.textContent = item.gallery === "microbit" ? "Micro:bit project" : "Minecraft escape room";
+        heroCta.textContent = "\u25B6 Watch";
+        featuredStudent.hidden = true; featuredBlurb.hidden = true;
+        mountHeroVideo(item);
+        return;
+      }
+      featuredLabel.textContent = item.base === "webapps/" ? "Featured web app" : "Featured game";
+      heroCta.textContent = "\u25B6 Play";
+      const source = iconUrl(item);
+      if (source) {
+        const backdrop = document.createElement("img"); backdrop.className = "hero-backdrop"; backdrop.src = source; backdrop.alt = "";
+        heroMedia.append(backdrop);
+        const image = document.createElement("img"); image.src = source; image.alt = "";
+        featuredIconWrap.append(image);
+      } else featuredIconWrap.textContent = (item.title || "?").trim().charAt(0).toUpperCase();
+      const student = item.student || item.students || item.author;
       featuredStudent.hidden = !student;
       featuredStudent.textContent = student || "";
-      featuredBlurb.hidden = !game.blurb;
-      featuredBlurb.textContent = game.blurb || "";
+      featuredBlurb.hidden = !item.blurb;
+      featuredBlurb.textContent = item.blurb || "";
     }
 
     function renderCategories() {
@@ -809,8 +904,17 @@
       landingFocusables.forEach((element, index) => { element.dataset.index = index; });
     }
 
+    // A featured video opens its gallery and starts that video; anything else opens like a normal tile.
     function launchFeatured() {
-      if (currentFeaturedGame) openGame(currentFeaturedGame);
+      const item = currentFeaturedGame;
+      if (!item) return;
+      if (item.gallery) {
+        frame.src = item.gallery + "/index.html?play=" + encodeURIComponent(item.file);
+        player.classList.add("open");
+        frame.focus();
+        return;
+      }
+      openGame(item);
     }
 
     function selectedGame() {
@@ -1467,7 +1571,8 @@
       fetch("webapps.json", { cache: "no-store" })
         .then(response => { if (!response.ok) throw new Error("webapps.json"); return response.json(); })
         .catch(() => { webappError.hidden = false; return []; }),
-      fetch("/api/new", { cache: "no-store" }).then(response => response.json()).catch(() => ({ new: [] }))
+      fetch("/api/new", { cache: "no-store" }).then(response => response.json()).catch(() => ({ new: [] })),
+      refreshHeroVideos()
     ]).then(([gameList, voteList, webappList, newList]) => {
       newKeys = new Set(newList && Array.isArray(newList.new) ? newList.new : []);
       games = gameList.map(game => ({ ...game, base: "games/" }));
@@ -1475,7 +1580,7 @@
       webapps = (Array.isArray(webappList) ? webappList : []).map(app => ({ ...app, base: "webapps/" }));
       votes = voteList && typeof voteList === "object" ? voteList : {};
       renderFeatured();
-      setInterval(renderFeatured, FEATURED_ROTATE_MS);
+      setInterval(() => refreshHeroVideos().then(() => { renderFeatured(); updateLandingFocusables(); }), FEATURED_ROTATE_MS);
       renderCategories();
       updateLandingFocusables();
       showLanding();
