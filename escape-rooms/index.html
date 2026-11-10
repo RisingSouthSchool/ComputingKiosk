@@ -22,6 +22,13 @@
     .room .icon { font-size: 2.6rem; }
     .room .name { font-size: 1.25rem; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
     .room .hint { color: var(--accent); font-size: .95rem; font-weight: 600; }
+    /* Hover/focus preview: the tile's thumbnail is a muted video that plays on mouse over. */
+    .room > .icon, .room > .name, .room > .hint { position: relative; z-index: 2; }
+    .room .thumb { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; opacity: 0; transition: opacity .2s ease; z-index: 0; pointer-events: none; }
+    .room::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity .2s ease; background: linear-gradient(to top, #10151ce6 0, #10151c99 38%, #10151c00 75%); }
+    .room.has-thumb .thumb, .room.has-thumb::before { opacity: 1; }
+    .room.has-thumb .icon { display: none; }
+    .new-ribbon { z-index: 3; }
     #empty { color: var(--muted); font-size: 1.1rem; }
     #viewer { display: none; max-width: 1200px; margin: 0 auto; padding: 24px 32px 40px; }
     #viewer.open { display: block; }
@@ -96,6 +103,7 @@
 
     function play(video, tile) {
       lastTile = tile;
+      list.querySelectorAll("video.thumb").forEach(preview => preview.pause());
       currentFile = video.file;
       error.hidden = true;
       nowPlaying.textContent = video.title;
@@ -104,6 +112,42 @@
       viewer.classList.add("open");
       player.play().catch(() => {});
       back.focus();
+    }
+
+    // Tile previews. Each tile gets a muted <video> showing a frame as its thumbnail;
+    // it plays while the tile is hovered or keyboard/controller-focused, then snaps
+    // back to the still frame. Sources load only as tiles scroll near the screen, so a
+    // long list doesn't open dozens of videos at once. These are separate from the main
+    // player, so previews never count as usage.
+    const PREVIEW_AT = 1;
+    // Focus previews only follow real key presses, not the automatic focus when the list loads.
+    let keyboardNav = false;
+    document.addEventListener("keydown", () => { keyboardNav = true; }, true);
+    document.addEventListener("pointerdown", () => { keyboardNav = false; }, true);
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const previewObserver = "IntersectionObserver" in window
+      ? new IntersectionObserver(entries => {
+          for (const entry of entries) if (entry.isIntersecting) { previewObserver.unobserve(entry.target); entry.target._loadPreview?.(); }
+        }, { rootMargin: "300px" })
+      : null;
+    function attachPreview(tile, url) {
+      const preview = document.createElement("video");
+      preview.className = "thumb";
+      preview.muted = true; preview.defaultMuted = true; preview.volume = 0;
+      preview.setAttribute("muted", ""); preview.setAttribute("aria-hidden", "true");
+      preview.playsInline = true; preview.loop = true; preview.preload = "metadata"; preview.tabIndex = -1;
+      preview.addEventListener("loadeddata", () => tile.classList.add("has-thumb"));
+      preview.addEventListener("error", () => { preview.remove(); tile.classList.remove("has-thumb"); });
+      tile.prepend(preview);
+      let timer = null;
+      const start = () => { clearTimeout(timer); if (!reduceMotion) timer = setTimeout(() => preview.play().catch(() => {}), 150); };
+      const stop = () => { clearTimeout(timer); preview.pause(); try { preview.currentTime = PREVIEW_AT; } catch (error) { /* not loaded yet */ } };
+      tile.addEventListener("mouseenter", start);
+      tile.addEventListener("mouseleave", stop);
+      tile.addEventListener("focus", () => { if (keyboardNav) start(); });
+      tile.addEventListener("blur", stop);
+      tile._loadPreview = () => { preview.src = url + "#t=" + PREVIEW_AT; };
+      if (previewObserver) previewObserver.observe(tile); else tile._loadPreview();
     }
 
     function render(videos, fresh) {
@@ -117,6 +161,7 @@
         tile.querySelector(".name").textContent = video.title;
         if (fresh.has("video:" + video.file)) tile.insertAdjacentHTML("afterbegin", '<div class="new-ribbon"><span>NEW</span></div>');
         tile.addEventListener("click", () => play(video, tile));
+        attachPreview(tile, "/escape-rooms/" + encodeURIComponent(video.file));
         list.append(tile);
       }
       list.querySelector(".room")?.focus();
