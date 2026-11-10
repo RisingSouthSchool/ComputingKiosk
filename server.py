@@ -98,7 +98,7 @@ def usage_connection():
 # date is, in order: an "added" date in its manifest entry (games.json,
 # webapps.json, ... -- set it by hand to force or end a banner), else the day
 # this kiosk first saw it (remembered in first_seen.json, which is git-ignored
-# so it survives updates). Videos use the date the file landed in escape-rooms/.
+# so it survives updates). Videos use the date the file landed in escape-rooms/ or microbit/.
 # The first time this runs, everything already on the kiosk counts as old.
 NEW_DAYS = 14
 FIRST_SEEN_FILE = ROOT / "first_seen.json"
@@ -128,12 +128,13 @@ def kiosk_items():
             for entry in folder.iterdir():
                 if entry.is_dir() and not entry.name.startswith(".") and (not needs_index or (entry / "index.html").is_file()):
                     items[f"{kind}:{entry.name}"] = added.get(entry.name)
-    if ESCAPE_ROOMS_DIR.is_dir():
-        for entry in ESCAPE_ROOMS_DIR.iterdir():
-            if entry.is_file() and not entry.name.startswith(".") and entry.suffix.lower() in VIDEO_TYPES:
-                info = entry.stat()
-                landed = getattr(info, "st_birthtime", info.st_mtime)  # macOS: when it was copied in
-                items[f"video:{entry.name}"] = datetime.fromtimestamp(landed).strftime("%Y-%m-%d")
+    for folder, prefix in VIDEO_FOLDERS:
+        if folder.is_dir():
+            for entry in folder.iterdir():
+                if entry.is_file() and not entry.name.startswith(".") and entry.suffix.lower() in VIDEO_TYPES:
+                    info = entry.stat()
+                    landed = getattr(info, "st_birthtime", info.st_mtime)  # macOS: when it was copied in
+                    items[f"video:{prefix}{entry.name}"] = datetime.fromtimestamp(landed).strftime("%Y-%m-%d")
     return items
 
 
@@ -322,8 +323,15 @@ def usage_target_exists(kind, slug):
     if kind == "db":
         return (DB_PROJECTS_DIR / slug).is_dir()
     if kind == "video":
-        file = (ESCAPE_ROOMS_DIR / slug).resolve()
-        return file.parent == ESCAPE_ROOMS_DIR.resolve() and file.suffix.lower() in VIDEO_TYPES and file.is_file()
+        # escape-room videos are logged by file name; micro:bit ones as "microbit:<file>"
+        for folder, prefix in VIDEO_FOLDERS:
+            if prefix and not slug.startswith(prefix):
+                continue
+            if not prefix and slug.startswith(tuple(p for _, p in VIDEO_FOLDERS if p)):
+                continue
+            file = (folder / slug[len(prefix):]).resolve()
+            if file.parent == folder.resolve() and file.suffix.lower() in VIDEO_TYPES and file.is_file():
+                return True
     return False
 
 PYTHON_PROJECTS_DIR = ROOT / "python_projects"
@@ -341,6 +349,11 @@ PTY_PORT = None  # set in main(); exposed to the client via /api/pty-port
 # the repo (so every kiosk has it after an update) but the videos in it are
 # git-ignored: they live only on the kiosk and survive every sync.
 ESCAPE_ROOMS_DIR = ROOT / "escape-rooms"
+# Student Micro:bit project videos work the same way, in their own folder.
+MICROBIT_DIR = ROOT / "microbit"
+# (folder, usage/NEW slug prefix): escape rooms keep their bare file names so
+# existing usage history and NEW dates are unaffected.
+VIDEO_FOLDERS = ((ESCAPE_ROOMS_DIR, ""), (MICROBIT_DIR, "microbit:"))
 VIDEO_TYPES = {".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/mp4"}  # H.264 .mov plays as mp4 in Chrome
 
 
@@ -469,22 +482,22 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
-    def list_escape_rooms(self):
-        """Videos currently in escape-rooms/, newest first. Read on every request
+    def list_videos(self, folder_dir):
+        """Videos currently in a video folder, newest first. Read on every request
         so dropping a file in the folder is all it takes to add one."""
         videos = []
-        if ESCAPE_ROOMS_DIR.is_dir():
-            for entry in ESCAPE_ROOMS_DIR.iterdir():
+        if folder_dir.is_dir():
+            for entry in folder_dir.iterdir():
                 if entry.is_file() and not entry.name.startswith(".") and entry.suffix.lower() in VIDEO_TYPES:
                     videos.append(entry)
         videos.sort(key=lambda entry: entry.stat().st_mtime, reverse=True)
         return [{"file": entry.name, "title": re.sub(r"\s+", " ", re.sub(r"[_-]+", " ", entry.stem)).strip()} for entry in videos]
 
-    def serve_escape_video(self, name):
+    def serve_video(self, folder_dir, name):
         """Serve one video with HTTP Range support (SimpleHTTPRequestHandler has
         none), so Chrome can scrub and skip through it."""
-        file = (ESCAPE_ROOMS_DIR / name).resolve()
-        if file.parent != ESCAPE_ROOMS_DIR.resolve() or file.suffix.lower() not in VIDEO_TYPES or not file.is_file():
+        file = (folder_dir / name).resolve()
+        if file.parent != folder_dir.resolve() or file.suffix.lower() not in VIDEO_TYPES or not file.is_file():
             self.send_error(404)
             return
         size = file.stat().st_size
@@ -532,10 +545,16 @@ class HubRequestHandler(SimpleHTTPRequestHandler):
             self.handle_stats(path)
             return
         if path == "/api/escape-rooms":
-            self.send_json(self.list_escape_rooms())
+            self.send_json(self.list_videos(ESCAPE_ROOMS_DIR))
+            return
+        if path == "/api/microbit":
+            self.send_json(self.list_videos(MICROBIT_DIR))
             return
         if path.startswith("/escape-rooms/") and path != "/escape-rooms/index.html":
-            self.serve_escape_video(unquote(path[len("/escape-rooms/"):]))
+            self.serve_video(ESCAPE_ROOMS_DIR, unquote(path[len("/escape-rooms/"):]))
+            return
+        if path.startswith("/microbit/") and path != "/microbit/index.html":
+            self.serve_video(MICROBIT_DIR, unquote(path[len("/microbit/"):]))
             return
         if path == "/api/votes":
             with VOTES_LOCK:

@@ -62,6 +62,7 @@
       const project = dbProjects.find(item => item.slug === slug);
       return { title: project ? project.title : humanise(slug), tag: "Database", likes: null, playable: null };
     }
+    if (slug.startsWith("microbit:")) return { title: humanise(slug.slice("microbit:".length)), tag: "Micro:bit video", likes: null, playable: null };
     return { title: humanise(slug), tag: "Escape-room video", likes: null, playable: null };
   }
 

@@ -269,6 +269,7 @@
       { id: "databases", title: "Y11 Databases", subtitle: "Year 11 databases: SQL and Python, live terminal programs", icon: "🗄️", real: true, enter: () => enterDatabases() },
       { id: "webapps", title: "Web apps", subtitle: "Year 10: AI created, human designed", icon: "💻", real: true, enter: () => enterWebapps() },
       { id: "minecraft", title: "Minecraft worlds", subtitle: "Escape rooms, data mosaics, network builds — Year 7 to 10", icon: "🧱", real: true, enter: () => enterEscapeRooms() },
+      { id: "microbit", title: "Micro:bit projects", subtitle: "Student-built Micro:bit projects, shown on video", icon: "🔌", real: true, enter: () => enterMicrobit() },
       { id: "robotics", title: "Robotics & hardware", subtitle: "VEX robotics, Lego micro:bit builds", icon: "🤖" },
       { id: "ai", title: "AI projects", subtitle: "Teachable Machine, chatbots", icon: "🧠" },
       { id: "data", title: "Data & spreadsheets", subtitle: "Spreadsheets and data analysis", icon: "📊" },
@@ -290,8 +291,13 @@
       ribbon.append(band);
       return ribbon;
     }
-    const CATEGORY_KINDS = { games: "game", python: "python", databases: "db", webapps: "webapp", minecraft: "video" };
-    const categoryHasNew = id => [...newKeys].some(key => key.startsWith(CATEGORY_KINDS[id] + ":"));
+    const CATEGORY_KINDS = { games: "game", python: "python", databases: "db", webapps: "webapp", minecraft: "video", microbit: "video" };
+    // Videos from both folders share the "video" kind; Micro:bit ones are "video:microbit:<file>".
+    const categoryHasNew = id => [...newKeys].some(key => {
+      if (id === "microbit") return key.startsWith("video:microbit:");
+      if (id === "minecraft") return key.startsWith("video:") && !key.startsWith("video:microbit:");
+      return key.startsWith(CATEGORY_KINDS[id] + ":");
+    });
     function refreshNew() {
       fetch("/api/new", { cache: "no-store" }).then(response => response.json()).then(result => {
         newKeys = new Set(Array.isArray(result.new) ? result.new : []);
@@ -422,6 +428,13 @@
     // in the same player as games, so Back to Hub returns to the landing screen.
     function enterEscapeRooms() {
       frame.src = "escape-rooms/index.html";
+      player.classList.add("open");
+      frame.focus();
+    }
+
+    // Same again for the Micro:bit project videos (microbit/index.html).
+    function enterMicrobit() {
+      frame.src = "microbit/index.html";
       player.classList.add("open");
       frame.focus();
     }
@@ -909,11 +922,11 @@
     const WAKE_GUARD_MS = 450; // covers mousedown->click and touch's click delay
 
     // Standby shows four kinds of slide, interleaved: featured games/apps,
-    // student Python, SQL, and short muted clips of the escape-room videos.
+    // student Python, SQL, and short muted clips of the escape-room and Micro:bit videos.
     // Featured games are the base; until any are tagged, show everything so
     // the screen is never blank.
     let snippets = [];          // snippets.json (made by snippet_scan.py)
-    let escapeVideos = [];      // /api/escape-rooms, fetched each time standby starts
+    let escapeVideos = [];      // /api/escape-rooms + /api/microbit, fetched each time standby starts
     let statSlides = [];        // built from /api/stats each time standby starts (empty until there is enough data)
     let attractRun = 0;         // bumped on every enter/exit so late async work can tell it is stale
     const CLIP_SECONDS = 8;
@@ -1119,10 +1132,10 @@
         video.disablePictureInPicture = true; video.controls = false;
         const kind = document.createElement("p");
         kind.className = "attract-kind";
-        kind.textContent = "Escape room · student walkthrough";
+        kind.textContent = entry.item.base === "microbit" ? "Micro:bit · student project" : "Escape room · student walkthrough";
         const name = document.createElement("h2");
         name.className = "attract-name";
-        name.textContent = entry.item.title || "Escape room";
+        name.textContent = entry.item.title || (entry.item.base === "microbit" ? "Micro:bit project" : "Escape room");
         slide.append(kind, video, name);
         let settled = false;
         const finish = ok => { if (settled) return; settled = true; clearTimeout(timeout); resolve(ok); };
@@ -1134,7 +1147,7 @@
           if (isFinite(length) && length > CLIP_SECONDS + 3) video.currentTime = length * 0.05 + Math.random() * (length * 0.9 - CLIP_SECONDS);
         });
         video.addEventListener("canplay", () => { video.play().then(() => finish(true), () => finish(false)); }, { once: true });
-        video.src = "/escape-rooms/" + encodeURIComponent(entry.item.file);
+        video.src = (entry.item.base === "microbit" ? "/microbit/" : "/escape-rooms/") + encodeURIComponent(entry.item.file);
       });
     }
 
@@ -1248,10 +1261,11 @@
           .catch(() => null)
           .finally(() => clearTimeout(giveUp));
       };
-      Promise.all([local("/api/escape-rooms"), local("/api/stats?period=week"), local("/api/stats?period=term")])
-        .then(([list, week, term]) => {
+      Promise.all([local("/api/escape-rooms"), local("/api/microbit"), local("/api/stats?period=week"), local("/api/stats?period=term")])
+        .then(([list, microbitList, week, term]) => {
           if (run !== attractRun) return;   // woken while these loaded
-          escapeVideos = Array.isArray(list) ? list : [];
+          escapeVideos = (Array.isArray(list) ? list : [])
+            .concat((Array.isArray(microbitList) ? microbitList : []).map(item => ({ ...item, base: "microbit" })));
           try { statSlides = buildStatSlides(week, term); } catch (error) { statSlides = []; }
           attractDeck = buildDeck();
           attractIndex = 0;

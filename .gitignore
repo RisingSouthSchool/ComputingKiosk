@@ -6,6 +6,11 @@ escape-rooms/*
 !escape-rooms/.gitkeep
 !escape-rooms/index.html
 
+# Micro:bit project videos stay on the kiosk only too.
+microbit/*
+!microbit/.gitkeep
+!microbit/index.html
+
 # Usage log: stays on the kiosk
 usage.db
 usage.db-*

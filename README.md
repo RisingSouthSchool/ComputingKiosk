@@ -269,7 +269,8 @@ pass is reshuffled, with at most 8 games/apps, 6 code, 5 SQL, 4 video and 4 stat
   week, and are left out entirely until there are at least 5 plays (the liked
   slide needs at least 2 liked items).
 - **Video clips** – an 8 second muted clip from a random point in one of the
-  escape-room videos in `escape-rooms/`. Add a video there and it joins the mix
+  escape-room videos in `escape-rooms/` or the Micro:bit videos in `microbit/`.
+  Add a video to either folder and it joins the mix
   the next time standby starts; with no videos, none are shown. A clip that
   will not play is skipped.
 
@@ -297,7 +298,7 @@ list, but remove the original zip from `zips/` too if you do not want it
 extracted again.
 ## NEW banners
 
-Anything added in the last 14 days gets a gold **NEW** ribbon on its tile, and its category tile on the home screen gets a **NEW** pill. It expires by itself, and anything you add later gets the banner automatically. This covers games, web apps, Python and database projects, and escape-room videos.
+Anything added in the last 14 days gets a gold **NEW** ribbon on its tile, and its category tile on the home screen gets a **NEW** pill. It expires by itself, and anything you add later gets the banner automatically. This covers games, web apps, Python and database projects, and the escape-room and Micro:bit videos.
 
 - **How it knows an item is new:** the first time this kiosk sees it, the server records the date in `first_seen.json` (local to the kiosk, git-ignored, so updates never touch it). The first ever run stamps everything that already exists as old, so nothing is flagged on day one.
 - **Override the date:** add `"added": "2026-11-09"` to an entry in `games.json`, `webapps.json`, etc. That date wins over first-seen. Zombie City uses this.
@@ -306,4 +307,13 @@ Anything added in the last 14 days gets a gold **NEW** ribbon on its tile, and i
 
 ## Sound
 
-The launcher starts Chrome with `--mute-audio`, so every game, app and video is silent and students can't turn sound on. This only applies when Chrome is started by `launch_kiosk.command`; if Chrome is already open, quit it first (Cmd+Q) and relaunch. Escape-room videos are muted too. To allow sound, remove `--mute-audio` from `launch_kiosk.command`.
+The launcher starts Chrome with `--mute-audio`, so every game, app and video is silent and students can't turn sound on. This only applies when Chrome is started by `launch_kiosk.command`; if Chrome is already open, quit it first (Cmd+Q) and relaunch. Escape-room and Micro:bit videos are muted too. To allow sound, remove `--mute-audio` from `launch_kiosk.command`.
+
+## Micro:bit project videos
+
+Student Micro:bit videos work exactly like the Minecraft escape-room videos:
+copy `.mp4` (H.264) or `.mov` files into the `microbit/` folder on the kiosk. The
+file name becomes the title (`temperature_alarm.mp4` shows as "temperature alarm").
+They appear on the **Micro:bit projects** tile straight away, get NEW ribbons for
+14 days, show up in usage stats, and join standby. Like the escape-room videos,
+the files stay on the kiosk only and are not synced from GitHub.
