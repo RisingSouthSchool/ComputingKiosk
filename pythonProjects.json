@@ -1,50 +1,50 @@
 [
   {
-    "slug": "task-1-programming-project-v2-diveshpraveenraj-main",
-    "title": "Task 1 Programming Project V2 Diveshpraveenraj Main",
-    "entryFile": "task-1-programming-project-v2-diveshpraveenraj-main/main.py",
+    "slug": "apex-custom-garage",
+    "title": "Apex Custom Garage",
+    "entryFile": "apex-custom-garage/main.py",
     "student": "",
     "blurb": ""
   },
   {
-    "slug": "task-1-programming-project-v2-hi63525-main",
-    "title": "Task 1 Programming Project V2 Hi63525 Main",
-    "entryFile": "task-1-programming-project-v2-hi63525-main/main.py",
+    "slug": "blackjack",
+    "title": "Blackjack",
+    "entryFile": "blackjack/main.py",
     "student": "",
     "blurb": ""
   },
   {
-    "slug": "task-1-programming-project-v2-kennedy-v-main",
-    "title": "Task 1 Programming Project V2 Kennedy V Main",
+    "slug": "chopsticks",
+    "title": "Chopsticks",
     "entryFile": "Chopsticks 1.0.py",
-    "student": "Kennedy",
-    "blurb": ""
-  },
-  {
-    "slug": "task-1-programming-project-v2-mcmanuseli-droid-main",
-    "title": "Task 1 Programming Project V2 Mcmanuseli Droid Main",
-    "entryFile": "task-1-programming-project-v2-mcmanuseli-droid-main/Game/paper_scissors_rock.py",
     "student": "",
     "blurb": ""
   },
   {
-    "slug": "task-1-programming-project-v2-rodvinmolaee-main",
-    "title": "Task 1 Programming Project V2 Rodvinmolaee Main",
-    "entryFile": "task-1-programming-project-v2-rodvinmolaee-main/imposter/draft.py",
+    "slug": "imposter-game",
+    "title": "Imposter Game",
+    "entryFile": "imposter-game/imposter/draft.py",
     "student": "",
     "blurb": ""
   },
   {
-    "slug": "task-1-programming-project-v2-saschapappas-main",
-    "title": "Task 1 Programming Project V2 Saschapappas Main",
-    "entryFile": "task-1-programming-project-v2-saschapappas-main/main.py",
+    "slug": "rock-paper-scissors",
+    "title": "Rock Paper Scissors",
+    "entryFile": "rock-paper-scissors/Game/paper_scissors_rock.py",
     "student": "",
     "blurb": ""
   },
   {
-    "slug": "task-1-programming-project-v2-txzylx-main",
-    "title": "Task 1 Programming Project V2 Txzylx Main",
-    "entryFile": "task-1-programming-project-v2-Txzylx-main/main.py",
+    "slug": "terminal-space-shooter",
+    "title": "Terminal Space Shooter",
+    "entryFile": "terminal-space-shooter/main.py",
+    "student": "",
+    "blurb": ""
+  },
+  {
+    "slug": "texas-holdem",
+    "title": "Texas Holdem",
+    "entryFile": "texas-holdem/main.py",
     "student": "",
     "blurb": ""
   }

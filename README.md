@@ -15,7 +15,10 @@ open while the hub is being used.
 
 ## Add a Python console project
 
-1. Put the student's `.zip` submission in `py_zips/`.
+1. Put the student's `.zip` submission in `py_zips/`. Rename it first to describe the
+   program (e.g. `blackjack.zip`, and rename the folder inside to match): GitHub Classroom
+   names submissions after the student's username, and the file name becomes the project's
+   slug and title.
 2. Double-click `start.command`.
 
 This needs the `websockets` package. A copy is bundled in `vendor/py/`, so there
