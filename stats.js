@@ -162,6 +162,7 @@
       h("div", { class: "st-top" },
         h("button", { type: "button", class: "st-back", "data-focus": "back", onclick: statsBack }, "← Home"),
         h("h1", { text: "Kiosk stats" }), h("span", { class: "st-spacer" }),
+        data.clock ? h("span", { class: "st-muted", style: "margin-right: 14px; font-size: .9rem", text: "Kiosk clock: " + data.clock.time + " " + data.clock.zone }) : "",
         h("a", { class: "st-btn quiet", href: "/api/usage.csv?period=" + state.period, download: "" }, "Download CSV")),
       h("div", { class: "st-chips" }, h("span", { class: "st-kicker", text: "Period" }),
         PERIODS.map(([id, label]) => chip(label, state.period === id, () => { state.period = id; loadDashboard("p:" + id); }, "p:" + id)),

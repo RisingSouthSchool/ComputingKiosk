@@ -24,6 +24,15 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlsplit
 
+# The kiosk is in Perth. Pin this process to that time zone so the weekday/hour stats, the "NEW"
+# dates and the CSV export never depend on how the Mac's own time zone happens to be set (the kiosk
+# is offline, so it can't correct itself). Set KIOSK_TZ to use a different zone.
+os.environ["TZ"] = os.environ.get("KIOSK_TZ", "Australia/Perth")
+try:
+    time.tzset()
+except AttributeError:
+    pass  # no tzset on Windows
+
 def _import_websockets():
     from websockets.asyncio.server import serve
     from websockets.exceptions import ConnectionClosed as closed
@@ -287,6 +296,7 @@ def compute_stats(period, kind=None, slug=None, now=None):
     total = len(plays)
     return {
         "period": period, "label": label, "from": start.strftime("%Y-%m-%d"), "to": end.strftime("%Y-%m-%d"),
+        "clock": {"time": now.strftime("%a %d %b %H:%M"), "zone": time.strftime("%Z")},   # so a wrong kiosk clock is visible
         "total_plays": total,
         "avg_seconds": round(sum(x["seconds"] for x in plays) / total) if total else 0,
         "sessions": len(inside),
