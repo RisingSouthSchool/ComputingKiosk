@@ -312,7 +312,7 @@ The launcher starts Chrome with `--mute-audio`, so every game, app and video is 
 ## Micro:bit project videos
 
 Student Micro:bit videos work exactly like the Minecraft escape-room videos:
-copy `.mp4` (H.264) or `.mov` files into the `microbit/` folder on the kiosk. The
+copy `.mp4` (H.264), `.mov` or `.webm` files into the `microbit/` folder on the kiosk. The
 file name becomes the title (`temperature_alarm.mp4` shows as "temperature alarm").
 They appear on the **Micro:bit projects** tile straight away, get NEW ribbons for
 14 days, show up in usage stats, and join standby. Like the escape-room videos,

@@ -354,7 +354,7 @@ MICROBIT_DIR = ROOT / "microbit"
 # (folder, usage/NEW slug prefix): escape rooms keep their bare file names so
 # existing usage history and NEW dates are unaffected.
 VIDEO_FOLDERS = ((ESCAPE_ROOMS_DIR, ""), (MICROBIT_DIR, "microbit:"))
-VIDEO_TYPES = {".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/mp4"}  # H.264 .mov plays as mp4 in Chrome
+VIDEO_TYPES = {".mp4": "video/mp4", ".m4v": "video/mp4", ".mov": "video/mp4", ".webm": "video/webm"}  # H.264 .mov plays as mp4 in Chrome
 
 
 def read_votes():
