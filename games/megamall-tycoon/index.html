@@ -1,0 +1,2882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MegaMall Tycoon - Isometric Store Management Game</title>
+    <!-- Local copies so the kiosk works with no internet -->
+    <link rel="stylesheet" href="tailwind.css">
+    <link rel="stylesheet" href="../../vendor/web/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="../../vendor/web/fonts/fonts.css">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #090d16;
+            color: #f8fafc;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+        .font-display {
+            font-family: 'Fredoka', cursive;
+        }
+        /* Glassmorphism UI */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+            transform: translateY(-2px);
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+        /* Canvas Container */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.85; }
+        }
+        .glow-effect {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen relative overflow-hidden bg-slate-950">
+
+    <!-- Game Viewport Canvas -->
+    <div id="canvas-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <!-- HUD Overlay Top Bar -->
+    <div class="fixed top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+        <!-- Store Stats Left -->
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-4 pointer-events-auto shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white shadow-lg font-display text-lg font-bold" id="hud-level-badge">
+                    1
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-bold text-base text-white tracking-wide" id="hud-store-name">Mega Mart</span>
+                        <button id="btn-edit-name" class="text-xs text-slate-400 hover:text-indigo-400 transition-colors" title="Rename Store"><i class="fa-solid fa-pen"></i></button>
+                    </div>
+                    <div class="w-32 bg-slate-800 h-2 rounded-full overflow-hidden mt-1 relative">
+                        <div id="hud-xp-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-300" style="width: 15%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-slate-700/60 hidden sm:block"></div>
+
+            <!-- Cash & Revenue -->
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <i class="fa-solid fa-sack-dollar text-base"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Cash</div>
+                        <div class="font-display font-bold text-emerald-400 text-lg leading-tight" id="hud-cash">$1,800</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 hidden md:flex">
+                    <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-base"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Today's Profit</div>
+                        <div class="font-display font-semibold text-slate-200 text-sm leading-tight" id="hud-daily-profit">$0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-slate-700/60 hidden md:block"></div>
+
+            <!-- Reputation / Vibe -->
+            <div class="flex items-center gap-2 hidden md:flex">
+                <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                    <i class="fa-solid fa-face-smile text-base"></i>
+                </div>
+                <div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Satisfaction</div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-display font-bold text-amber-400 text-sm" id="hud-reputation">95%</span>
+                        <div class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300" id="hud-reputation-tag">High</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls & Time Right -->
+        <div class="glass-panel rounded-2xl px-4 py-2.5 flex items-center gap-4 pointer-events-auto shadow-xl ml-auto">
+            <!-- Day & Time -->
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-amber-400" id="hud-time-icon">
+                    <i class="fa-solid fa-sun text-lg"></i>
+                </div>
+                <div>
+                    <div class="font-display font-bold text-slate-200 text-sm" id="hud-day-text">Day 1</div>
+                    <div class="text-xs text-slate-400 font-mono" id="hud-clock">08:00 AM</div>
+                </div>
+            </div>
+
+            <div class="h-8 w-px bg-slate-700/60"></div>
+
+            <!-- Game Speed -->
+            <div class="flex items-center bg-slate-900/80 rounded-xl p-1 border border-slate-700/50">
+                <button id="btn-speed-pause" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors" title="Pause"><i class="fa-solid fa-pause text-xs"></i></button>
+                <button id="btn-speed-1" class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs" title="Normal Speed">1x</button>
+                <button id="btn-speed-2" class="w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors font-bold text-xs" title="Fast Speed">2x</button>
+            </div>
+
+            <!-- Reset Camera -->
+            <button id="btn-reset-cam" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors" title="Center Camera">
+                <i class="fa-solid fa-crosshairs text-sm"></i>
+            </button>
+
+            <!-- Audio Toggle -->
+            <button id="btn-audio-toggle" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors" title="Toggle Sound">
+                <i class="fa-solid fa-volume-high text-sm"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Event Banner (Hidden by default) -->
+    <div id="event-banner" class="fixed top-20 left-1/2 -translate-x-1/2 z-20 glass-panel border-amber-500/50 rounded-xl px-5 py-2.5 flex items-center gap-3 text-amber-300 font-semibold shadow-2xl transition-all duration-300 translate-y-[-100px] opacity-0 pointer-events-none">
+        <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400 animate-bounce">
+            <i class="fa-solid fa-bolt text-lg" id="event-icon"></i>
+        </div>
+        <div>
+            <div class="text-xs uppercase tracking-wider text-amber-400/80 font-bold" id="event-title">EVENT ACTIVE</div>
+            <div class="text-sm font-display text-white" id="event-desc">Rush Hour! Customer incoming speed x2!</div>
+        </div>
+    </div>
+
+    <!-- Build Mode Floating Indicator Banner -->
+    <div id="build-mode-banner" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-20 glass-panel border-emerald-500/60 rounded-2xl px-5 py-2.5 flex items-center gap-4 shadow-2xl transition-all duration-200 translate-y-24 opacity-0 pointer-events-none">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+            <i class="fa-solid fa-hammer text-base"></i>
+        </div>
+        <div>
+            <div class="text-[10px] uppercase tracking-wider text-emerald-400 font-bold">Build Mode Active — Click Floor Tile to Place</div>
+            <div class="text-sm font-display font-bold text-white" id="build-mode-label">Grocery Shelf ($150)</div>
+        </div>
+        <button id="btn-cancel-build" class="ml-2 px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
+            <i class="fa-solid fa-xmark"></i> Cancel (ESC)
+        </button>
+    </div>
+
+    <!-- Move Mode Floating Indicator Banner -->
+    <div id="move-mode-banner" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-20 glass-panel border-cyan-500/60 rounded-2xl px-5 py-2.5 flex items-center gap-4 shadow-2xl transition-all duration-200 translate-y-24 opacity-0 pointer-events-none">
+        <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+            <i class="fa-solid fa-arrows-up-down-left-right text-base"></i>
+        </div>
+        <div>
+            <div class="text-[10px] uppercase tracking-wider text-cyan-400 font-bold" id="move-mode-sub">Move Mode Active</div>
+            <div class="text-sm font-display font-bold text-white" id="move-mode-label">Click a placed item to pick it up, then click an empty tile</div>
+        </div>
+        <button id="btn-cancel-move" class="ml-2 px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5">
+            <i class="fa-solid fa-xmark"></i> Cancel (ESC)
+        </button>
+    </div>
+
+    <!-- Tile Inspector Context Popover (When clicking placed furniture) -->
+    <div id="tile-inspector" class="fixed bottom-20 left-1/2 -translate-x-1/2 z-20 glass-panel border-indigo-500/50 rounded-2xl px-5 py-3 flex items-center gap-4 shadow-2xl transition-all duration-200 translate-y-24 opacity-0 pointer-events-none">
+        <div id="inspector-icon" class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        <div>
+            <div class="font-display font-bold text-white text-sm" id="inspector-title">Grocery Shelf</div>
+            <div class="text-xs text-slate-300" id="inspector-sub">Stock: 35 / 40</div>
+        </div>
+        <div class="flex items-center gap-2 ml-2">
+            <button id="btn-inspector-move" class="px-3 py-1.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition-colors flex items-center gap-1">
+                <i class="fa-solid fa-arrows-up-down-left-right"></i> Move
+            </button>
+            <button id="btn-inspector-restock" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors">
+                Refill ($15)
+            </button>
+            <button id="btn-inspector-sell" class="px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-white text-xs font-bold transition-colors">
+                Sell (+$75)
+            </button>
+            <button id="btn-inspector-close" class="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Rename Store Inline Popover Modal (Replaces native prompt) -->
+    <div id="rename-modal" class="fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-sm rounded-2xl p-5 border border-indigo-500/40 shadow-2xl">
+            <h3 class="font-display font-bold text-lg text-white mb-2">Rename Your Store</h3>
+            <p class="text-xs text-slate-400 mb-3">Choose a catchy name for your retail empire:</p>
+            <input id="input-store-name" type="text" maxlength="22" class="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white text-sm focus:outline-none focus:border-indigo-500 mb-4" placeholder="Mega Mart">
+            <div class="flex justify-end gap-2">
+                <button id="btn-rename-cancel" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Cancel</button>
+                <button id="btn-rename-save" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Save Name</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-banner" class="fixed top-20 right-4 z-30 glass-panel border-rose-500/50 rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition-all duration-300 translate-x-80 opacity-0 pointer-events-none flex items-center gap-2">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-indigo-400"></i>
+        <span id="toast-text">Notification</span>
+    </div>
+
+    <!-- Right Side Floating Action Tools -->
+    <div class="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-3">
+        <button id="btn-quick-move" class="glass-panel w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-cyan-400 hover:scale-105 active:scale-95 transition-all shadow-xl group relative">
+            <i class="fa-solid fa-arrows-up-down-left-right text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Move</span>
+            <span class="absolute right-14 bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Move Shelves, Plants & Registers</span>
+        </button>
+        <button id="btn-quick-restock" class="glass-panel w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-emerald-400 hover:scale-105 active:scale-95 transition-all shadow-xl group relative">
+            <i class="fa-solid fa-boxes-packing text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Restock</span>
+            <span class="absolute right-14 bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Refill All Shelves ($50)</span>
+        </button>
+        <button id="btn-quick-clean" class="glass-panel w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-sky-400 hover:scale-105 active:scale-95 transition-all shadow-xl group relative">
+            <i class="fa-solid fa-broom text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Clean</span>
+            <span class="absolute right-14 bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Clean Store Trash</span>
+        </button>
+        <button id="btn-quick-promo" class="glass-panel w-12 h-12 rounded-2xl flex flex-col items-center justify-center text-amber-400 hover:scale-105 active:scale-95 transition-all shadow-xl group relative">
+            <i class="fa-solid fa-bullhorn text-lg"></i>
+            <span class="text-[9px] font-bold mt-0.5">Promo</span>
+            <span class="absolute right-14 bg-slate-900 text-slate-200 text-xs px-2.5 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-slate-700 pointer-events-none">Trigger Store Event ($200)</span>
+        </button>
+    </div>
+
+    <!-- Main Navigation Dock (Bottom Bar) -->
+    <div class="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 glass-panel rounded-2xl p-2 flex items-center gap-2 shadow-2xl max-w-[95vw] overflow-x-auto">
+        <button data-tab="tab-inventory" class="nav-tab-btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold text-sm transition-all whitespace-nowrap">
+            <i class="fa-solid fa-boxes-stacked text-indigo-400"></i>
+            <span>Inventory</span>
+        </button>
+        <button data-tab="tab-build" class="nav-tab-btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold text-sm transition-all whitespace-nowrap">
+            <i class="fa-solid fa-store text-emerald-400"></i>
+            <span>Build & Furniture</span>
+        </button>
+        <button data-tab="tab-staff" class="nav-tab-btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold text-sm transition-all whitespace-nowrap">
+            <i class="fa-solid fa-users text-amber-400"></i>
+            <span>Staff</span>
+        </button>
+        <button data-tab="tab-upgrades" class="nav-tab-btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold text-sm transition-all whitespace-nowrap">
+            <i class="fa-solid fa-arrow-up-right-dots text-purple-400"></i>
+            <span>Upgrades</span>
+        </button>
+        <button data-tab="tab-stats" class="nav-tab-btn flex items-center gap-2.5 px-4 py-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800/60 font-semibold text-sm transition-all whitespace-nowrap">
+            <i class="fa-solid fa-chart-pie text-cyan-400"></i>
+            <span>Analytics</span>
+        </button>
+    </div>
+
+    <!-- MODAL DRAWER OVERLAY -->
+    <div id="modal-container" class="fixed inset-0 z-30 bg-slate-950/70 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="modal-box" class="glass-panel w-full max-w-4xl max-h-[85vh] rounded-3xl flex flex-col shadow-2xl border border-slate-700/80 overflow-hidden transform scale-95 transition-transform duration-300">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-700/60 flex items-center justify-between bg-slate-900/50">
+                <div class="flex items-center gap-3">
+                    <div id="modal-header-icon" class="w-10 h-10 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div>
+                        <h2 id="modal-title" class="font-display text-xl font-bold text-white">Inventory Management</h2>
+                        <p id="modal-subtitle" class="text-xs text-slate-400">Manage products, stock levels, and set retail prices</p>
+                    </div>
+                </div>
+                <button id="btn-close-modal" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 overflow-y-auto flex-1 space-y-6" id="modal-body">
+                
+                <!-- INVENTORY TAB CONTENT -->
+                <div id="tab-inventory" class="tab-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="inventory-items-grid">
+                        <!-- Populated dynamically by JS -->
+                    </div>
+                </div>
+
+                <!-- BUILD & FURNITURE TAB CONTENT -->
+                <div id="tab-build" class="tab-content hidden">
+                    <div class="flex gap-2 border-b border-slate-800 pb-3 mb-4 overflow-x-auto">
+                        <button class="build-cat-btn px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold text-xs" data-cat="all">All Items</button>
+                        <button class="build-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs" data-cat="shelf">Shelves</button>
+                        <button class="build-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs" data-cat="checkout">Checkouts</button>
+                        <button class="build-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs" data-cat="decor">Decorations</button>
+                        <button class="build-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs" data-cat="expansion">Expand Store</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4" id="build-items-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- STAFF TAB CONTENT -->
+                <div id="tab-staff" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="staff-roles-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- UPGRADES TAB CONTENT -->
+                <div id="tab-upgrades" class="tab-content hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="upgrades-grid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- STATS & ANALYTICS TAB CONTENT -->
+                <div id="tab-stats" class="tab-content hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <div class="glass-card p-4 rounded-2xl text-center">
+                            <div class="text-xs text-slate-400 mb-1">Total Sales Revenue</div>
+                            <div class="font-display font-bold text-2xl text-emerald-400" id="stat-total-revenue">$0</div>
+                        </div>
+                        <div class="glass-card p-4 rounded-2xl text-center">
+                            <div class="text-xs text-slate-400 mb-1">Customers Served</div>
+                            <div class="font-display font-bold text-2xl text-indigo-400" id="stat-customers-served">0</div>
+                        </div>
+                        <div class="glass-card p-4 rounded-2xl text-center">
+                            <div class="text-xs text-slate-400 mb-1">Store Happiness</div>
+                            <div class="font-display font-bold text-2xl text-amber-400" id="stat-avg-rating">95%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="glass-card p-5 rounded-2xl">
+                        <h3 class="font-display font-bold text-white mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-award text-amber-400"></i> Store Level Milestones
+                        </h3>
+                        <div class="space-y-3" id="milestones-list">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- TUTORIAL / WELCOME MODAL -->
+    <div id="tutorial-modal" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel w-full max-w-lg rounded-3xl p-6 sm:p-8 text-center border border-indigo-500/30 shadow-2xl relative">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 text-white flex items-center justify-center text-3xl font-bold mx-auto mb-4 shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-shop"></i>
+            </div>
+            <h1 class="font-display text-2xl sm:text-3xl font-bold text-white mb-2">Welcome to MegaMall Tycoon!</h1>
+            <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+                Build the ultimate retail empire from scratch! Stock shelves with colorful goods, design your floorplan, set competitive prices, hire staff, and watch your mall thrive day and night.
+            </p>
+            <div class="grid grid-cols-2 gap-3 text-left mb-6 bg-slate-900/60 p-4 rounded-2xl border border-slate-800 text-xs">
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-box text-indigo-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-white block">Stock & Inspect</strong>
+                        Click any shelf to refill it or sell it back.
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-cash-register text-emerald-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-white block">Checkout Counters</strong>
+                        Hire cashiers to staff registers & speed up lines.
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-tags text-amber-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-white block">Optimize Prices</strong>
+                        Fair prices boost happiness; gouging lowers satisfaction.
+                    </div>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i class="fa-solid fa-user-gear text-cyan-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-white block">Live Staff NPCs</strong>
+                        Restockers and Janitors roam your floor automatically.
+                    </div>
+                </div>
+            </div>
+            <button id="btn-start-game" class="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-display font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all text-base">
+                Open My Store Now!
+            </button>
+        </div>
+    </div>
+
+    <!-- GAME CODE SCRIPT -->
+    <script>
+    /**
+     * MEGAMALL TYCOON - ENHANCED ISOMETRIC EDITION
+     * Detailed Isometric Architecture, Bespoke Furniture & Character Rendering,
+     * Animated Staff NPCs, Day/Night & Power-Outage Lighting, Build Previews & Economy Wiring.
+     */
+
+    // --- SOUND ENGINE (Web Audio API Synthesizer) ---
+    class SoundEngine {
+        constructor() {
+            this.ctx = null;
+            this.enabled = true;
+        }
+
+        init() {
+            if (!this.ctx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        playChime() {
+            if (!this.enabled || !this.ctx) return;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.15);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+
+        playCash() {
+            if (!this.enabled || !this.ctx) return;
+            const now = this.ctx.currentTime;
+            [880, 1760].forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                gain.gain.setValueAtTime(0.18, now + idx * 0.06);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.06);
+                osc.stop(now + idx * 0.06 + 0.15);
+            });
+        }
+
+        playPop() {
+            if (!this.enabled || !this.ctx) return;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(160, now + 0.08);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.08);
+        }
+
+        playLevelUp() {
+            if (!this.enabled || !this.ctx) return;
+            const now = this.ctx.currentTime;
+            const notes = [440, 554.37, 659.25, 880];
+            notes.forEach((freq, idx) => {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                gain.gain.setValueAtTime(0.18, now + idx * 0.08);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + idx * 0.08);
+                osc.stop(now + idx * 0.08 + 0.3);
+            });
+        }
+    }
+
+    const soundEngine = new SoundEngine();
+
+    // --- GAME CONSTANTS & DATA CONFIG ---
+    const CATEGORIES = {
+        GROCERY: { id: 'GROCERY', name: 'Groceries', color: '#10b981', icon: 'fa-basket-shopping' },
+        CLOTHING: { id: 'CLOTHING', name: 'Clothing', color: '#8b5cf6', icon: 'fa-shirt' },
+        ELECTRONICS: { id: 'ELECTRONICS', name: 'Electronics', color: '#3b82f6', icon: 'fa-tv' },
+        TOYS: { id: 'TOYS', name: 'Toys & Games', color: '#f59e0b', icon: 'fa-gamepad' }
+    };
+
+    const PRODUCTS = {
+        apples: { id: 'apples', name: 'Fresh Apples', cat: 'GROCERY', cost: 2, defaultPrice: 5, unlockedAt: 1, icon: '🍎' },
+        bread: { id: 'bread', name: 'Artisan Bread', cat: 'GROCERY', cost: 4, defaultPrice: 9, unlockedAt: 1, icon: '🍞' },
+        tshirt: { id: 'tshirt', name: 'Cotton T-Shirt', cat: 'CLOTHING', cost: 12, defaultPrice: 28, unlockedAt: 1, icon: '👕' },
+        sneakers: { id: 'sneakers', name: 'Urban Sneakers', cat: 'CLOTHING', cost: 35, defaultPrice: 85, unlockedAt: 3, icon: '👟' },
+        headphones: { id: 'headphones', name: 'Wireless Headphones', cat: 'ELECTRONICS', cost: 45, defaultPrice: 110, unlockedAt: 2, icon: '🎧' },
+        console: { id: 'console', name: 'Game Console', cat: 'ELECTRONICS', cost: 220, defaultPrice: 450, unlockedAt: 5, icon: '🎮' },
+        teddy: { id: 'teddy', name: 'Plush Bear', cat: 'TOYS', cost: 15, defaultPrice: 35, unlockedAt: 2, icon: '🧸' },
+        drone: { id: 'drone', name: 'Toy Drone', cat: 'TOYS', cost: 60, defaultPrice: 140, unlockedAt: 4, icon: '🛸' }
+    };
+
+    const FURNITURE_TYPES = {
+        shelf_grocery: { id: 'shelf_grocery', name: 'Grocery Shelf', cat: 'shelf', productCat: 'GROCERY', cost: 150, capacity: 40, width: 1, height: 1, color: '#059669', icon: 'fa-apple-whole' },
+        shelf_clothing: { id: 'shelf_clothing', name: 'Clothing Rack', cat: 'shelf', productCat: 'CLOTHING', cost: 250, capacity: 35, width: 1, height: 1, color: '#7c3aed', icon: 'fa-shirt' },
+        shelf_electronics: { id: 'shelf_electronics', name: 'Tech Display Unit', cat: 'shelf', productCat: 'ELECTRONICS', cost: 400, capacity: 25, width: 1, height: 1, color: '#2563eb', icon: 'fa-tv' },
+        shelf_toys: { id: 'shelf_toys', name: 'Toy Stand', cat: 'shelf', productCat: 'TOYS', cost: 300, capacity: 30, width: 1, height: 1, color: '#d97706', icon: 'fa-gamepad' },
+        checkout_basic: { id: 'checkout_basic', name: 'Standard Checkout', cat: 'checkout', cost: 300, speed: 1.0, width: 1, height: 1, color: '#475569', icon: 'fa-cash-register' },
+        checkout_express: { id: 'checkout_express', name: 'Express Checkout', cat: 'checkout', cost: 800, speed: 2.2, width: 1, height: 1, color: '#0284c7', icon: 'fa-bolt' },
+        plant: { id: 'plant', name: 'Decorative Palm', cat: 'decor', cost: 100, beauty: 15, width: 1, height: 1, color: '#16a34a', icon: 'fa-plant-wilt' },
+        neon_sign: { id: 'neon_sign', name: 'Neon Store Sign', cat: 'decor', cost: 500, beauty: 45, width: 1, height: 1, color: '#ec4899', icon: 'fa-lightbulb' }
+    };
+
+    const EXPANSIONS = [
+        { level: 1, size: 8, cost: 0 },
+        { level: 2, size: 10, cost: 1000 },
+        { level: 4, size: 12, cost: 3000 },
+        { level: 6, size: 14, cost: 8000 }
+    ];
+
+    // --- GAME STATE ---
+    const gameState = {
+        storeName: "Mega Mart",
+        cash: 1800,
+        totalRevenue: 0,
+        customersServed: 0,
+        level: 1,
+        xp: 0,
+        xpToNextLevel: 500,
+        reputation: 95,
+        gridSize: 8,
+        gameSpeed: 1,
+        day: 1,
+        time: 480, // 8:00 AM in minutes
+        dayProfit: 0,
+        animTime: 0,
+
+        inventory: {
+            apples: { stock: 40, price: 5 },
+            bread: { stock: 30, price: 9 },
+            tshirt: { stock: 25, price: 28 },
+            sneakers: { stock: 0, price: 85 },
+            headphones: { stock: 0, price: 110 },
+            console: { stock: 0, price: 450 },
+            teddy: { stock: 0, price: 35 },
+            drone: { stock: 0, price: 140 }
+        },
+
+        staff: {
+            cashiers: 1,
+            restockers: 1,
+            janitors: 0
+        },
+
+        upgrades: {
+            marketing: 0,
+            lighting: 0
+        },
+
+        grid: [],
+        customers: [],
+        staffAgents: [],
+        particles: [],
+        trashItems: [],
+
+        activeEvent: null,
+        eventTimer: 0,
+
+        selectedBuildCategory: 'all',
+        inspectedTile: null
+    };
+
+    // --- HELPER FUNCTIONS ---
+    function showToast(text, icon = 'fa-circle-info', borderColor = 'border-indigo-500/50') {
+        const banner = document.getElementById('toast-banner');
+        const textEl = document.getElementById('toast-text');
+        const iconEl = document.getElementById('toast-icon');
+        banner.className = `fixed top-20 right-4 z-30 glass-panel ${borderColor} rounded-xl px-4 py-2.5 text-xs font-semibold text-white shadow-xl transition-all duration-300 translate-x-0 opacity-100 pointer-events-none flex items-center gap-2`;
+        iconEl.className = `fa-solid ${icon} text-indigo-400`;
+        textEl.innerText = text;
+        clearTimeout(banner._timer);
+        banner._timer = setTimeout(() => {
+            banner.classList.add('translate-x-80', 'opacity-0');
+            banner.classList.remove('translate-x-0', 'opacity-100');
+        }, 2600);
+    }
+
+    function adjustColor(col, amt) {
+        let num = parseInt(col.replace('#', ''), 16);
+        let r = Math.min(255, Math.max(0, (num >> 16) + amt));
+        let g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amt));
+        let b = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+        return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function addParticle(gx, gy, text, color = '#10b981') {
+        gameState.particles.push({ gx, gy, text, color, life: 1.0, y: 0 });
+    }
+
+    // --- CANVAS ENGINE (DETAILED ISOMETRIC RENDERER) ---
+    class IsoEngine {
+        constructor(canvasId) {
+            this.canvas = document.getElementById(canvasId);
+            this.ctx = this.canvas.getContext('2d');
+
+            this.tileWidth = 76;
+            this.tileHeight = 38;
+
+            this.cameraOffset = { x: 0, y: 0 };
+            this.isDragging = false;
+            this.hasMovedDuringDrag = false;
+            this.dragStart = { x: 0, y: 0 };
+
+            this.selectedBuildItem = null;
+            this.moveMode = false;
+            this.movingSource = null; // { x, y, item, singleMove }
+            this.hoveredTile = null;
+
+            this.resize();
+            window.addEventListener('resize', () => this.resize());
+            this.setupControls();
+        }
+
+        resize() {
+            this.canvas.width = window.innerWidth;
+            this.canvas.height = window.innerHeight;
+            this.resetCamera();
+        }
+
+        resetCamera() {
+            this.cameraOffset.x = this.canvas.width / 2;
+            this.cameraOffset.y = Math.max(130, this.canvas.height * 0.24);
+        }
+
+        setupControls() {
+            const container = document.getElementById('canvas-container');
+
+            const getPos = (e) => {
+                if (e.touches && e.touches[0]) {
+                    return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+                return { x: e.clientX, y: e.clientY };
+            };
+
+            const startDrag = (e) => {
+                const pos = getPos(e);
+                this.isDragging = true;
+                this.hasMovedDuringDrag = false;
+                this.dragStart = { x: pos.x - this.cameraOffset.x, y: pos.y - this.cameraOffset.y };
+            };
+
+            const doDrag = (e) => {
+                const pos = getPos(e);
+                if (this.isDragging) {
+                    const nextX = pos.x - this.dragStart.x;
+                    const nextY = pos.y - this.dragStart.y;
+                    if (Math.hypot(nextX - this.cameraOffset.x, nextY - this.cameraOffset.y) > 4) {
+                        this.hasMovedDuringDrag = true;
+                    }
+                    this.cameraOffset.x = nextX;
+                    this.cameraOffset.y = nextY;
+                }
+
+                const isoCoords = this.screenToIso(pos.x, pos.y);
+                if (isoCoords.x >= 0 && isoCoords.x < gameState.gridSize && isoCoords.y >= 0 && isoCoords.y < gameState.gridSize) {
+                    this.hoveredTile = isoCoords;
+                } else {
+                    this.hoveredTile = null;
+                }
+            };
+
+            const endDrag = () => {
+                this.isDragging = false;
+            };
+
+            container.addEventListener('mousedown', startDrag);
+            container.addEventListener('mousemove', doDrag);
+            window.addEventListener('mouseup', endDrag);
+
+            container.addEventListener('touchstart', startDrag, { passive: true });
+            container.addEventListener('touchmove', doDrag, { passive: true });
+            window.addEventListener('touchend', endDrag);
+
+            container.addEventListener('click', () => {
+                if (this.hasMovedDuringDrag) return;
+                if (this.hoveredTile) {
+                    this.handleTileClick(this.hoveredTile.x, this.hoveredTile.y);
+                } else {
+                    closeTileInspector();
+                }
+            });
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (this.selectedBuildItem) {
+                        exitBuildMode();
+                    }
+                    if (this.moveMode) {
+                        exitMoveMode();
+                    }
+                    closeTileInspector();
+                    closeModal();
+                }
+            });
+        }
+
+        handleTileClick(x, y) {
+            // 1. Move Mode Interaction
+            if (this.moveMode) {
+                const clickedItem = gameState.grid[y] && gameState.grid[y][x];
+
+                // Step A: No item picked up yet -> pick up clicked furniture
+                if (!this.movingSource) {
+                    if (clickedItem) {
+                        pickUpFurnitureForMove(x, y, false);
+                    } else {
+                        addParticle(x, y, 'Select an item to move', '#38bdf8');
+                    }
+                    return;
+                }
+
+                // Step B: Item is currently picked up
+                // Clicking the same tile cancels picking up that specific item
+                if (this.movingSource.x === x && this.movingSource.y === y) {
+                    if (this.movingSource.singleMove) {
+                        exitMoveMode();
+                    } else {
+                        this.movingSource = null;
+                        updateMoveModeBanner();
+                        soundEngine.playPop();
+                    }
+                    return;
+                }
+
+                // Clicking a different occupied tile switches selection (in continuous Move Mode)
+                if (clickedItem) {
+                    pickUpFurnitureForMove(x, y, this.movingSource.singleMove);
+                    return;
+                }
+
+                // Prevent blocking entrance at (0,0)
+                if (x === 0 && y === 0) {
+                    addParticle(x, y, 'Keep Entrance Clear!', '#ef4444');
+                    return;
+                }
+
+                // Execute move to empty tile (x, y)
+                executeFurnitureMove(this.movingSource.x, this.movingSource.y, x, y);
+                return;
+            }
+
+            // 2. Clean trash if clicked on tile
+            const trashIdx = gameState.trashItems.findIndex(t => Math.round(t.x) === x && Math.round(t.y) === y);
+            if (trashIdx !== -1 && !this.selectedBuildItem) {
+                gameState.trashItems.splice(trashIdx, 1);
+                gameState.cash += 5;
+                gameState.reputation = Math.min(100, gameState.reputation + 0.5);
+                addParticle(x, y, '+$5 Cleaned!', '#06b6d4');
+                soundEngine.playPop();
+                updateHUD();
+                return;
+            }
+
+            // 3. If build mode active, place furniture
+            if (this.selectedBuildItem) {
+                if (x === 0 && y === 0) {
+                    addParticle(x, y, 'Keep Entrance Clear!', '#ef4444');
+                    return;
+                }
+                placeFurniture(this.selectedBuildItem, x, y);
+                return;
+            }
+
+            // 4. Inspect existing furniture on tile
+            const existing = gameState.grid[y] && gameState.grid[y][x];
+            if (existing) {
+                openTileInspector(x, y, existing);
+            } else {
+                closeTileInspector();
+            }
+        }
+
+        gridToIso(gx, gy) {
+            const screenX = (gx - gy) * (this.tileWidth / 2) + this.cameraOffset.x;
+            const screenY = (gx + gy) * (this.tileHeight / 2) + this.cameraOffset.y;
+            return { x: screenX, y: screenY };
+        }
+
+        screenToIso(sx, sy) {
+            const relX = sx - this.cameraOffset.x;
+            const relY = sy - this.cameraOffset.y;
+            const gx = Math.floor((relX / (this.tileWidth / 2) + relY / (this.tileHeight / 2)) / 2);
+            const gy = Math.floor((relY / (this.tileHeight / 2) - relX / (this.tileWidth / 2)) / 2);
+            return { x: gx, y: gy };
+        }
+
+        // --- MAIN RENDER PIPELINE ---
+        render() {
+            const ctx = this.ctx;
+            ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Subtle Radial Studio Backdrop
+            const bgGrad = ctx.createRadialGradient(
+                this.canvas.width / 2, this.canvas.height / 2, 60,
+                this.canvas.width / 2, this.canvas.height / 2, Math.max(this.canvas.width, this.canvas.height) * 0.75
+            );
+            bgGrad.addColorStop(0, '#131c31');
+            bgGrad.addColorStop(1, '#070b14');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // 1. Exterior Foundation Plinth & Floor Grid
+            this.drawStoreFoundationAndFloor();
+
+            // 2. Back Perimeter Walls (x=0 and y=0 edges) with Windows & Entrance Archway
+            this.drawPerimeterWalls();
+
+            // 3. Trash items on floor
+            gameState.trashItems.forEach(t => this.drawTrash(t.x, t.y));
+
+            // 4. Depth-Sorted Entities (Furniture, Customers, Staff Agents)
+            const drawables = [];
+
+            for (let y = 0; y < gameState.gridSize; y++) {
+                for (let x = 0; x < gameState.gridSize; x++) {
+                    const item = gameState.grid[y][x];
+                    if (item) {
+                        drawables.push({ type: 'furniture', x, y, depth: x + y, data: item });
+                    }
+                }
+            }
+
+            gameState.customers.forEach(cust => {
+                drawables.push({ type: 'customer', x: cust.x, y: cust.y, depth: cust.x + cust.y + 0.05, data: cust });
+            });
+
+            gameState.staffAgents.forEach(agent => {
+                drawables.push({ type: 'staff', x: agent.x, y: agent.y, depth: agent.x + agent.y + 0.05, data: agent });
+            });
+
+            drawables.sort((a, b) => a.depth - b.depth);
+
+            drawables.forEach(obj => {
+                if (obj.type === 'furniture') {
+                    const isBeingMoved = this.moveMode && this.movingSource && this.movingSource.x === obj.x && this.movingSource.y === obj.y;
+                    this.drawFurniture(obj.x, obj.y, obj.data, isBeingMoved ? 0.35 : 1.0);
+                    if (isBeingMoved) {
+                        this.drawMovingSourceHighlight(obj.x, obj.y);
+                    }
+                } else if (obj.type === 'customer') {
+                    this.drawCharacterSprite(obj.data, false);
+                } else if (obj.type === 'staff') {
+                    this.drawCharacterSprite(obj.data, true);
+                }
+            });
+
+            // 5. Hovered Tile & Ghost Build/Move Preview
+            if (this.hoveredTile) {
+                this.drawHoverTile(this.hoveredTile.x, this.hoveredTile.y);
+            }
+
+            // 6. Day / Night & Power Outage Ambient Lighting Overlay
+            this.drawAmbientLighting();
+
+            // 7. Floating Particles (Above lighting so text stays crisp)
+            this.renderParticles();
+        }
+
+        drawStoreFoundationAndFloor() {
+            const ctx = this.ctx;
+            const size = gameState.gridSize;
+            const hw = this.tileWidth / 2;
+            const hh = this.tileHeight / 2;
+
+            // 3D Concrete Platform Slab under the entire store
+            const topCorner = this.gridToIso(0, 0);
+            const rightCorner = this.gridToIso(size, 0);
+            const bottomCorner = this.gridToIso(size, size);
+            const leftCorner = this.gridToIso(0, size);
+            const slabDepth = 18;
+
+            // Left slab edge
+            ctx.beginPath();
+            ctx.moveTo(leftCorner.x, leftCorner.y);
+            ctx.lineTo(bottomCorner.x, bottomCorner.y);
+            ctx.lineTo(bottomCorner.x, bottomCorner.y + slabDepth);
+            ctx.lineTo(leftCorner.x, leftCorner.y + slabDepth);
+            ctx.closePath();
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+
+            // Right slab edge
+            ctx.beginPath();
+            ctx.moveTo(bottomCorner.x, bottomCorner.y);
+            ctx.lineTo(rightCorner.x, rightCorner.y);
+            ctx.lineTo(rightCorner.x, rightCorner.y + slabDepth);
+            ctx.lineTo(bottomCorner.x, bottomCorner.y + slabDepth);
+            ctx.closePath();
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+
+            // Individual Floor Tiles with subtle sheen & border trim
+            for (let y = 0; y < size; y++) {
+                for (let x = 0; x < size; x++) {
+                    const pos = this.gridToIso(x, y);
+
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x, pos.y);
+                    ctx.lineTo(pos.x + hw, pos.y + hh);
+                    ctx.lineTo(pos.x, pos.y + this.tileHeight);
+                    ctx.lineTo(pos.x - hw, pos.y + hh);
+                    ctx.closePath();
+
+                    const isEven = (x + y) % 2 === 0;
+                    const isAisleBorder = (x === 0 || y === 0);
+                    if (isAisleBorder) {
+                        ctx.fillStyle = isEven ? '#263449' : '#2e3e56';
+                    } else {
+                        ctx.fillStyle = isEven ? '#1e293b' : '#293548';
+                    }
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(15, 23, 42, 0.65)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            // Welcome Mat & Glowing Entryway at (0,0)
+            const entPos = this.gridToIso(0, 0);
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(entPos.x, entPos.y + 4);
+            ctx.lineTo(entPos.x + hw - 6, entPos.y + hh);
+            ctx.lineTo(entPos.x, entPos.y + this.tileHeight - 4);
+            ctx.lineTo(entPos.x - hw + 6, entPos.y + hh);
+            ctx.closePath();
+            ctx.fillStyle = '#4f46e5';
+            ctx.fill();
+            ctx.strokeStyle = '#a5b4fc';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '800 9px Plus Jakarta Sans, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('WELCOME', entPos.x, entPos.y + hh + 3);
+            ctx.restore();
+        }
+
+        drawPerimeterWalls() {
+            const ctx = this.ctx;
+            const size = gameState.gridSize;
+            const hw = this.tileWidth / 2;
+            const hh = this.tileHeight / 2;
+            const wallH = 58;
+
+            // Back-Left Wall along x = 0 (from y = size down to y = 0)
+            for (let y = size - 1; y >= 0; y--) {
+                const pTop = this.gridToIso(0, y);
+                const pBot = this.gridToIso(0, y + 1);
+
+                // Wall panel
+                ctx.beginPath();
+                ctx.moveTo(pTop.x, pTop.y);
+                ctx.lineTo(pBot.x, pBot.y);
+                ctx.lineTo(pBot.x, pBot.y - wallH);
+                ctx.lineTo(pTop.x, pTop.y - wallH);
+                ctx.closePath();
+                ctx.fillStyle = y === 0 ? '#312e81' : '#1e293b';
+                ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Top Wall Coping Trim
+                ctx.beginPath();
+                ctx.moveTo(pTop.x, pTop.y - wallH);
+                ctx.lineTo(pBot.x, pBot.y - wallH);
+                ctx.lineTo(pBot.x - 4, pBot.y - wallH - 2);
+                ctx.lineTo(pTop.x - 4, pTop.y - wallH - 2);
+                ctx.closePath();
+                ctx.fillStyle = '#475569';
+                ctx.fill();
+
+                // Baseboard Accent Stripe
+                ctx.beginPath();
+                ctx.moveTo(pTop.x, pTop.y);
+                ctx.lineTo(pBot.x, pBot.y);
+                ctx.lineTo(pBot.x, pBot.y - 7);
+                ctx.lineTo(pTop.x, pTop.y - 7);
+                ctx.closePath();
+                ctx.fillStyle = '#6366f1';
+                ctx.fill();
+
+                // Sliding Glass Entrance Archway at y = 0, or Storefront Windows on even tiles
+                if (y === 0) {
+                    const pulse = 0.65 + Math.sin(gameState.animTime * 3) * 0.2;
+                    ctx.beginPath();
+                    ctx.moveTo(pTop.x - 4, pTop.y - 4);
+                    ctx.lineTo(pBot.x + 4, pBot.y - 4);
+                    ctx.lineTo(pBot.x + 4, pBot.y - wallH + 10);
+                    ctx.lineTo(pTop.x - 4, pTop.y - wallH + 10);
+                    ctx.closePath();
+                    ctx.fillStyle = `rgba(99, 102, 241, ${pulse * 0.45})`;
+                    ctx.fill();
+                    ctx.strokeStyle = '#818cf8';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // Overhead "OPEN" Neon Header
+                    const midX = (pTop.x + pBot.x) / 2;
+                    const midY = (pTop.y + pBot.y) / 2 - wallH + 6;
+                    ctx.fillStyle = '#34d399';
+                    ctx.font = 'bold 9px Plus Jakarta Sans, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('OPEN', midX, midY);
+                } else if (y % 2 === 1) {
+                    // Panoramic Glass Window Pane
+                    ctx.beginPath();
+                    ctx.moveTo(pTop.x - 5, pTop.y - 14);
+                    ctx.lineTo(pBot.x + 5, pBot.y - 14);
+                    ctx.lineTo(pBot.x + 5, pBot.y - wallH + 12);
+                    ctx.lineTo(pTop.x - 5, pTop.y - wallH + 12);
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+
+            // Back-Right Wall along y = 0 (from x = 0 to x = size)
+            for (let x = 0; x < size; x++) {
+                const pLeft = this.gridToIso(x, 0);
+                const pRight = this.gridToIso(x + 1, 0);
+
+                ctx.beginPath();
+                ctx.moveTo(pLeft.x, pLeft.y);
+                ctx.lineTo(pRight.x, pRight.y);
+                ctx.lineTo(pRight.x, pRight.y - wallH);
+                ctx.lineTo(pLeft.x, pLeft.y - wallH);
+                ctx.closePath();
+                ctx.fillStyle = '#273549';
+                ctx.fill();
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+
+                // Top Trim
+                ctx.beginPath();
+                ctx.moveTo(pLeft.x, pLeft.y - wallH);
+                ctx.lineTo(pRight.x, pRight.y - wallH);
+                ctx.lineTo(pRight.x + 4, pRight.y - wallH - 2);
+                ctx.lineTo(pLeft.x + 4, pLeft.y - wallH - 2);
+                ctx.closePath();
+                ctx.fillStyle = '#64748b';
+                ctx.fill();
+
+                // Baseboard Accent
+                ctx.beginPath();
+                ctx.moveTo(pLeft.x, pLeft.y);
+                ctx.lineTo(pRight.x, pRight.y);
+                ctx.lineTo(pRight.x, pRight.y - 7);
+                ctx.lineTo(pLeft.x, pLeft.y - 7);
+                ctx.closePath();
+                ctx.fillStyle = '#6366f1';
+                ctx.fill();
+
+                // Storefront Windows on odd x tiles
+                if (x > 0 && x % 2 === 1) {
+                    ctx.beginPath();
+                    ctx.moveTo(pLeft.x + 5, pLeft.y - 14);
+                    ctx.lineTo(pRight.x - 5, pRight.y - 14);
+                    ctx.lineTo(pRight.x - 5, pRight.y - wallH + 12);
+                    ctx.lineTo(pLeft.x + 5, pLeft.y - wallH + 12);
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+                    ctx.fill();
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.45)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Helper to draw an isometric 3D prism centered on tile (x, y)
+        drawIsoBox(pos, scaleW, scaleD, zBottom, zHeight, topColor, leftColor, rightColor) {
+            const ctx = this.ctx;
+            const hw = (this.tileWidth / 2) * scaleW;
+            const hh = (this.tileHeight / 2) * scaleD;
+            const cy = pos.y + this.tileHeight / 2;
+
+            // Left face
+            ctx.beginPath();
+            ctx.moveTo(pos.x - hw, cy - zBottom);
+            ctx.lineTo(pos.x, cy + hh - zBottom);
+            ctx.lineTo(pos.x, cy + hh - zBottom - zHeight);
+            ctx.lineTo(pos.x - hw, cy - zBottom - zHeight);
+            ctx.closePath();
+            ctx.fillStyle = leftColor;
+            ctx.fill();
+
+            // Right face
+            ctx.beginPath();
+            ctx.moveTo(pos.x, cy + hh - zBottom);
+            ctx.lineTo(pos.x + hw, cy - zBottom);
+            ctx.lineTo(pos.x + hw, cy - zBottom - zHeight);
+            ctx.lineTo(pos.x, cy + hh - zBottom - zHeight);
+            ctx.closePath();
+            ctx.fillStyle = rightColor;
+            ctx.fill();
+
+            // Top face
+            ctx.beginPath();
+            ctx.moveTo(pos.x, cy - hh - zBottom - zHeight);
+            ctx.lineTo(pos.x + hw, cy - zBottom - zHeight);
+            ctx.lineTo(pos.x, cy + hh - zBottom - zHeight);
+            ctx.lineTo(pos.x - hw, cy - zBottom - zHeight);
+            ctx.closePath();
+            ctx.fillStyle = topColor;
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        }
+
+        // --- BESPOKE DETAILED FURNITURE RENDERER ---
+        drawFurniture(x, y, item, alpha = 1.0) {
+            const ctx = this.ctx;
+            const pos = this.gridToIso(x, y);
+            const type = FURNITURE_TYPES[item.typeId];
+            if (!type) return;
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // Ground Contact Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
+            ctx.beginPath();
+            ctx.ellipse(pos.x, pos.y + this.tileHeight / 2 + 2, 24, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            const id = item.typeId;
+
+            if (id === 'shelf_grocery') {
+                // Wooden base + 3 tiered emerald produce crates stocked proportional to item.stock
+                this.drawIsoBox(pos, 0.78, 0.78, 0, 10, '#78350f', '#451a03', '#92400e');
+                this.drawIsoBox(pos, 0.72, 0.72, 10, 12, '#059669', '#064e3b', '#047857');
+                this.drawIsoBox(pos, 0.62, 0.62, 22, 12, '#10b981', '#065f46', '#059669');
+
+                const ratio = (item.stock ?? type.capacity) / type.capacity;
+                if (ratio > 0) {
+                    const produceColors = ['#ef4444', '#facc15', '#fb923c', '#4ade80', '#ef4444', '#facc15'];
+                    const count = Math.max(1, Math.ceil(ratio * produceColors.length));
+                    for (let i = 0; i < count; i++) {
+                        const ox = ((i % 3) - 1) * 7;
+                        const oy = (Math.floor(i / 3) - 0.5) * 5;
+                        ctx.fillStyle = produceColors[i];
+                        ctx.beginPath();
+                        ctx.arc(pos.x + ox, pos.y + this.tileHeight / 2 - 35 + oy, 3.6, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            } else if (id === 'shelf_clothing') {
+                // Display table base + metallic garment rail + colorful hanging shirts
+                this.drawIsoBox(pos, 0.76, 0.76, 0, 8, '#4c1d95', '#2e1065', '#5b21b6');
+                const cy = pos.y + this.tileHeight / 2;
+
+                // Chrome vertical posts
+                ctx.strokeStyle = '#cbd5e1';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(pos.x - 14, cy - 8);
+                ctx.lineTo(pos.x - 14, cy - 38);
+                ctx.moveTo(pos.x + 14, cy - 8);
+                ctx.lineTo(pos.x + 14, cy - 38);
+                // Top crossbar
+                ctx.moveTo(pos.x - 16, cy - 38);
+                ctx.lineTo(pos.x + 16, cy - 38);
+                ctx.stroke();
+
+                // Hanging garments proportional to stock
+                const ratio = (item.stock ?? type.capacity) / type.capacity;
+                const shirtColors = ['#f43f5e', '#38bdf8', '#facc15', '#a855f7', '#34d399'];
+                const count = Math.ceil(ratio * shirtColors.length);
+                for (let i = 0; i < count; i++) {
+                    const sx = pos.x - 10 + i * 5;
+                    ctx.fillStyle = shirtColors[i];
+                    ctx.beginPath();
+                    ctx.roundRect(sx - 2.5, cy - 35, 5, 16, 1.5);
+                    ctx.fill();
+                }
+            } else if (id === 'shelf_electronics') {
+                // Sleek dark-slate showroom podium + illuminated glass top + glowing screens
+                this.drawIsoBox(pos, 0.80, 0.80, 0, 22, '#1e3a8a', '#0f172a', '#1e293b');
+                this.drawIsoBox(pos, 0.74, 0.74, 22, 4, '#38bdf8', '#0284c7', '#0369a1');
+
+                const ratio = (item.stock ?? type.capacity) / type.capacity;
+                if (ratio > 0) {
+                    const cy = pos.y + this.tileHeight / 2;
+                    // Glowing mini monitor / console display
+                    ctx.fillStyle = '#0f172a';
+                    ctx.fillRect(pos.x - 9, cy - 38, 12, 9);
+                    ctx.fillStyle = '#38bdf8';
+                    ctx.fillRect(pos.x - 8, cy - 37, 10, 7);
+
+                    if (ratio > 0.4) {
+                        // Secondary device box
+                        ctx.fillStyle = '#e2e8f0';
+                        ctx.fillRect(pos.x + 4, cy - 32, 7, 5);
+                    }
+                }
+            } else if (id === 'shelf_toys') {
+                // Bright yellow/amber tiered toy stand with colorful blocks and plush bear
+                this.drawIsoBox(pos, 0.78, 0.78, 0, 14, '#f59e0b', '#92400e', '#b45309');
+                this.drawIsoBox(pos, 0.56, 0.56, 14, 14, '#fbbf24', '#b45309', '#d97706');
+
+                const ratio = (item.stock ?? type.capacity) / type.capacity;
+                if (ratio > 0) {
+                    const cy = pos.y + this.tileHeight / 2;
+                    // Colorful toy blocks & plush icon
+                    ctx.fillStyle = '#ef4444';
+                    ctx.fillRect(pos.x - 8, cy - 33, 6, 6);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.fillRect(pos.x + 2, cy - 33, 6, 6);
+                    if (ratio > 0.35) {
+                        // Plush bear silhouette
+                        ctx.fillStyle = '#92400e';
+                        ctx.beginPath();
+                        ctx.arc(pos.x - 1, cy - 37, 4.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            } else if (id === 'checkout_basic' || id === 'checkout_express') {
+                const isExpress = id === 'checkout_express';
+                const bodyTop = isExpress ? '#0284c7' : '#475569';
+                const bodyLeft = isExpress ? '#0c4a6e' : '#1e293b';
+                const bodyRight = isExpress ? '#0369a1' : '#334155';
+
+                // Main counter + dark rubber conveyor belt
+                this.drawIsoBox(pos, 0.85, 0.75, 0, 24, bodyTop, bodyLeft, bodyRight);
+                this.drawIsoBox(pos, 0.65, 0.35, 24, 2, '#0f172a', '#020617', '#1e293b');
+
+                const cy = pos.y + this.tileHeight / 2;
+                // POS Register Screen
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(pos.x - 12, cy - 37, 11, 9);
+                ctx.fillStyle = isExpress ? '#38bdf8' : '#34d399';
+                ctx.fillRect(pos.x - 11, cy - 36, 9, 7);
+
+                // Express Lane Overhead Beacon
+                if (isExpress) {
+                    ctx.strokeStyle = '#38bdf8';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x + 12, cy - 24);
+                    ctx.lineTo(pos.x + 12, cy - 46);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#0284c7';
+                    ctx.beginPath();
+                    ctx.arc(pos.x + 12, cy - 48, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 7px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⚡', pos.x + 12, cy - 45.5);
+                }
+                // Standing Cashier Behind Counter if Cashiers Hired (Green Uniform)
+                if (gameState.staff.cashiers > 0 && alpha === 1.0) {
+                    const cx = pos.x - 10;
+                    const cHeadY = cy - 42;
+                    // Green Uniform Torso & Apron
+                    ctx.fillStyle = '#16a34a';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy - 29, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#4ade80';
+                    ctx.fillRect(cx - 3.5, cy - 30, 7, 2);
+                    // Head
+                    ctx.fillStyle = '#fde68a';
+                    ctx.beginPath();
+                    ctx.arc(cx, cHeadY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Forest Green Visor Cap
+                    ctx.fillStyle = '#14532d';
+                    ctx.fillRect(cx - 5, cHeadY - 5, 10, 2.5);
+                }
+
+                // Queue badge if customers waiting
+                if (item.queue && item.queue.length > 0 && alpha === 1.0) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    ctx.arc(pos.x + 16, cy - 36, 8.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 9px Plus Jakarta Sans, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(item.queue.length, pos.x + 16, cy - 33);
+                }
+            } else if (id === 'plant') {
+                // Terracotta Planter Pot + Trunk + Swaying Palm Fronds
+                this.drawIsoBox(pos, 0.45, 0.45, 0, 12, '#9a3412', '#7c2d12', '#c2410c');
+                const cy = pos.y + this.tileHeight / 2;
+                const sway = Math.sin(gameState.animTime * 2 + x + y) * 2;
+
+                // Trunk
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = 3.5;
+                ctx.beginPath();
+                ctx.moveTo(pos.x, cy - 12);
+                ctx.lineTo(pos.x + sway * 0.5, cy - 32);
+                ctx.stroke();
+
+                // Layered Palm Fronds
+                const frondAngles = [-2.5, -1.8, -1.1, -0.4, 0.3];
+                frondAngles.forEach((ang, idx) => {
+                    ctx.strokeStyle = idx % 2 === 0 ? '#16a34a' : '#22c55e';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(pos.x + sway * 0.5, cy - 32);
+                    ctx.quadraticCurveTo(
+                        pos.x + Math.cos(ang) * 12 + sway,
+                        cy - 42,
+                        pos.x + Math.cos(ang) * 20 + sway,
+                        cy - 28
+                    );
+                    ctx.stroke();
+                });
+            } else if (id === 'neon_sign') {
+                // Sleek Metal Pedestal + Glowing Animated Neon Frame
+                this.drawIsoBox(pos, 0.65, 0.45, 0, 8, '#334155', '#0f172a', '#1e293b');
+                const cy = pos.y + this.tileHeight / 2;
+                const glow = 0.75 + Math.sin(gameState.animTime * 4) * 0.25;
+
+                // Support Pillars
+                ctx.strokeStyle = '#94a3b8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(pos.x - 12, cy - 8);
+                ctx.lineTo(pos.x - 12, cy - 44);
+                ctx.moveTo(pos.x + 12, cy - 8);
+                ctx.lineTo(pos.x + 12, cy - 44);
+                ctx.stroke();
+
+                // Neon Frame Box
+                ctx.save();
+                ctx.shadowColor = '#ec4899';
+                ctx.shadowBlur = 14 * glow;
+                ctx.fillStyle = 'rgba(236, 72, 153, 0.25)';
+                ctx.strokeStyle = '#f472b6';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.roundRect(pos.x - 16, cy - 46, 32, 18, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '800 8px Plus Jakarta Sans, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('SALE ★', pos.x, cy - 34);
+                ctx.restore();
+            }
+
+            // Floating Stock Bar Indicator above Shelves
+            if (type.cat === 'shelf' && alpha === 1.0) {
+                const stockRatio = Math.max(0, Math.min(1, item.stock / type.capacity));
+                const barW = 34;
+                const barH = 5;
+                const barX = pos.x - barW / 2;
+                const barY = pos.y - 34;
+
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+                ctx.beginPath();
+                ctx.roundRect(barX - 1, barY - 1, barW + 2, barH + 2, 2);
+                ctx.fill();
+
+                ctx.fillStyle = stockRatio > 0.4 ? '#10b981' : (stockRatio > 0 ? '#f59e0b' : '#ef4444');
+                ctx.fillRect(barX, barY, barW * stockRatio, barH);
+            }
+
+            ctx.restore();
+        }
+
+        // --- DETAILED WALKING CUSTOMER & STAFF SPRITES ---
+        drawCharacterSprite(entity, isStaff) {
+            const ctx = this.ctx;
+            const pos = this.gridToIso(entity.x, entity.y);
+            const cy = pos.y + this.tileHeight / 2;
+
+            const isMoving = Math.hypot((entity.targetX ?? entity.x) - entity.x, (entity.targetY ?? entity.y) - entity.y) > 0.08;
+            const walkPhase = isMoving ? Math.sin(gameState.animTime * 11 + (entity.animSeed || 0)) : 0;
+            const bobY = Math.abs(walkPhase) * 2.2;
+
+            // Ground Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.beginPath();
+            ctx.ellipse(pos.x, cy + 2, 9.5, 4.8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Animated Legs
+            ctx.strokeStyle = isStaff ? '#0f172a' : '#1e293b';
+            ctx.lineWidth = 2.6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(pos.x - 2.5, cy - 6 - bobY);
+            ctx.lineTo(pos.x - 2.5 - walkPhase * 3, cy + 1);
+            ctx.moveTo(pos.x + 2.5, cy - 6 - bobY);
+            ctx.lineTo(pos.x + 2.5 + walkPhase * 3, cy + 1);
+            ctx.stroke();
+
+            // Torso / Outfit (All Staff wear shades of Green; Customers wear Non-Green colors)
+            let torsoColor = entity.color;
+            if (isStaff) {
+                torsoColor = entity.role === 'restocker' ? '#22c55e' : '#059669';
+            }
+            ctx.fillStyle = torsoColor;
+            ctx.beginPath();
+            ctx.roundRect(pos.x - 5.5, cy - 17 - bobY, 11, 12, 4);
+            ctx.fill();
+
+            // Staff Green Apron / High-Vis Stripe
+            if (isStaff) {
+                ctx.fillStyle = '#bbf7d0';
+                ctx.fillRect(pos.x - 4, cy - 14 - bobY, 8, 2.5);
+            }
+
+            // Held Props: Customers hold shopping bag when cart > 0; Restockers carry box; Janitors hold broom
+            if (!isStaff && entity.shoppingCart && entity.shoppingCart.length > 0) {
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(pos.x + 5, cy - 12 - bobY, 5, 6);
+                ctx.strokeStyle = '#6366f1';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(pos.x + 5, cy - 12 - bobY, 5, 6);
+            } else if (isStaff && entity.role === 'restocker') {
+                // Cardboard supply box
+                ctx.fillStyle = '#d97706';
+                ctx.fillRect(pos.x - 5, cy - 16 - bobY, 10, 7);
+                ctx.strokeStyle = '#78350f';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(pos.x - 5, cy - 16 - bobY, 10, 7);
+            } else if (isStaff && entity.role === 'janitor') {
+                // Broom handle + bristles
+                ctx.strokeStyle = '#a16207';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(pos.x + 6, cy - 22 - bobY);
+                ctx.lineTo(pos.x + 9, cy + 1);
+                ctx.stroke();
+                ctx.fillStyle = '#fde047';
+                ctx.fillRect(pos.x + 6, cy - 2, 6, 3.5);
+            }
+
+            // Head
+            const headY = cy - 23 - bobY;
+            ctx.fillStyle = entity.skinTone || '#fde68a';
+            ctx.beginPath();
+            ctx.arc(pos.x, headY, 5.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Hair or Staff Green Cap
+            if (isStaff) {
+                ctx.fillStyle = entity.role === 'restocker' ? '#15803d' : '#065f46';
+                ctx.beginPath();
+                ctx.arc(pos.x, headY - 1.5, 5.6, Math.PI, 0);
+                ctx.fill();
+            } else {
+                ctx.fillStyle = entity.hairColor || '#1e293b';
+                ctx.beginPath();
+                ctx.arc(pos.x, headY - 1, 5.6, Math.PI * 0.9, Math.PI * 2.1);
+                ctx.fill();
+            }
+
+            // VIP Crown
+            if (!isStaff && entity.isVIP) {
+                ctx.fillStyle = '#facc15';
+                ctx.beginPath();
+                ctx.moveTo(pos.x - 5, headY - 6);
+                ctx.lineTo(pos.x - 3, headY - 11);
+                ctx.lineTo(pos.x, headY - 8);
+                ctx.lineTo(pos.x + 3, headY - 11);
+                ctx.lineTo(pos.x + 5, headY - 6);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Thought / Status Bubble Overhead
+            if (!isStaff) {
+                let bubbleIcon = '';
+                if (entity.state === 'QUEUE') bubbleIcon = '⏳';
+                else if (entity.state === 'LEAVING_HAPPY') bubbleIcon = '😊';
+                else if (entity.state === 'LEAVING_ANGRY') bubbleIcon = '😡';
+
+                if (bubbleIcon) {
+                    ctx.font = '12px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(bubbleIcon, pos.x, headY - (entity.isVIP ? 14 : 9));
+                }
+            }
+        }
+
+        drawTrash(x, y) {
+            const ctx = this.ctx;
+            const pos = this.gridToIso(x, y);
+            const cy = pos.y + this.tileHeight / 2;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.25)';
+            ctx.beginPath();
+            ctx.ellipse(pos.x, cy + 2, 7, 3.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crumpled cup & wrapper
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.arc(pos.x - 2, cy - 1, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#f43f5e';
+            ctx.fillRect(pos.x + 1, cy - 2, 4, 2.5);
+        }
+
+        drawMovingSourceHighlight(x, y) {
+            const ctx = this.ctx;
+            const pos = this.gridToIso(x, y);
+            const hw = this.tileWidth / 2;
+            const hh = this.tileHeight / 2;
+            const pulse = 0.55 + Math.sin(gameState.animTime * 8) * 0.35;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x + hw, pos.y + hh);
+            ctx.lineTo(pos.x, pos.y + this.tileHeight);
+            ctx.lineTo(pos.x - hw, pos.y + hh);
+            ctx.closePath();
+            ctx.fillStyle = `rgba(34, 211, 238, ${0.22 * pulse})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(34, 211, 238, ${0.95 * pulse})`;
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        drawHoverTile(x, y) {
+            const ctx = this.ctx;
+            const pos = this.gridToIso(x, y);
+            const hw = this.tileWidth / 2;
+            const hh = this.tileHeight / 2;
+
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineTo(pos.x + hw, pos.y + hh);
+            ctx.lineTo(pos.x, pos.y + this.tileHeight);
+            ctx.lineTo(pos.x - hw, pos.y + hh);
+            ctx.closePath();
+
+            const occupiedItem = gameState.grid[y] && gameState.grid[y][x];
+            const isOccupied = Boolean(occupiedItem) || (x === 0 && y === 0);
+
+            if (this.moveMode) {
+                if (!this.movingSource) {
+                    // Hovering to pick up an item
+                    const canPickUp = Boolean(occupiedItem);
+                    ctx.fillStyle = canPickUp ? 'rgba(34, 211, 238, 0.35)' : 'rgba(148, 163, 184, 0.14)';
+                    ctx.fill();
+                    ctx.strokeStyle = canPickUp ? '#22d3ee' : 'rgba(148, 163, 184, 0.45)';
+                    ctx.lineWidth = canPickUp ? 2.2 : 1.2;
+                    ctx.stroke();
+                } else {
+                    // Hovering target destination while holding an item
+                    const isSameTile = this.movingSource.x === x && this.movingSource.y === y;
+                    const canDrop = !isOccupied && !isSameTile;
+                    ctx.fillStyle = canDrop ? 'rgba(16, 185, 129, 0.42)' : 'rgba(239, 68, 68, 0.42)';
+                    ctx.fill();
+                    ctx.strokeStyle = canDrop ? '#34d399' : '#f87171';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    if (canDrop) {
+                        this.drawFurniture(x, y, this.movingSource.item, 0.6);
+                    }
+                }
+            } else if (this.selectedBuildItem) {
+                ctx.fillStyle = isOccupied ? 'rgba(239, 68, 68, 0.42)' : 'rgba(16, 185, 129, 0.42)';
+                ctx.fill();
+                ctx.strokeStyle = isOccupied ? '#f87171' : '#34d399';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Translucent Ghost Preview of Furniture on Valid Tile
+                if (!isOccupied) {
+                    this.drawFurniture(x, y, { typeId: this.selectedBuildItem, stock: 99 }, 0.55);
+                }
+            } else {
+                ctx.fillStyle = 'rgba(99, 102, 241, 0.22)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(165, 180, 252, 0.75)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+        }
+
+        // --- DAY / NIGHT & POWER OUTAGE AMBIENT LIGHTING OVERLAY ---
+        drawAmbientLighting() {
+            const ctx = this.ctx;
+            const mins = gameState.time; // 480 (8:00 AM) to 1320 (10:00 PM)
+            let overlayColor = null;
+
+            if (gameState.activeEvent?.type === 'POWER_OUTAGE') {
+                const flicker = 0.42 + Math.sin(gameState.animTime * 18) * 0.06;
+                overlayColor = `rgba(5, 8, 20, ${flicker})`;
+            } else if (mins < 600) {
+                // Morning warm golden tint (8 AM - 10 AM)
+                const t = 1 - (mins - 480) / 120;
+                overlayColor = `rgba(251, 191, 36, ${0.08 * t})`;
+            } else if (mins >= 1020 && mins < 1170) {
+                // Sunset amber glow (5 PM - 7:30 PM)
+                const t = (mins - 1020) / 150;
+                overlayColor = `rgba(249, 115, 22, ${0.14 * t})`;
+            } else if (mins >= 1170) {
+                // Evening cool indigo night (7:30 PM - 10 PM)
+                const lightingReduction = Math.min(0.14, gameState.upgrades.lighting * 0.04);
+                const t = Math.min(1, (mins - 1170) / 120);
+                overlayColor = `rgba(15, 23, 55, ${Math.max(0.08, 0.28 * t - lightingReduction)})`;
+            }
+
+            if (overlayColor) {
+                ctx.fillStyle = overlayColor;
+                ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+        }
+
+        renderParticles() {
+            const ctx = this.ctx;
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                p.y -= 0.55;
+                p.life -= 0.018;
+
+                if (p.life <= 0) {
+                    gameState.particles.splice(i, 1);
+                    continue;
+                }
+
+                const pos = this.gridToIso(p.gx, p.gy);
+                ctx.save();
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.font = '800 13px Plus Jakarta Sans, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0,0,0,0.85)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(p.text, pos.x, pos.y + p.y - 10);
+                ctx.restore();
+            }
+        }
+    }
+
+    // --- INITIALIZE STORE GRID & STAFF AGENTS ---
+    function initGrid() {
+        gameState.grid = Array(16).fill(null).map(() => Array(16).fill(null));
+
+        // Starter store layout
+        gameState.grid[2][2] = { typeId: 'shelf_grocery', stock: 40 };
+        gameState.grid[2][4] = { typeId: 'shelf_clothing', stock: 28 };
+        gameState.grid[5][2] = { typeId: 'checkout_basic', queue: [] };
+        gameState.grid[1][6] = { typeId: 'plant' };
+        gameState.grid[6][1] = { typeId: 'neon_sign' };
+    }
+
+    function syncStaffAgents() {
+        // Maintain visual walking NPCs matching hired restockers & janitors
+        const targetRestockers = gameState.staff.restockers;
+        const targetJanitors = gameState.staff.janitors;
+
+        const currentRestockers = gameState.staffAgents.filter(a => a.role === 'restocker');
+        const currentJanitors = gameState.staffAgents.filter(a => a.role === 'janitor');
+
+        while (currentRestockers.length < targetRestockers) {
+            const agent = {
+                role: 'restocker',
+                x: 1 + Math.random() * 2,
+                y: 1 + Math.random() * 2,
+                targetX: 2,
+                targetY: 2,
+                animSeed: Math.random() * 10
+            };
+            gameState.staffAgents.push(agent);
+            currentRestockers.push(agent);
+        }
+        while (currentRestockers.length > targetRestockers) {
+            const rem = currentRestockers.pop();
+            const idx = gameState.staffAgents.indexOf(rem);
+            if (idx !== -1) gameState.staffAgents.splice(idx, 1);
+        }
+
+        while (currentJanitors.length < targetJanitors) {
+            const agent = {
+                role: 'janitor',
+                x: 2 + Math.random() * 2,
+                y: 2 + Math.random() * 2,
+                targetX: 3,
+                targetY: 3,
+                animSeed: Math.random() * 10
+            };
+            gameState.staffAgents.push(agent);
+            currentJanitors.push(agent);
+        }
+        while (currentJanitors.length > targetJanitors) {
+            const rem = currentJanitors.pop();
+            const idx = gameState.staffAgents.indexOf(rem);
+            if (idx !== -1) gameState.staffAgents.splice(idx, 1);
+        }
+    }
+
+    // --- MAIN GAME LOOP & SIMULATION ---
+    let isoEngine;
+
+    function initGame() {
+        initGrid();
+        syncStaffAgents();
+        isoEngine = new IsoEngine('gameCanvas');
+
+        setupUIEvents();
+        updateHUD();
+        renderBuildTabs();
+        renderInventoryTab();
+        renderStaffTab();
+        renderUpgradesTab();
+        renderStatsTab();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    let lastTime = performance.now();
+    function gameLoop(now) {
+        const dt = Math.min(0.1, (now - lastTime) / 1000);
+        lastTime = now;
+
+        if (gameState.gameSpeed > 0) {
+            gameState.animTime += dt * gameState.gameSpeed;
+            updateSimulation(dt * gameState.gameSpeed);
+        }
+
+        isoEngine.render();
+        requestAnimationFrame(gameLoop);
+    }
+
+    let customerSpawnTimer = 0;
+
+    function updateSimulation(dt) {
+        // Time & Day Cycle
+        gameState.time += dt * 2.2;
+        if (gameState.time >= 1320) {
+            gameState.day += 1;
+            gameState.time = 480;
+            gameState.dayProfit = 0;
+
+            const salaries = (gameState.staff.cashiers * 40) + (gameState.staff.restockers * 50) + (gameState.staff.janitors * 35);
+            if (salaries > 0) {
+                gameState.cash = Math.max(0, gameState.cash - salaries);
+                addParticle(1, 1, `Daily Wages -$${salaries}`, '#ef4444');
+            }
+        }
+
+        // Update HUD clock smoothly
+        updateHUDClockOnly();
+
+        // Active Event Countdown
+        if (gameState.activeEvent) {
+            gameState.eventTimer -= dt;
+            if (gameState.eventTimer <= 0) {
+                gameState.activeEvent = null;
+                hideEventBanner();
+            }
+        } else if (Math.random() < 0.00045) {
+            triggerRandomEvent();
+        }
+
+        // Customer Spawner (affected by Marketing, Rush Hour, and Power Outage)
+        let spawnInterval = 4.6 - (gameState.upgrades.marketing * 0.55);
+        if (gameState.activeEvent?.type === 'RUSH_HOUR') spawnInterval *= 0.45;
+        if (gameState.activeEvent?.type === 'POWER_OUTAGE') spawnInterval *= 1.65;
+
+        customerSpawnTimer += dt;
+        if (customerSpawnTimer >= Math.max(1.3, spawnInterval)) {
+            customerSpawnTimer = 0;
+            spawnCustomer();
+        }
+
+        updateCustomers(dt);
+        updateStaffAgents(dt);
+    }
+
+    function spawnCustomer() {
+        // Strictly Non-Green outfit colors so Green workers stand out clearly
+        const outfitColors = ['#f43f5e', '#3b82f6', '#a855f7', '#f97316', '#ec4899', '#6366f1', '#eab308'];
+        const skinTones = ['#fde68a', '#fed7aa', '#d97706', '#92400e'];
+        const hairColors = ['#0f172a', '#451a03', '#78350f', '#b45309', '#64748b'];
+        const isVIP = Math.random() < 0.12;
+
+        // Pick a category that currently has shelves built in the store
+        const builtCategories = [];
+        for (let y = 0; y < gameState.gridSize; y++) {
+            for (let x = 0; x < gameState.gridSize; x++) {
+                const item = gameState.grid[y][x];
+                if (item && FURNITURE_TYPES[item.typeId]?.cat === 'shelf') {
+                    const cat = FURNITURE_TYPES[item.typeId].productCat;
+                    if (!builtCategories.includes(cat)) builtCategories.push(cat);
+                }
+            }
+        }
+
+        const desiredCategory = builtCategories.length > 0
+            ? builtCategories[Math.floor(Math.random() * builtCategories.length)]
+            : 'GROCERY';
+
+        const cust = {
+            id: Math.random().toString(36).substring(2, 9),
+            x: 0,
+            y: 0,
+            targetX: 0,
+            targetY: 0,
+            state: 'SEARCHING_SHELF',
+            color: outfitColors[Math.floor(Math.random() * outfitColors.length)],
+            skinTone: skinTones[Math.floor(Math.random() * skinTones.length)],
+            hairColor: hairColors[Math.floor(Math.random() * hairColors.length)],
+            animSeed: Math.random() * 10,
+            isVIP: isVIP,
+            desiredCategory: desiredCategory,
+            shoppingCart: [],
+            targetCheckoutTile: null,
+            checkoutProgress: 0
+        };
+
+        findNextTarget(cust);
+        gameState.customers.push(cust);
+    }
+
+    function findNextTarget(cust) {
+        const validShelves = [];
+        for (let y = 0; y < gameState.gridSize; y++) {
+            for (let x = 0; x < gameState.gridSize; x++) {
+                const item = gameState.grid[y][x];
+                if (item && FURNITURE_TYPES[item.typeId]?.cat === 'shelf') {
+                    const shelfType = FURNITURE_TYPES[item.typeId];
+                    if (shelfType.productCat === cust.desiredCategory && item.stock > 0) {
+                        validShelves.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        if (validShelves.length > 0) {
+            const chosen = validShelves[Math.floor(Math.random() * validShelves.length)];
+            cust.targetX = chosen.x;
+            cust.targetY = chosen.y;
+        } else {
+            cust.state = 'LEAVING_ANGRY';
+            cust.targetX = 0;
+            cust.targetY = 0;
+            gameState.reputation = Math.max(10, gameState.reputation - 1);
+            updateHUD();
+        }
+    }
+
+    function updateCustomers(dt) {
+        const speed = 2.3;
+
+        for (let i = gameState.customers.length - 1; i >= 0; i--) {
+            const cust = gameState.customers[i];
+
+            const dx = cust.targetX - cust.x;
+            const dy = cust.targetY - cust.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 0.08) {
+                cust.x += (dx / dist) * speed * dt;
+                cust.y += (dy / dist) * speed * dt;
+            } else {
+                cust.x = cust.targetX;
+                cust.y = cust.targetY;
+                handleCustomerArrival(cust, dt);
+            }
+
+            if ((cust.state === 'LEAVING_HAPPY' || cust.state === 'LEAVING_ANGRY') && cust.x === 0 && cust.y === 0) {
+                gameState.customers.splice(i, 1);
+            }
+        }
+    }
+
+    function handleCustomerArrival(cust, dt) {
+        if (cust.state === 'SEARCHING_SHELF') {
+            const tile = gameState.grid[cust.targetY] && gameState.grid[cust.targetY][cust.targetX];
+            if (tile && tile.stock > 0) {
+                tile.stock--;
+
+                // Pick unlocked product from matching category
+                const matchingKeys = Object.keys(PRODUCTS).filter(k => PRODUCTS[k].cat === cust.desiredCategory && gameState.level >= PRODUCTS[k].unlockedAt);
+                const prodKey = matchingKeys[Math.floor(Math.random() * matchingKeys.length)] || Object.keys(PRODUCTS).find(k => PRODUCTS[k].cat === cust.desiredCategory);
+                const prod = PRODUCTS[prodKey];
+                const basePrice = gameState.inventory[prodKey]?.price || prod.defaultPrice;
+
+                // Price sensitivity check
+                const priceRatio = basePrice / prod.defaultPrice;
+                if (priceRatio > 1.6) {
+                    gameState.reputation = Math.max(10, gameState.reputation - 0.6);
+                } else if (priceRatio <= 1.1) {
+                    gameState.reputation = Math.min(100, gameState.reputation + 0.25);
+                }
+
+                // Flash Sale Event 1.5x multiplier + VIP 2x multiplier
+                let salePrice = basePrice;
+                if (gameState.activeEvent?.type === 'FLASH_SALE') salePrice = Math.round(salePrice * 1.5);
+                if (cust.isVIP) salePrice *= 2;
+
+                cust.shoppingCart.push({ name: prodKey, price: salePrice });
+                addXP(5);
+
+                if (Math.random() < 0.14) {
+                    gameState.trashItems.push({ x: cust.x, y: cust.y });
+                }
+
+                findCheckoutCounter(cust);
+            } else {
+                cust.state = 'LEAVING_ANGRY';
+                cust.targetX = 0;
+                cust.targetY = 0;
+            }
+        } else if (cust.state === 'QUEUE') {
+            // Cashier speed multiplier
+            const cashierMult = gameState.staff.cashiers > 0 ? (1 + gameState.staff.cashiers * 0.45) : 0.45;
+            const tileSpeed = cust.targetCheckoutType?.speed || 1.0;
+            cust.checkoutProgress += dt * cashierMult * tileSpeed;
+
+            if (cust.checkoutProgress >= 0.75) {
+                processCheckout(cust);
+            }
+        }
+    }
+
+    function findCheckoutCounter(cust) {
+        const checkouts = [];
+        for (let y = 0; y < gameState.gridSize; y++) {
+            for (let x = 0; x < gameState.gridSize; x++) {
+                const item = gameState.grid[y][x];
+                if (item && FURNITURE_TYPES[item.typeId]?.cat === 'checkout') {
+                    checkouts.push({ x, y, tile: item, type: FURNITURE_TYPES[item.typeId] });
+                }
+            }
+        }
+
+        if (checkouts.length > 0) {
+            checkouts.sort((a, b) => a.tile.queue.length - b.tile.queue.length);
+            const chosen = checkouts[0];
+            chosen.tile.queue.push(cust);
+
+            cust.state = 'QUEUE';
+            cust.targetCheckoutTile = chosen.tile;
+            cust.targetCheckoutType = chosen.type;
+            cust.targetX = chosen.x;
+            cust.targetY = chosen.y;
+        } else {
+            cust.state = 'LEAVING_ANGRY';
+            cust.targetX = 0;
+            cust.targetY = 0;
+        }
+    }
+
+    function processCheckout(cust) {
+        const total = cust.shoppingCart.reduce((sum, item) => sum + item.price, 0);
+        gameState.cash += total;
+        gameState.dayProfit += total;
+        gameState.totalRevenue += total;
+        gameState.customersServed++;
+
+        soundEngine.playCash();
+        addParticle(cust.x, cust.y, `+$${total}`, '#10b981');
+
+        cust.state = 'LEAVING_HAPPY';
+        cust.targetX = 0;
+        cust.targetY = 0;
+
+        if (cust.targetCheckoutTile && cust.targetCheckoutTile.queue) {
+            const idx = cust.targetCheckoutTile.queue.indexOf(cust);
+            if (idx !== -1) cust.targetCheckoutTile.queue.splice(idx, 1);
+        }
+
+        gameState.reputation = Math.min(100, gameState.reputation + 0.25);
+        addXP(15);
+        updateHUD();
+    }
+
+    // --- STAFF NPC AI WALKING & WORK LOOP ---
+    function updateStaffAgents(dt) {
+        const speed = 1.9;
+        gameState.staffAgents.forEach(agent => {
+            if (agent.role === 'restocker') {
+                // Find lowest-stock shelf
+                let lowestShelf = null;
+                let lowestRatio = 0.85;
+                for (let y = 0; y < gameState.gridSize; y++) {
+                    for (let x = 0; x < gameState.gridSize; x++) {
+                        const item = gameState.grid[y][x];
+                        if (item && FURNITURE_TYPES[item.typeId]?.cat === 'shelf') {
+                            const cap = FURNITURE_TYPES[item.typeId].capacity;
+                            const ratio = item.stock / cap;
+                            if (ratio < lowestRatio) {
+                                lowestRatio = ratio;
+                                lowestShelf = { x, y, item, cap };
+                            }
+                        }
+                    }
+                }
+
+                if (lowestShelf) {
+                    agent.targetX = lowestShelf.x;
+                    agent.targetY = lowestShelf.y;
+                } else if (Math.hypot(agent.targetX - agent.x, agent.targetY - agent.y) < 0.15) {
+                    agent.targetX = 1 + Math.floor(Math.random() * (gameState.gridSize - 2));
+                    agent.targetY = 1 + Math.floor(Math.random() * (gameState.gridSize - 2));
+                }
+
+                const dx = agent.targetX - agent.x;
+                const dy = agent.targetY - agent.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0.12) {
+                    agent.x += (dx / dist) * speed * dt;
+                    agent.y += (dy / dist) * speed * dt;
+                } else if (lowestShelf && gameState.cash >= 2) {
+                    lowestShelf.item.stock = Math.min(lowestShelf.cap, lowestShelf.item.stock + 2);
+                    gameState.cash -= 2;
+                    updateHUD();
+                }
+            } else if (agent.role === 'janitor') {
+                if (gameState.trashItems.length > 0) {
+                    const targetTrash = gameState.trashItems[0];
+                    agent.targetX = targetTrash.x;
+                    agent.targetY = targetTrash.y;
+                } else if (Math.hypot(agent.targetX - agent.x, agent.targetY - agent.y) < 0.15) {
+                    agent.targetX = 1 + Math.floor(Math.random() * (gameState.gridSize - 2));
+                    agent.targetY = 1 + Math.floor(Math.random() * (gameState.gridSize - 2));
+                }
+
+                const dx = agent.targetX - agent.x;
+                const dy = agent.targetY - agent.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0.12) {
+                    agent.x += (dx / dist) * speed * dt;
+                    agent.y += (dy / dist) * speed * dt;
+                } else if (gameState.trashItems.length > 0) {
+                    gameState.trashItems.shift();
+                    addParticle(agent.x, agent.y, 'Swept Clean!', '#06b6d4');
+                }
+            }
+        });
+    }
+
+    // --- PROGRESSION & EVENTS ---
+    function addXP(amount) {
+        gameState.xp += amount;
+        if (gameState.xp >= gameState.xpToNextLevel) {
+            gameState.level++;
+            gameState.xp -= gameState.xpToNextLevel;
+            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
+
+            soundEngine.playLevelUp();
+            addParticle(gameState.gridSize / 2, gameState.gridSize / 2, `LEVEL UP! Level ${gameState.level}`, '#a855f7');
+            showToast(`Store reached Level ${gameState.level}! New products unlocked.`, 'fa-star', 'border-purple-500/60');
+            updateHUD();
+        }
+    }
+
+    function triggerRandomEvent() {
+        const events = [
+            { type: 'RUSH_HOUR', title: 'RUSH HOUR!', desc: 'Huge wave of shoppers arriving at your store!', icon: 'fa-users' },
+            { type: 'FLASH_SALE', title: 'FLASH SALE', desc: 'Shoppers paying 1.5x price for all items!', icon: 'fa-tags' },
+            { type: 'POWER_OUTAGE', title: 'POWER OUTAGE', desc: 'Grid brownout! Lights dimmed & traffic slower.', icon: 'fa-bolt-lightning' }
+        ];
+
+        const evt = events[Math.floor(Math.random() * events.length)];
+        gameState.activeEvent = evt;
+        gameState.eventTimer = 24;
+
+        showEventBanner(evt.title, evt.desc, evt.icon);
+    }
+
+    function showEventBanner(title, desc, icon) {
+        const banner = document.getElementById('event-banner');
+        document.getElementById('event-title').innerText = title;
+        document.getElementById('event-desc').innerText = desc;
+        document.getElementById('event-icon').className = `fa-solid ${icon} text-lg`;
+
+        banner.classList.remove('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+        banner.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function hideEventBanner() {
+        const banner = document.getElementById('event-banner');
+        banner.classList.add('translate-y-[-100px]', 'opacity-0', 'pointer-events-none');
+        banner.classList.remove('translate-y-0', 'opacity-100');
+    }
+
+    // --- BUILD MODE, MOVE MODE & TILE INSPECTOR ---
+    function enterBuildMode(typeId) {
+        const type = FURNITURE_TYPES[typeId];
+        if (!type) return;
+        exitMoveMode();
+        isoEngine.selectedBuildItem = typeId;
+        closeTileInspector();
+
+        const banner = document.getElementById('build-mode-banner');
+        document.getElementById('build-mode-label').innerText = `${type.name} ($${type.cost})`;
+        banner.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        banner.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function exitBuildMode() {
+        isoEngine.selectedBuildItem = null;
+        const banner = document.getElementById('build-mode-banner');
+        banner.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        banner.classList.remove('translate-y-0', 'opacity-100');
+    }
+
+    function enterMoveMode(initialX = null, initialY = null) {
+        exitBuildMode();
+        closeTileInspector();
+        isoEngine.moveMode = true;
+        isoEngine.movingSource = null;
+
+        const moveBtn = document.getElementById('btn-quick-move');
+        moveBtn.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950/80');
+
+        if (initialX !== null && initialY !== null && gameState.grid[initialY]?.[initialX]) {
+            pickUpFurnitureForMove(x = initialX, y = initialY, true);
+        } else {
+            updateMoveModeBanner();
+        }
+    }
+
+    function pickUpFurnitureForMove(x, y, singleMove = false) {
+        const item = gameState.grid[y]?.[x];
+        if (!item) return;
+        isoEngine.movingSource = { x, y, item, singleMove };
+        soundEngine.playPop();
+        updateMoveModeBanner();
+    }
+
+    function updateMoveModeBanner() {
+        const banner = document.getElementById('move-mode-banner');
+        const subEl = document.getElementById('move-mode-sub');
+        const labelEl = document.getElementById('move-mode-label');
+
+        if (!isoEngine.moveMode) {
+            banner.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            banner.classList.remove('translate-y-0', 'opacity-100');
+            return;
+        }
+
+        if (isoEngine.movingSource) {
+            const type = FURNITURE_TYPES[isoEngine.movingSource.item.typeId];
+            subEl.innerText = `Moving ${type ? type.name : 'Item'} — Click Any Empty Floor Tile`;
+            labelEl.innerText = `Relocating from (${isoEngine.movingSource.x}, ${isoEngine.movingSource.y}) — Free Move`;
+        } else {
+            subEl.innerText = 'Move Mode Active — Rearrange Your Store';
+            labelEl.innerText = 'Click a shelf, plant, or register to pick it up';
+        }
+
+        banner.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        banner.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function executeFurnitureMove(fromX, fromY, toX, toY) {
+        const item = gameState.grid[fromY]?.[fromX];
+        if (!item) return;
+        if (gameState.grid[toY]?.[toX] || (toX === 0 && toY === 0)) {
+            addParticle(toX, toY, 'Tile Occupied!', '#ef4444');
+            return;
+        }
+
+        // Transfer furniture object (preserving stock & queue)
+        gameState.grid[toY][toX] = item;
+        gameState.grid[fromY][fromX] = null;
+
+        // Retarget any customers walking toward or standing at the moved shelf/checkout
+        gameState.customers.forEach(cust => {
+            if (cust.targetX === fromX && cust.targetY === fromY) {
+                cust.targetX = toX;
+                cust.targetY = toY;
+            }
+            if (cust.targetCheckoutTile === item) {
+                cust.targetX = toX;
+                cust.targetY = toY;
+            }
+        });
+
+        const type = FURNITURE_TYPES[item.typeId];
+        soundEngine.playPop();
+        addParticle(toX, toY, `Moved ${type ? type.name : 'Item'}!`, '#22d3ee');
+
+        const wasSingleMove = isoEngine.movingSource?.singleMove;
+        isoEngine.movingSource = null;
+
+        if (wasSingleMove) {
+            exitMoveMode();
+        } else {
+            updateMoveModeBanner();
+        }
+    }
+
+    function exitMoveMode() {
+        isoEngine.moveMode = false;
+        isoEngine.movingSource = null;
+        const moveBtn = document.getElementById('btn-quick-move');
+        if (moveBtn) {
+            moveBtn.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/80');
+        }
+        updateMoveModeBanner();
+    }
+
+    function placeFurniture(typeId, x, y) {
+        const type = FURNITURE_TYPES[typeId];
+        if (!type) return;
+
+        if (gameState.cash < type.cost) {
+            addParticle(x, y, 'Not Enough Cash!', '#ef4444');
+            return;
+        }
+
+        if (gameState.grid[y][x]) {
+            addParticle(x, y, 'Tile Occupied!', '#ef4444');
+            return;
+        }
+
+        gameState.cash -= type.cost;
+        gameState.grid[y][x] = {
+            typeId: typeId,
+            stock: type.cat === 'shelf' ? type.capacity : 0,
+            queue: type.cat === 'checkout' ? [] : null
+        };
+
+        if (type.beauty) {
+            gameState.reputation = Math.min(100, gameState.reputation + type.beauty * 0.2);
+        }
+
+        soundEngine.playPop();
+        addParticle(x, y, `Built ${type.name}!`, '#10b981');
+        updateHUD();
+    }
+
+    function openTileInspector(x, y, tile) {
+        const type = FURNITURE_TYPES[tile.typeId];
+        if (!type) return;
+
+        gameState.inspectedTile = { x, y, tile };
+        const panel = document.getElementById('tile-inspector');
+        const iconWrap = document.getElementById('inspector-icon');
+        const titleEl = document.getElementById('inspector-title');
+        const subEl = document.getElementById('inspector-sub');
+        const restockBtn = document.getElementById('btn-inspector-restock');
+        const sellBtn = document.getElementById('btn-inspector-sell');
+
+        iconWrap.innerHTML = `<i class="fa-solid ${type.icon}"></i>`;
+        titleEl.innerText = type.name;
+
+        if (type.cat === 'shelf') {
+            subEl.innerText = `Stock: ${tile.stock} / ${type.capacity}`;
+            restockBtn.classList.remove('hidden');
+            restockBtn.innerText = `Refill ($15)`;
+        } else if (type.cat === 'checkout') {
+            subEl.innerText = `Queue: ${tile.queue ? tile.queue.length : 0} shoppers`;
+            restockBtn.classList.add('hidden');
+        } else {
+            subEl.innerText = `Store Vibe +${type.beauty || 10}`;
+            restockBtn.classList.add('hidden');
+        }
+
+        const refund = Math.floor(type.cost * 0.5);
+        sellBtn.innerText = `Sell (+$${refund})`;
+
+        panel.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        panel.classList.add('translate-y-0', 'opacity-100');
+    }
+
+    function closeTileInspector() {
+        gameState.inspectedTile = null;
+        const panel = document.getElementById('tile-inspector');
+        panel.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        panel.classList.remove('translate-y-0', 'opacity-100');
+    }
+
+    // --- UI RENDERING & CONTROLS ---
+    function updateHUDClockOnly() {
+        document.getElementById('hud-day-text').innerText = `Day ${gameState.day}`;
+        const hrs = Math.floor(gameState.time / 60);
+        const mins = Math.floor(gameState.time % 60);
+        const ampm = hrs >= 12 ? 'PM' : 'AM';
+        const formattedHrs = (hrs % 12 || 12).toString().padStart(2, '0');
+        const formattedMins = mins.toString().padStart(2, '0');
+        document.getElementById('hud-clock').innerText = `${formattedHrs}:${formattedMins} ${ampm}`;
+
+        const timeIcon = document.querySelector('#hud-time-icon i');
+        if (hrs >= 19) {
+            timeIcon.className = 'fa-solid fa-moon text-indigo-400 text-lg';
+        } else if (hrs >= 17) {
+            timeIcon.className = 'fa-solid fa-cloud-sun text-orange-400 text-lg';
+        } else {
+            timeIcon.className = 'fa-solid fa-sun text-amber-400 text-lg';
+        }
+    }
+
+    function updateHUD() {
+        document.getElementById('hud-cash').innerText = `$${gameState.cash.toLocaleString()}`;
+        document.getElementById('hud-daily-profit').innerText = `$${gameState.dayProfit.toLocaleString()}`;
+        document.getElementById('hud-level-badge').innerText = gameState.level;
+        document.getElementById('hud-store-name').innerText = gameState.storeName;
+
+        const rep = Math.floor(gameState.reputation);
+        document.getElementById('hud-reputation').innerText = `${rep}%`;
+        document.getElementById('hud-reputation-tag').innerText = rep >= 80 ? 'High' : (rep >= 50 ? 'Fair' : 'Low');
+
+        updateHUDClockOnly();
+
+        const xpPct = Math.min(100, Math.floor((gameState.xp / gameState.xpToNextLevel) * 100));
+        document.getElementById('hud-xp-bar').style.width = `${xpPct}%`;
+    }
+
+    function setupUIEvents() {
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabId = btn.getAttribute('data-tab');
+                openModal(tabId);
+            });
+        });
+
+        document.getElementById('btn-close-modal').addEventListener('click', closeModal);
+        document.getElementById('modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'modal-container') closeModal();
+        });
+
+        // Build Mode Cancel
+        document.getElementById('btn-cancel-build').addEventListener('click', exitBuildMode);
+
+        // Move Mode Toggle & Cancel
+        document.getElementById('btn-quick-move').addEventListener('click', () => {
+            if (isoEngine.moveMode) {
+                exitMoveMode();
+            } else {
+                enterMoveMode();
+            }
+        });
+        document.getElementById('btn-cancel-move').addEventListener('click', exitMoveMode);
+
+        // Tile Inspector Actions
+        document.getElementById('btn-inspector-close').addEventListener('click', closeTileInspector);
+        document.getElementById('btn-inspector-move').addEventListener('click', () => {
+            if (!gameState.inspectedTile) return;
+            const { x, y } = gameState.inspectedTile;
+            enterMoveMode(x, y);
+        });
+        document.getElementById('btn-inspector-restock').addEventListener('click', () => {
+            if (!gameState.inspectedTile) return;
+            const { x, y, tile } = gameState.inspectedTile;
+            const type = FURNITURE_TYPES[tile.typeId];
+            if (gameState.cash >= 15) {
+                gameState.cash -= 15;
+                tile.stock = type.capacity;
+                soundEngine.playPop();
+                addParticle(x, y, 'Shelf Refilled!', '#10b981');
+                updateHUD();
+                openTileInspector(x, y, tile);
+            } else {
+                showToast('Need $15 to refill this shelf!', 'fa-circle-exclamation', 'border-rose-500/60');
+            }
+        });
+
+        document.getElementById('btn-inspector-sell').addEventListener('click', () => {
+            if (!gameState.inspectedTile) return;
+            const { x, y, tile } = gameState.inspectedTile;
+            const type = FURNITURE_TYPES[tile.typeId];
+            const refund = Math.floor(type.cost * 0.5);
+            gameState.cash += refund;
+            gameState.grid[y][x] = null;
+            soundEngine.playPop();
+            addParticle(x, y, `Sold +$${refund}`, '#f59e0b');
+            updateHUD();
+            closeTileInspector();
+        });
+
+        // Build Category Filter Tabs
+        document.querySelectorAll('.build-cat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                gameState.selectedBuildCategory = btn.getAttribute('data-cat');
+                document.querySelectorAll('.build-cat-btn').forEach(b => {
+                    b.className = b === btn
+                        ? 'build-cat-btn px-3 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold text-xs'
+                        : 'build-cat-btn px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white font-semibold text-xs';
+                });
+                renderBuildTabs();
+            });
+        });
+
+        // Quick Tools Right Side
+        document.getElementById('btn-quick-restock').addEventListener('click', () => {
+            if (gameState.cash >= 50) {
+                gameState.cash -= 50;
+                for (let y = 0; y < gameState.gridSize; y++) {
+                    for (let x = 0; x < gameState.gridSize; x++) {
+                        const item = gameState.grid[y][x];
+                        if (item && FURNITURE_TYPES[item.typeId]?.cat === 'shelf') {
+                            item.stock = FURNITURE_TYPES[item.typeId].capacity;
+                        }
+                    }
+                }
+                soundEngine.playChime();
+                addParticle(Math.floor(gameState.gridSize / 2), Math.floor(gameState.gridSize / 2), 'All Shelves Restocked!', '#10b981');
+                updateHUD();
+            } else {
+                showToast('Need $50 for Store-Wide Restock!', 'fa-circle-exclamation', 'border-rose-500/60');
+            }
+        });
+
+        document.getElementById('btn-quick-clean').addEventListener('click', () => {
+            const count = gameState.trashItems.length;
+            gameState.trashItems = [];
+            addParticle(Math.floor(gameState.gridSize / 2), Math.floor(gameState.gridSize / 2), `Cleaned ${count} trash!`, '#06b6d4');
+            soundEngine.playPop();
+        });
+
+        document.getElementById('btn-quick-promo').addEventListener('click', () => {
+            if (gameState.cash >= 200) {
+                gameState.cash -= 200;
+                triggerRandomEvent();
+                updateHUD();
+            } else {
+                showToast('Need $200 to launch a promo campaign!', 'fa-circle-exclamation', 'border-rose-500/60');
+            }
+        });
+
+        // Speed Controls
+        document.getElementById('btn-speed-pause').addEventListener('click', () => setSpeed(0));
+        document.getElementById('btn-speed-1').addEventListener('click', () => setSpeed(1));
+        document.getElementById('btn-speed-2').addEventListener('click', () => setSpeed(2));
+
+        // Reset Camera
+        document.getElementById('btn-reset-cam').addEventListener('click', () => {
+            isoEngine.resetCamera();
+            soundEngine.playPop();
+        });
+
+        // Audio Toggle
+        document.getElementById('btn-audio-toggle').addEventListener('click', () => {
+            soundEngine.enabled = !soundEngine.enabled;
+            const icon = document.querySelector('#btn-audio-toggle i');
+            icon.className = soundEngine.enabled ? 'fa-solid fa-volume-high text-sm' : 'fa-solid fa-volume-xmark text-sm';
+        });
+
+        // Custom Rename Modal (No native prompt())
+        const renameModal = document.getElementById('rename-modal');
+        const renameInput = document.getElementById('input-store-name');
+        document.getElementById('btn-edit-name').addEventListener('click', () => {
+            renameInput.value = gameState.storeName;
+            renameModal.classList.remove('hidden');
+            renameInput.focus();
+        });
+        document.getElementById('btn-rename-cancel').addEventListener('click', () => {
+            renameModal.classList.add('hidden');
+        });
+        document.getElementById('btn-rename-save').addEventListener('click', () => {
+            if (renameInput.value && renameInput.value.trim()) {
+                gameState.storeName = renameInput.value.trim();
+                updateHUD();
+                soundEngine.playPop();
+            }
+            renameModal.classList.add('hidden');
+        });
+
+        // Tutorial Start
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            soundEngine.init();
+            soundEngine.playChime();
+            document.getElementById('tutorial-modal').classList.add('hidden');
+        });
+    }
+
+    function setSpeed(speed) {
+        gameState.gameSpeed = speed;
+        document.getElementById('btn-speed-pause').className = speed === 0 ? 'w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs' : 'w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors';
+        document.getElementById('btn-speed-1').className = speed === 1 ? 'w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs' : 'w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors';
+        document.getElementById('btn-speed-2').className = speed === 2 ? 'w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs' : 'w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:text-white transition-colors';
+    }
+
+    function openModal(tabId) {
+        const container = document.getElementById('modal-container');
+        const modalBox = document.getElementById('modal-box');
+
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+        const activeContent = document.getElementById(tabId);
+        if (activeContent) activeContent.classList.remove('hidden');
+
+        const meta = {
+            'tab-inventory': { title: 'Inventory & Pricing', sub: 'Adjust retail prices and check unlocked merchandise', icon: 'fa-boxes-stacked' },
+            'tab-build': { title: 'Build & Store Expansion', sub: 'Place shelves, checkout lanes, decor, or expand your floorplan', icon: 'fa-store' },
+            'tab-staff': { title: 'Staff Management', sub: 'Hire Cashiers, Restockers, and Janitors to automate operations', icon: 'fa-users' },
+            'tab-upgrades': { title: 'Store Upgrades', sub: 'Invest in advertising and store lighting upgrades', icon: 'fa-arrow-up-right-dots' },
+            'tab-stats': { title: 'Store Analytics', sub: 'Track lifetime revenue, customer volume, and level milestones', icon: 'fa-chart-pie' }
+        };
+
+        if (meta[tabId]) {
+            document.getElementById('modal-title').innerText = meta[tabId].title;
+            document.getElementById('modal-subtitle').innerText = meta[tabId].sub;
+            document.getElementById('modal-header-icon').innerHTML = `<i class="fa-solid ${meta[tabId].icon}"></i>`;
+        }
+
+        document.querySelectorAll('.nav-tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-tab') === tabId) {
+                btn.classList.add('bg-indigo-600', 'text-white');
+                btn.classList.remove('text-slate-300');
+            } else {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-300');
+            }
+        });
+
+        if (tabId === 'tab-inventory') renderInventoryTab();
+        if (tabId === 'tab-build') renderBuildTabs();
+        if (tabId === 'tab-staff') renderStaffTab();
+        if (tabId === 'tab-upgrades') renderUpgradesTab();
+        if (tabId === 'tab-stats') renderStatsTab();
+
+        container.classList.remove('opacity-0', 'pointer-events-none');
+        modalBox.classList.remove('scale-95');
+        modalBox.classList.add('scale-100');
+    }
+
+    function closeModal() {
+        const container = document.getElementById('modal-container');
+        const modalBox = document.getElementById('modal-box');
+        container.classList.add('opacity-0', 'pointer-events-none');
+        modalBox.classList.remove('scale-100');
+        modalBox.classList.add('scale-95');
+    }
+
+    // --- TAB RENDERING ---
+    function renderInventoryTab() {
+        const grid = document.getElementById('inventory-items-grid');
+        grid.innerHTML = '';
+
+        Object.keys(PRODUCTS).forEach(key => {
+            const prod = PRODUCTS[key];
+            const inv = gameState.inventory[key];
+            const isUnlocked = gameState.level >= prod.unlockedAt;
+
+            const card = document.createElement('div');
+            card.className = `glass-card p-4 rounded-2xl flex flex-col justify-between ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
+
+            card.innerHTML = `
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center text-2xl shadow-inner">
+                            ${prod.icon}
+                        </div>
+                        <div>
+                            <h4 class="font-display font-bold text-white text-base">${prod.name}</h4>
+                            <div class="text-xs text-slate-400">Category: <span class="text-indigo-400 font-semibold">${CATEGORIES[prod.cat].name}</span></div>
+                        </div>
+                    </div>
+                    ${!isUnlocked ? `<span class="text-xs bg-slate-800 px-2 py-1 rounded text-amber-400 font-bold"><i class="fa-solid fa-lock"></i> Lvl ${prod.unlockedAt}</span>` : ''}
+                </div>
+
+                ${isUnlocked ? `
+                    <div class="space-y-3 bg-slate-900/40 p-3 rounded-xl border border-slate-800/80">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Recommended Retail:</span>
+                            <span class="text-emerald-400 font-bold">$${prod.defaultPrice}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400">Your Selling Price:</span>
+                            <div class="flex items-center gap-2">
+                                <button class="btn-price-down bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded flex items-center justify-center font-bold text-white" data-prod="${key}">-</button>
+                                <span class="font-bold text-white text-sm" id="price-val-${key}">$${inv.price}</span>
+                                <button class="btn-price-up bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded flex items-center justify-center font-bold text-white" data-prod="${key}">+</button>
+                            </div>
+                        </div>
+                    </div>
+                ` : '<div class="text-xs text-slate-500 italic">Unlock this department by reaching higher store levels.</div>'}
+            `;
+
+            grid.appendChild(card);
+        });
+
+        grid.querySelectorAll('.btn-price-up').forEach(b => {
+            b.addEventListener('click', (e) => {
+                const prodKey = e.currentTarget.getAttribute('data-prod');
+                gameState.inventory[prodKey].price += 1;
+                document.getElementById(`price-val-${prodKey}`).innerText = `$${gameState.inventory[prodKey].price}`;
+            });
+        });
+
+        grid.querySelectorAll('.btn-price-down').forEach(b => {
+            b.addEventListener('click', (e) => {
+                const prodKey = e.currentTarget.getAttribute('data-prod');
+                if (gameState.inventory[prodKey].price > 1) {
+                    gameState.inventory[prodKey].price -= 1;
+                    document.getElementById(`price-val-${prodKey}`).innerText = `$${gameState.inventory[prodKey].price}`;
+                }
+            });
+        });
+    }
+
+    function renderBuildTabs() {
+        const grid = document.getElementById('build-items-grid');
+        grid.innerHTML = '';
+        const filterCat = gameState.selectedBuildCategory;
+
+        if (filterCat !== 'expansion') {
+            Object.keys(FURNITURE_TYPES).forEach(key => {
+                const item = FURNITURE_TYPES[key];
+                if (filterCat !== 'all' && item.cat !== filterCat) return;
+
+                const isSelected = isoEngine.selectedBuildItem === key;
+
+                const card = document.createElement('div');
+                card.className = `glass-card p-4 rounded-2xl flex flex-col justify-between cursor-pointer ${isSelected ? 'border-2 border-indigo-500 bg-indigo-500/10' : ''}`;
+
+                card.innerHTML = `
+                    <div>
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white mb-3 shadow-md" style="background-color: ${item.color}">
+                            <i class="fa-solid ${item.icon} text-lg"></i>
+                        </div>
+                        <h4 class="font-display font-bold text-white text-sm">${item.name}</h4>
+                        <p class="text-xs text-slate-400 mt-1">${item.cat === 'shelf' ? `Holds ${item.capacity} ${CATEGORIES[item.productCat].name.toLowerCase()}` : (item.cat === 'checkout' ? `Checkout Speed x${item.speed}` : `+${item.beauty} Store Vibe`)}</p>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between">
+                        <span class="font-display font-bold text-emerald-400 text-sm">$${item.cost}</span>
+                        <button class="px-3 py-1.5 rounded-lg ${isSelected ? 'bg-indigo-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'} text-xs font-semibold">
+                            ${isSelected ? 'Placing...' : 'Place'}
+                        </button>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    if (isoEngine.selectedBuildItem === key) {
+                        exitBuildMode();
+                    } else {
+                        enterBuildMode(key);
+                    }
+                    closeModal();
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Store Expansion Card
+        if (filterCat === 'all' || filterCat === 'expansion') {
+            const nextExpansion = EXPANSIONS.find(e => e.size > gameState.gridSize);
+            if (nextExpansion) {
+                const expCard = document.createElement('div');
+                expCard.className = 'glass-card p-4 rounded-2xl flex flex-col justify-between border-dashed border-2 border-emerald-500/40 bg-emerald-500/5';
+                expCard.innerHTML = `
+                    <div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-3">
+                            <i class="fa-solid fa-expand text-lg"></i>
+                        </div>
+                        <h4 class="font-display font-bold text-white text-sm">Expand Store Floor</h4>
+                        <p class="text-xs text-slate-400 mt-1">Upgrade floorplan to ${nextExpansion.size}x${nextExpansion.size} (Req. Lvl ${nextExpansion.level})</p>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between">
+                        <span class="font-display font-bold text-emerald-400 text-sm">$${nextExpansion.cost}</span>
+                        <button id="btn-buy-expansion" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold">
+                            Expand
+                        </button>
+                    </div>
+                `;
+
+                expCard.querySelector('#btn-buy-expansion').addEventListener('click', () => {
+                    if (gameState.cash >= nextExpansion.cost && gameState.level >= nextExpansion.level) {
+                        gameState.cash -= nextExpansion.cost;
+                        gameState.gridSize = nextExpansion.size;
+                        soundEngine.playLevelUp();
+                        showToast(`Store expanded to ${nextExpansion.size}x${nextExpansion.size}!`, 'fa-expand', 'border-emerald-500/60');
+                        updateHUD();
+                        renderBuildTabs();
+                    } else {
+                        showToast(`Requires Store Level ${nextExpansion.level} and $${nextExpansion.cost}!`, 'fa-lock', 'border-rose-500/60');
+                    }
+                });
+
+                grid.appendChild(expCard);
+            }
+        }
+    }
+
+    function renderStaffTab() {
+        const grid = document.getElementById('staff-roles-grid');
+        grid.innerHTML = '';
+
+        const roles = [
+            { id: 'cashiers', name: 'Cashier', salary: 40, icon: 'fa-cash-register', desc: 'Staffs registers & speeds up checkout queues' },
+            { id: 'restockers', name: 'Restocker', salary: 50, icon: 'fa-boxes-packing', desc: 'Walks the floor refilling low shelves automatically' },
+            { id: 'janitors', name: 'Janitor', salary: 35, icon: 'fa-broom', desc: 'Roams aisles sweeping up customer litter' }
+        ];
+
+        roles.forEach(role => {
+            const count = gameState.staff[role.id];
+            const card = document.createElement('div');
+            card.className = 'glass-card p-5 rounded-2xl flex flex-col justify-between';
+            card.innerHTML = `
+                <div>
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-xl mb-3">
+                        <i class="fa-solid ${role.icon}"></i>
+                    </div>
+                    <h4 class="font-display font-bold text-white text-base">${role.name}s</h4>
+                    <p class="text-xs text-slate-400 mt-1">${role.desc}</p>
+                    <div class="text-xs text-slate-500 mt-2">Wage: <span class="text-amber-400 font-bold">$${role.salary}/day</span></div>
+                </div>
+
+                <div class="mt-6 flex items-center justify-between bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                    <span class="text-xs font-semibold text-slate-300">Hired: <strong class="text-white text-sm" id="staff-count-${role.id}">${count}</strong></span>
+                    <div class="flex items-center gap-1.5">
+                        <button class="btn-fire-staff bg-slate-800 hover:bg-slate-700 text-slate-300 w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs" data-role="${role.id}">-</button>
+                        <button class="btn-hire-staff bg-amber-600 hover:bg-amber-500 text-white w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs" data-role="${role.id}">+</button>
+                    </div>
+                </div>
+            `;
+
+            grid.appendChild(card);
+        });
+
+        grid.querySelectorAll('.btn-hire-staff').forEach(b => {
+            b.addEventListener('click', (e) => {
+                const role = e.currentTarget.getAttribute('data-role');
+                gameState.staff[role]++;
+                syncStaffAgents();
+                soundEngine.playPop();
+                renderStaffTab();
+            });
+        });
+
+        grid.querySelectorAll('.btn-fire-staff').forEach(b => {
+            b.addEventListener('click', (e) => {
+                const role = e.currentTarget.getAttribute('data-role');
+                if (gameState.staff[role] > 0) {
+                    gameState.staff[role]--;
+                    syncStaffAgents();
+                    soundEngine.playPop();
+                    renderStaffTab();
+                }
+            });
+        });
+    }
+
+    function renderUpgradesTab() {
+        const grid = document.getElementById('upgrades-grid');
+        grid.innerHTML = '';
+
+        const list = [
+            { id: 'marketing', name: 'Billboard Ads', cost: 500 * (gameState.upgrades.marketing + 1), desc: 'Increases customer arrival rate across the city', level: gameState.upgrades.marketing },
+            { id: 'lighting', name: 'LED Store Lighting', cost: 600 * (gameState.upgrades.lighting + 1), desc: 'Brightens evening shopping hours & boosts satisfaction', level: gameState.upgrades.lighting }
+        ];
+
+        list.forEach(upg => {
+            const card = document.createElement('div');
+            card.className = 'glass-card p-5 rounded-2xl flex items-center justify-between gap-4';
+            card.innerHTML = `
+                <div>
+                    <h4 class="font-display font-bold text-white text-base">${upg.name}</h4>
+                    <p class="text-xs text-slate-400 mt-1">${upg.desc}</p>
+                    <div class="text-xs text-indigo-400 font-semibold mt-2">Current Level: ${upg.level}</div>
+                </div>
+                <button class="btn-buy-upgrade px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl text-xs whitespace-nowrap">
+                    Upgrade ($${upg.cost})
+                </button>
+            `;
+
+            card.querySelector('.btn-buy-upgrade').addEventListener('click', () => {
+                if (gameState.cash >= upg.cost) {
+                    gameState.cash -= upg.cost;
+                    gameState.upgrades[upg.id]++;
+                    if (upg.id === 'lighting') {
+                        gameState.reputation = Math.min(100, gameState.reputation + 4);
+                    }
+                    soundEngine.playLevelUp();
+                    updateHUD();
+                    renderUpgradesTab();
+                } else {
+                    showToast(`Need $${upg.cost} for this upgrade!`, 'fa-circle-exclamation', 'border-rose-500/60');
+                }
+            });
+
+            grid.appendChild(card);
+        });
+    }
+
+    function renderStatsTab() {
+        document.getElementById('stat-total-revenue').innerText = `$${gameState.totalRevenue.toLocaleString()}`;
+        document.getElementById('stat-customers-served').innerText = gameState.customersServed;
+        document.getElementById('stat-avg-rating').innerText = `${Math.floor(gameState.reputation)}%`;
+
+        const milestonesGrid = document.getElementById('milestones-list');
+        milestonesGrid.innerHTML = `
+            <div class="flex items-center justify-between text-xs p-2.5 bg-slate-900/50 rounded-xl">
+                <span class="text-slate-300">Level 1: Corner Neighborhood Shop</span>
+                <span class="text-emerald-400 font-bold">UNLOCKED</span>
+            </div>
+            <div class="flex items-center justify-between text-xs p-2.5 bg-slate-900/50 rounded-xl ${gameState.level >= 3 ? '' : 'opacity-50'}">
+                <span class="text-slate-300">Level 3: Suburban Mini Market</span>
+                <span class="${gameState.level >= 3 ? 'text-emerald-400' : 'text-slate-500'} font-bold">${gameState.level >= 3 ? 'UNLOCKED' : 'LOCKED'}</span>
+            </div>
+            <div class="flex items-center justify-between text-xs p-2.5 bg-slate-900/50 rounded-xl ${gameState.level >= 5 ? '' : 'opacity-50'}">
+                <span class="text-slate-300">Level 5: Flagship Mega Superstore</span>
+                <span class="${gameState.level >= 5 ? 'text-emerald-400' : 'text-slate-500'} font-bold">${gameState.level >= 5 ? 'UNLOCKED' : 'LOCKED'}</span>
+            </div>
+        `;
+    }
+
+    // --- START ON WINDOW LOAD ---
+    window.onload = function() {
+        initGame();
+    };
+    </script>
+</body>
+</html>

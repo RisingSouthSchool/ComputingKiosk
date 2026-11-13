@@ -120,5 +120,17 @@
     "year": 10,
     "type": "Vibe coded",
     "added": "2026-11-09"
+  },
+  {
+    "slug": "megamall-tycoon",
+    "title": "MegaMall Tycoon",
+    "hasIcon": false,
+    "iconSource": "placeholder",
+    "iconFile": "placeholder_icon.png",
+    "blurb": "",
+    "featured": false,
+    "year": 10,
+    "type": "Vibe coded",
+    "added": "2026-11-13"
   }
 ]
