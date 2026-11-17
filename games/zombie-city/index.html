@@ -127,7 +127,7 @@
 
         <div id="health-display" class="hud-text">HP: 100</div>
         <div id="weapon-display" class="hud-text">FAMAS F1</div>
-        <div id="ammo-display" class="hud-text">35 / 35</div>
+        <div id="ammo-display" class="hud-text">25 / 25</div>
 
         <div id="crosshair"></div>
         <div id="hitmarker">
@@ -140,8 +140,9 @@
 
     <div id="menu">
         <h1 id="menu-title">ZOMBIE CITY</h1>
-        <p>WASD to Move | SPACE to Jump | CLICK to Shoot | R to Reload<br>Q or Scroll to Switch Weapons<br>Parkour on buildings to escape the horde!</p>
+        <p>Highest Wave: <span id="highscore-display">1</span><br><br>WASD to Move | SPACE to Jump | CLICK to Shoot | R to Reload<br>Q or Scroll to Switch Weapons<br>E to Melee | G to Grenade | RIGHT CLICK to Zoom<br>Parkour on buildings to escape the horde!</p>
         <button id="start-btn">PLAY</button>
+        <button id="restart-btn" style="display:none; margin-top: 15px; background: #880000;">RESTART</button>
     </div>
 
     <script>
@@ -171,6 +172,7 @@
         let bullets = [];
         let zombies = [];
         let healthPacks = [];
+        let grenadePickups = [];
         let bossProjectiles = [];
         let grenades = [];
         let explosions = [];
@@ -180,9 +182,13 @@
         const MAX_ZOMBIES = 15;
         let mapSize = 350;
         let grenadeCount = 2;
+        let isZooming = false;
+        let lastMeleeTime = 0;
+        let targetFov = 75;
 
         // --- Wave Logic ---
         let currentWave = 1;
+        let highscore = localStorage.getItem('zombieCityHighscore') || 1;
         let zombiesToSpawn = 10;
         let zombiesKilledThisWave = 0;
         let waveActive = true;
@@ -264,6 +270,29 @@
                 spread: 0.15,
                 pellets: 12,
                 lastFired: 0
+            },
+            {
+                name: "AI Sniper",
+                type: "semi",
+                maxAmmo: 5,
+                ammo: 5,
+                fireRate: 1500,
+                damage: 2500,
+                spread: 0.0,
+                pellets: 1,
+                lastFired: 0
+            },
+            {
+                name: "Flamethrower",
+                type: "auto",
+                maxAmmo: 400,
+                ammo: 400,
+                fireRate: 40,
+                damage: 1,
+                spread: 0.15,
+                pellets: 1,
+                lastFired: 0,
+                isFlame: true
             }
         ];
         let currentWeaponIdx = 0;
@@ -287,6 +316,8 @@
 
         // --- Initialization ---
         function init() {
+            document.getElementById('highscore-display').innerText = highscore;
+
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x050510);
             scene.fog = new THREE.Fog(0x050510, 20, 150); // Pushed fog back
@@ -313,6 +344,10 @@
 
             // Event Listeners
             document.getElementById('start-btn').addEventListener('click', startGame);
+            document.getElementById('restart-btn').addEventListener('click', () => {
+                resetGame();
+                startGame();
+            });
 
             document.addEventListener('pointerlockchange', () => {
                 isGameActive = (document.pointerLockElement === document.body);
@@ -321,6 +356,9 @@
                 if (!isGameActive) {
                     if (hp > 0) {
                         document.getElementById('menu-title').innerText = "PAUSED";
+                        document.getElementById('restart-btn').style.display = 'block';
+                    } else {
+                        document.getElementById('restart-btn').style.display = 'none';
                     }
                     const btn = document.getElementById('start-btn');
                     btn.disabled = true;
@@ -351,8 +389,12 @@
                         break;
                     case 'KeyR': reload(); break;
                     case 'KeyQ': switchWeapon(); break;
+                    case 'KeyE': melee(); break;
+                    case 'KeyG': throwGrenade(); break;
                     case 'Digit1': switchWeapon(0); break;
                     case 'Digit2': switchWeapon(1); break;
+                    case 'Digit3': switchWeapon(2); break;
+                    case 'Digit4': switchWeapon(3); break;
                 }
             });
 
@@ -368,10 +410,11 @@
             document.addEventListener('mousedown', (e) => {
                 if (!isGameActive) return;
                 if (e.button === 0) isShooting = true;
-                if (e.button === 2) throwGrenade(); // Right click
+                if (e.button === 2) isZooming = true; // Right click to Zoom
             });
             document.addEventListener('mouseup', (e) => {
                 if (e.button === 0) isShooting = false;
+                if (e.button === 2) isZooming = false;
             });
 
             // Prevent context menu on right click
@@ -486,8 +529,10 @@
                 scene.add(bMesh);
                 obstacles.push({ mesh: bMesh, box: new THREE.Box3().setFromObject(bMesh) });
 
+                let hasLadder = false;
                 // Ladders for climbing to the roofs
                 if (Math.random() > 0.6) {
+                    hasLadder = true;
                     const ladderGroup = new THREE.Group();
                     const lMat = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8 });
 
@@ -525,7 +570,7 @@
                 }
 
                 // Add Parkour Steps (Guaranteed to be jumpable heights!)
-                if (Math.random() > 0.1) {
+                if (!hasLadder && Math.random() > 0.1) {
                     const rH1 = 2 + Math.random() * 3; // Lowered step heights for easy parkour!
                     const aTex1 = baseTex.clone();
                     aTex1.needsUpdate = true;
@@ -635,6 +680,46 @@
             playerBodyGroup.add(shotgunGroup);
             WEAPONS[1].mesh = shotgunGroup;
 
+            // AI Sniper
+            const sniperGroup = new THREE.Group();
+            const snMat = new THREE.MeshStandardMaterial({ color: 0x112211, metalness: 0.8 });
+
+            const snBody = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.4, 2.5), snMat);
+            const snBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 3.0), snMat);
+            snBarrel.rotation.x = Math.PI/2;
+            snBarrel.position.set(0, 0.1, -2.0);
+
+            const snScope = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8), new THREE.MeshStandardMaterial({color: 0x000000}));
+            snScope.rotation.x = Math.PI/2;
+            snScope.position.set(0, 0.3, -0.2);
+
+            const snStock = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.5, 1.0), snMat);
+            snStock.position.set(0, -0.1, 1.2);
+
+            sniperGroup.add(snBody, snBarrel, snScope, snStock);
+            sniperGroup.position.set(0.6, -0.8, -1.5);
+            sniperGroup.visible = false;
+            playerBodyGroup.add(sniperGroup);
+            WEAPONS[2].mesh = sniperGroup;
+
+            // Flamethrower
+            const flameGroup = new THREE.Group();
+            const flMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+
+            const flBody = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 2.5), flMat);
+            flBody.rotation.x = Math.PI/2;
+            flBody.position.set(0, 0.1, -1.2);
+
+            const flTank = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 1.0), new THREE.MeshStandardMaterial({color: 0xdd4400}));
+            flTank.rotation.x = Math.PI/2;
+            flTank.position.set(0, -0.3, -0.8);
+
+            flameGroup.add(flBody, flTank);
+            flameGroup.position.set(0.6, -0.8, -1.5);
+            flameGroup.visible = false;
+            playerBodyGroup.add(flameGroup);
+            WEAPONS[3].mesh = flameGroup;
+
             // Setup Muzzle Flashes
             WEAPONS.forEach(w => {
                 w.flash = new THREE.PointLight(0xff6600, 0, 15);
@@ -711,15 +796,56 @@
             }
         }
 
-        function spawnZombie(isBoss = false) {
+        function spawnGrenadePickup() {
+            if (grenadePickups.length >= 10) return;
+
+            const group = new THREE.Group();
+            const geo = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+            const mat = new THREE.MeshStandardMaterial({ color: 0xffffff }); // White box
+            const box = new THREE.Mesh(geo, mat);
+            group.add(box);
+
+            const stripeMat = new THREE.MeshBasicMaterial({ color: 0x4a5d23 }); // Olive green stripe
+            const stripe = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.4, 1.3), stripeMat);
+            group.add(stripe);
+
+            let pos = new THREE.Vector3();
+            let safe = false;
+            let attempts = 0;
+            const tempBox = new THREE.Box3();
+
+            while (!safe && attempts < 50) {
+                pos.set((Math.random() - 0.5) * (mapSize - 15), 1.0, (Math.random() - 0.5) * (mapSize - 15));
+                group.position.copy(pos);
+                tempBox.setFromObject(group);
+                safe = true;
+                for (let o of obstacles) {
+                    if (tempBox.intersectsBox(o.box)) { safe = false; break; }
+                }
+                attempts++;
+            }
+
+            if (safe) {
+                const glowGeo = new THREE.SphereGeometry(2.0, 12, 12);
+                const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+                const hl = new THREE.Mesh(glowGeo, glowMat); // White glow
+                group.add(hl);
+                scene.add(group);
+                grenadePickups.push({ mesh: group, box: tempBox, pos: pos });
+            }
+        }
+
+        function spawnZombie(isBoss = false, isPinkBoss = false) {
             if (zombies.length >= MAX_ZOMBIES) return;
 
             const isRanged = !isBoss && Math.random() < 0.2; // 20% chance to be ranged
+            const isVolatile = !isBoss && !isRanged && Math.random() < 0.1; // 10% chance to be Volatile
             const zGroup = new THREE.Group();
 
             let color = 0x2e422c; // Default Green
-            if (isBoss) color = 0x880000; // Red
+            if (isBoss) color = isPinkBoss ? 0xff1493 : 0x880000; // Deep Pink or Red
             if (isRanged) color = 0xcccc00; // Yellow
+            if (isVolatile) color = 0xff6600; // Orange
 
             const mat = new THREE.MeshStandardMaterial({ color: color });
 
@@ -775,18 +901,30 @@
 
             scene.add(zGroup);
 
-            const hpVal = isBoss ? (2500 + currentWave * 600) : (100 + currentWave * 20); // Buffed boss health
+            let hpVal = 100; // Flat health for regular zombies, no more bullet sponges!
+            if (isBoss) {
+                // Pink boss is now the earlier boss, so it gets the slightly smaller health pool
+                hpVal = isPinkBoss ? (2500 + currentWave * 600) : (4000 + currentWave * 800);
+            }
+
+            let spd = 7 + currentWave * 0.5 + Math.random() * 3;
+            if (isBoss) spd = isPinkBoss ? 22.0 : 16.0;
 
             const zombieObj = {
                 mesh: zGroup,
                 box: new THREE.Box3(),
                 hp: hpVal,
                 maxHp: hpVal,
-                speed: isBoss ? 16.0 : (7 + currentWave * 0.5 + Math.random() * 3), // Buffed boss speed
+                speed: spd,
                 velocity: new THREE.Vector3(0, 0, 0),
                 isClimbing: false,
                 isBoss: isBoss,
+                isPinkBoss: isPinkBoss,
+                combatMode: 'ranged', // Used for pink boss dynamic AI
+                lastModeSwitch: 0,
                 isRanged: isRanged,
+                isVolatile: isVolatile,
+                burnTimer: 0,
                 lastFired: 0,
                 lLeg: lLeg,
                 rLeg: rLeg,
@@ -875,9 +1013,21 @@
             camera.rotation.x += (Math.random() * 0.02) + 0.01;
 
             for (let p = 0; p < w.pellets; p++) {
-                const geo = new THREE.BoxGeometry(0.1, 0.1, 4.0);
-                const mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-                const mesh = new THREE.Mesh(geo, mat);
+                let geo, mat, mesh, velMult, lifeTime;
+
+                if (w.isFlame) {
+                    geo = new THREE.SphereGeometry(0.4, 8, 8);
+                    mat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.8 });
+                    mesh = new THREE.Mesh(geo, mat);
+                    velMult = 60; // Slower moving fire
+                    lifeTime = 0.8; // Short range
+                } else {
+                    geo = new THREE.BoxGeometry(0.1, 0.1, 4.0);
+                    mat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+                    mesh = new THREE.Mesh(geo, mat);
+                    velMult = 400; // Fast bullets
+                    lifeTime = 2.0;
+                }
 
                 // Position bullet slightly in front of camera
                 mesh.position.copy(camera.position);
@@ -891,16 +1041,52 @@
                 dir.z += (Math.random() - 0.5) * w.spread;
                 dir.normalize();
 
-                mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), dir);
+                if (!w.isFlame) mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,-1), dir);
 
                 scene.add(mesh);
                 bullets.push({
                     mesh: mesh,
-                    velocity: dir.multiplyScalar(400),
-                    life: 2.0,
+                    velocity: dir.multiplyScalar(velMult),
+                    life: lifeTime,
                     damage: w.damage,
-                    lastPos: mesh.position.clone()
+                    lastPos: mesh.position.clone(),
+                    isFlame: w.isFlame
                 });
+            }
+        }
+
+        function melee() {
+            const now = performance.now();
+            if (now - lastMeleeTime < 800) return;
+            lastMeleeTime = now;
+
+            const wMesh = WEAPONS[currentWeaponIdx].mesh;
+            const origZ = wMesh.position.z;
+            wMesh.position.z -= 0.8;
+            setTimeout(() => { wMesh.position.z = origZ; }, 150);
+
+            playSound('shotgun'); // Punchy sound
+
+            for (let j = zombies.length - 1; j >= 0; j--) {
+                const z = zombies[j];
+                const dist = camera.position.distanceTo(z.mesh.position);
+                if (dist < 8.0) {
+                    const dirToZombie = new THREE.Vector3().subVectors(z.mesh.position, camera.position).normalize();
+                    const camDir = new THREE.Vector3();
+                    camera.getWorldDirection(camDir);
+
+                    if (camDir.dot(dirToZombie) > 0.4) {
+                        z.hp -= 150;
+                        if (z.isBoss) updateBossHealth();
+
+                        if (z.hp <= 0) {
+                            processZombieDeath(z, j);
+                        } else {
+                            z.mesh.position.add(camDir.multiplyScalar(3.0)); // Knockback
+                            showHitmarker(false);
+                        }
+                    }
+                }
             }
         }
 
@@ -916,6 +1102,34 @@
             setTimeout(() => flash.style.opacity = 0, 150);
 
             if (hp <= 0) gameOver();
+        }
+
+        function processZombieDeath(z, index) {
+            scene.remove(z.mesh);
+            zombies.splice(index, 1);
+            zombiesKilledThisWave++;
+            updateUI();
+            playSound('zombieDeath');
+            showHitmarker(true);
+
+            if (z.isBoss) {
+                activeBoss = null;
+                document.getElementById('boss-health-container').style.display = 'none';
+            }
+
+            if (z.isVolatile) {
+                playExplosionSound();
+                const exGeo = new THREE.SphereGeometry(15, 16, 16);
+                const exMat = new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.8 });
+                const exMesh = new THREE.Mesh(exGeo, exMat);
+                exMesh.position.copy(z.mesh.position);
+                scene.add(exMesh);
+                explosions.push({ mesh: exMesh, life: 0.5 });
+
+                if (camera.position.distanceTo(z.mesh.position) < 15) {
+                    triggerDamage(40);
+                }
+            }
         }
 
         function throwGrenade() {
@@ -950,15 +1164,25 @@
             lastTime = time;
 
             if (isGameActive) {
+                // FOV Lerp for Sniper Zoom
+                targetFov = isZooming ? 20 : 75;
+                if (Math.abs(camera.fov - targetFov) > 1) {
+                    camera.fov += (targetFov - camera.fov) * 15 * delta;
+                    camera.updateProjectionMatrix();
+                }
+
                 // Wave Logic
                 if (waveActive) {
                     if (zombies.length < Math.min(MAX_ZOMBIES, zombiesToSpawn - zombiesKilledThisWave) && Math.random() < 0.02) {
                         // Check if it's time to spawn a boss (Every 5th wave, first zombie)
                         let isBoss = false;
+                        let isPinkBoss = false;
                         if (currentWave % 5 === 0 && zombiesKilledThisWave === 0 && !activeBoss) {
                             isBoss = true;
+                            // Pink Boss on wave 5, 15, 25. Red Boss on wave 10, 20, 30.
+                            if (currentWave % 10 !== 0) isPinkBoss = true;
                         }
-                        spawnZombie(isBoss);
+                        spawnZombie(isBoss, isPinkBoss);
                     }
                     if (zombiesKilledThisWave >= zombiesToSpawn) {
                         waveActive = false;
@@ -970,6 +1194,11 @@
                     updateUI();
                     if (waveTimer > 4) {
                         currentWave++;
+                        if (currentWave > highscore) {
+                            highscore = currentWave;
+                            localStorage.setItem('zombieCityHighscore', highscore);
+                            document.getElementById('highscore-display').innerText = highscore;
+                        }
                         zombiesToSpawn = 10 + currentWave * 3;
                         zombiesKilledThisWave = 0;
                         waveActive = true;
@@ -977,6 +1206,9 @@
                         // Spawn 1 or 2 health packs guaranteed between waves
                         spawnHealthPack();
                         if (Math.random() > 0.3) spawnHealthPack();
+                        // Spawn grenade supplies
+                        spawnGrenadePickup();
+                        if (Math.random() > 0.5) spawnGrenadePickup();
                     }
                 }
 
@@ -1007,10 +1239,10 @@
 
                 // Move X
                 camera.position.x += playerVelocity.x * delta;
-                // Lift bottom of box by 0.1 units during horizontal movement so we don't snag on floors!
+                // Lift bottom significantly and make thinner to avoid corner/floor snags
                 playerBox.setFromCenterAndSize(
-                    new THREE.Vector3(camera.position.x, camera.position.y - 1.9, camera.position.z),
-                    new THREE.Vector3(1.5, 3.8, 1.5)
+                    new THREE.Vector3(camera.position.x, camera.position.y - 1.5, camera.position.z),
+                    new THREE.Vector3(0.6, 2.5, 0.6)
                 );
                 for (let o of obstacles) {
                     if (playerBox.intersectsBox(o.box)) {
@@ -1023,8 +1255,8 @@
                 // Move Z
                 camera.position.z += playerVelocity.z * delta;
                 playerBox.setFromCenterAndSize(
-                    new THREE.Vector3(camera.position.x, camera.position.y - 1.9, camera.position.z),
-                    new THREE.Vector3(1.5, 3.8, 1.5)
+                    new THREE.Vector3(camera.position.x, camera.position.y - 1.5, camera.position.z),
+                    new THREE.Vector3(0.6, 2.5, 0.6)
                 );
                 for (let o of obstacles) {
                     if (playerBox.intersectsBox(o.box)) {
@@ -1037,14 +1269,16 @@
                 // Ladder Climbing Logic
                 playerBox.setFromCenterAndSize(
                     new THREE.Vector3(camera.position.x, camera.position.y - 2, camera.position.z),
-                    new THREE.Vector3(1.5, 4, 1.5)
+                    new THREE.Vector3(1.0, 4, 1.0)
                 );
                 for (let l of ladders) {
                     if (playerBox.intersectsBox(l.box)) {
                         if (moveForward) {
                             playerVelocity.y = 15.0; // Climb up!
+                        } else if (moveBackward) {
+                            playerVelocity.y = -10.0; // Climb down
                         } else if (playerVelocity.y < 0) {
-                            playerVelocity.y = 0; // Hang onto the ladder
+                            playerVelocity.y = -2.0; // Slide down slowly
                         }
                         break;
                     }
@@ -1057,14 +1291,14 @@
                 // Math fix for landing perfectly on roofs
                 playerBox.setFromCenterAndSize(
                     new THREE.Vector3(camera.position.x, camera.position.y - 2, camera.position.z),
-                    new THREE.Vector3(1.5, 4, 1.5)
+                    new THREE.Vector3(0.6, 4, 0.6) // Thinner here too
                 );
 
                 for (let o of obstacles) {
                     if (playerBox.intersectsBox(o.box)) {
                         if (playerVelocity.y < 0) {
                             // Falling onto something
-                            camera.position.y = o.box.max.y + 4; // 4 is half height(2) + distance to camera(2)
+                            camera.position.y = o.box.max.y + 4.01; // Added 0.01 micro-margin so floor doesn't snag next frame!
                             playerVelocity.y = 0;
                             playerOnGround = true;
                         } else if (playerVelocity.y > 0) {
@@ -1101,6 +1335,21 @@
                     }
                 }
 
+                // Grenade Pickups
+                for (let i = grenadePickups.length - 1; i >= 0; i--) {
+                    const gp = grenadePickups[i];
+                    gp.mesh.rotation.y += delta;
+
+                    if (playerBox.intersectsBox(gp.box)) {
+                        grenadeCount += 2; // +2 Grenades per box!
+                        updateUI();
+                        playSound('heal');
+
+                        scene.remove(gp.mesh);
+                        grenadePickups.splice(i, 1);
+                    }
+                }
+
                 if (isShooting) shoot();
 
                 // Flash Decay
@@ -1117,6 +1366,11 @@
 
                     b.mesh.position.addScaledVector(b.velocity, delta);
                     b.life -= delta;
+
+                    if (b.isFlame) {
+                        b.mesh.scale.addScalar(8 * delta); // Flames expand
+                        b.mesh.material.opacity -= 1.0 * delta; // Flames fade out
+                    }
 
                     // Raycast check between last frame and this frame
                     const path = new THREE.Vector3().subVectors(b.mesh.position, b.lastPos);
@@ -1166,20 +1420,12 @@
                             const z = hitZombie.z;
                             z.hp -= b.damage;
 
+                            if (b.isFlame) z.burnTimer = 3.0; // Apply 3 seconds of Burning!
+
                             if (z.isBoss) updateBossHealth();
 
                             if (z.hp <= 0) {
-                                scene.remove(z.mesh);
-                                zombies.splice(hitZombie.idx, 1);
-                                zombiesKilledThisWave++;
-                                updateUI();
-                                playSound('zombieDeath');
-                                showHitmarker(true);
-
-                                if (z.isBoss) {
-                                    activeBoss = null;
-                                    document.getElementById('boss-health-container').style.display = 'none';
-                                }
+                                processZombieDeath(z, hitZombie.idx);
                             } else {
                                 showHitmarker(false);
                             }
@@ -1195,13 +1441,59 @@
                 }
 
                 // Handle Zombies
-                for (let z of zombies) {
+                for (let zi = zombies.length - 1; zi >= 0; zi--) {
+                    let z = zombies[zi];
+
+                    if (z.burnTimer > 0) {
+                        z.burnTimer -= delta;
+                        z.hp -= 25 * delta; // 25 Damage over time per second
+
+                        // Visual fire effect
+                        z.mesh.children.forEach(c => {
+                            if (c.material && c.material.emissive !== undefined) {
+                                c.material.emissive = new THREE.Color(0xff5500);
+                                c.material.emissiveIntensity = 0.6;
+                            }
+                        });
+
+                        if (z.isBoss) updateBossHealth();
+
+                        if (z.hp <= 0) {
+                            processZombieDeath(z, zi);
+                            continue; // Zombie died to fire, skip the rest of its movement!
+                        }
+                    } else {
+                        z.mesh.children.forEach(c => {
+                            if (c.material && c.material.emissive !== undefined) {
+                                c.material.emissiveIntensity = 0;
+                            }
+                        });
+                    }
+
                     z.mesh.lookAt(camera.position.x, z.mesh.position.y, camera.position.z);
 
                     const pDir = new THREE.Vector3().subVectors(camera.position, z.mesh.position);
                     pDir.y = 0; pDir.normalize();
 
                     const scale = z.isBoss ? 2.5 : 1.0;
+                    const distToPlayer = z.mesh.position.distanceTo(camera.position);
+
+                    // Catch-up mechanic: If a zombie gets stuck far away, drop them closer!
+                    if (distToPlayer > 150 && !z.isBoss) {
+                        let angle = Math.random() * Math.PI * 2;
+                        let nx = camera.position.x + Math.cos(angle) * 70;
+                        let nz = camera.position.z + Math.sin(angle) * 70;
+                        nx = Math.max(-mapSize/2 + 10, Math.min(mapSize/2 - 10, nx));
+                        nz = Math.max(-mapSize/2 + 10, Math.min(mapSize/2 - 10, nz));
+                        z.mesh.position.set(nx, 60, nz); // Drop from the sky
+                        z.velocity.y = 0;
+                    }
+
+                    // Speed Boost for final zombies in wave
+                    let activeSpeed = z.speed;
+                    if (zombiesToSpawn - zombiesKilledThisWave <= 3 && zombies.length <= 3) {
+                        activeSpeed *= 1.5;
+                    }
 
                     // Helper to mathematically size the zombie box covering whole body/head
                     const updateZBox = () => {
@@ -1217,7 +1509,6 @@
 
                     // Ranged zombies try to stay back
                     if (z.isRanged) {
-                        const distToPlayer = z.mesh.position.distanceTo(camera.position);
                         if (distToPlayer < 40) {
                             moveDir.multiplyScalar(-1); // Back away if too close
                         } else if (distToPlayer < 60) {
@@ -1225,7 +1516,23 @@
                         }
                     }
 
-                    z.mesh.position.x += moveDir.x * z.speed * delta;
+                    // Pink Boss dynamic combat behavior
+                    if (z.isPinkBoss) {
+                        if (time - z.lastModeSwitch > 6000) {
+                            z.combatMode = z.combatMode === 'ranged' ? 'melee' : 'ranged';
+                            z.lastModeSwitch = time;
+                        }
+
+                        if (z.combatMode === 'ranged') {
+                            if (distToPlayer < 50) {
+                                moveDir.multiplyScalar(-1);
+                            } else if (distToPlayer < 70) {
+                                moveDir.set(0,0,0);
+                            }
+                        }
+                    }
+
+                    z.mesh.position.x += moveDir.x * activeSpeed * delta;
                     updateZBox();
 
                     // Lift collision check off the ground slightly so they don't snag on roofs
@@ -1235,20 +1542,20 @@
                     let hitWall = false;
                     for (let o of obstacles) {
                         if (checkBox.intersectsBox(o.box)) {
-                            z.mesh.position.x -= moveDir.x * z.speed * delta;
+                            z.mesh.position.x -= moveDir.x * activeSpeed * delta;
                             hitWall = true;
                             break;
                         }
                     }
 
-                    z.mesh.position.z += moveDir.z * z.speed * delta;
+                    z.mesh.position.z += moveDir.z * activeSpeed * delta;
                     updateZBox();
                     checkBox = z.box.clone();
                     checkBox.min.y += 0.5;
 
                     for (let o of obstacles) {
                         if (checkBox.intersectsBox(o.box)) {
-                            z.mesh.position.z -= moveDir.z * z.speed * delta;
+                            z.mesh.position.z -= moveDir.z * activeSpeed * delta;
                             hitWall = true;
                             break;
                         }
@@ -1256,7 +1563,7 @@
 
                     // Zombie Walk Animation
                     if (moveDir.lengthSq() > 0.01 || z.isClimbing) {
-                        z.walkCycle += (z.isClimbing ? 15 : z.speed) * delta * 0.8;
+                        z.walkCycle += (z.isClimbing ? 15 : activeSpeed) * delta * 0.8;
                         z.lLeg.rotation.x = Math.sin(z.walkCycle) * 0.7;
                         z.rLeg.rotation.x = Math.sin(z.walkCycle + Math.PI) * 0.7;
                         z.lArm.rotation.x = Math.sin(z.walkCycle + Math.PI) * 0.4;
@@ -1315,27 +1622,30 @@
                     }
 
                     // Boss Fireball Attack
-                    if (z.isBoss && time - z.lastFired > 2500) {
-                        z.lastFired = time;
-                        const pGeo = new THREE.SphereGeometry(1.2, 8, 8);
-                        const pMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
-                        const pMesh = new THREE.Mesh(pGeo, pMat);
-                        pMesh.position.copy(z.mesh.position);
-                        pMesh.position.y += 9.0; // Fire from boss head height
+                    if (z.isBoss) {
+                        let fireRate = z.isPinkBoss ? 1200 : 2500;
+                        if (time - z.lastFired > fireRate) {
+                            z.lastFired = time;
+                            const pGeo = new THREE.SphereGeometry(1.2, 8, 8);
+                            const pMat = new THREE.MeshBasicMaterial({ color: z.isPinkBoss ? 0xff1493 : 0xff3300 });
+                            const pMesh = new THREE.Mesh(pGeo, pMat);
+                            pMesh.position.copy(z.mesh.position);
+                            pMesh.position.y += 9.0; // Fire from boss head height
 
-                        const dir = new THREE.Vector3().subVectors(camera.position, pMesh.position).normalize();
-                        scene.add(pMesh);
-                        bossProjectiles.push({
-                            mesh: pMesh,
-                            box: new THREE.Box3(),
-                            velocity: dir.multiplyScalar(45), // Fast projectile
-                            life: 4.0
-                        });
+                            const dir = new THREE.Vector3().subVectors(camera.position, pMesh.position).normalize();
+                            scene.add(pMesh);
+                            bossProjectiles.push({
+                                mesh: pMesh,
+                                box: new THREE.Box3(),
+                                velocity: dir.multiplyScalar(45), // Fast projectile
+                                life: 4.0,
+                                damage: z.isPinkBoss ? 35 : 20
+                            });
+                        }
                     }
 
                     // Ranged Zombie Spit Attack
                     if (z.isRanged && time - z.lastFired > 3000) {
-                        const distToPlayer = z.mesh.position.distanceTo(camera.position);
                         // Only shoot if roughly in line of sight (not climbing and distance < 70)
                         if (!z.isClimbing && distToPlayer < 70) {
                             z.lastFired = time;
@@ -1351,7 +1661,8 @@
                                 mesh: pMesh,
                                 box: new THREE.Box3(),
                                 velocity: dir.multiplyScalar(20), // Slow projectile
-                                life: 6.0
+                                life: 6.0,
+                                damage: 15
                             });
                         }
                     }
@@ -1372,7 +1683,7 @@
                     if (p.mesh.position.y < 0) hitWall = true;
 
                     if (invulnTimer <= 0 && p.box.intersectsBox(playerBox)) {
-                        triggerDamage(20);
+                        triggerDamage(p.damage || 20); // Dynamic damage based on projectile
                         hitWall = true;
                     }
 
@@ -1436,7 +1747,7 @@
                         playExplosionSound();
 
                         // Visual explosion sphere
-                        const exGeo = new THREE.SphereGeometry(15, 16, 16);
+                        const exGeo = new THREE.SphereGeometry(25, 16, 16);
                         const exMat = new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.8 });
                         const exMesh = new THREE.Mesh(exGeo, exMat);
                         exMesh.position.copy(g.mesh.position);
@@ -1446,27 +1757,29 @@
                         // Damage Zombies in radius
                         for (let j = zombies.length - 1; j >= 0; j--) {
                             const z = zombies[j];
-                            if (z.mesh.position.distanceTo(g.mesh.position) < 15) {
-                                z.hp -= 2000; // Massive damage buff against bosses
+                            // 2D Distance check ensures grenades hit tall bosses reliably!
+                            const dx = z.mesh.position.x - g.mesh.position.x;
+                            const dz = z.mesh.position.z - g.mesh.position.z;
+                            if (Math.sqrt(dx*dx + dz*dz) < 25) {
+                                if (z.isBoss) {
+                                    z.hp -= 5000; // Big chunk of boss health
+                                } else {
+                                    z.hp = 0; // Instakill standard
+                                }
+
                                 if (z.isBoss) updateBossHealth();
+
                                 if (z.hp <= 0) {
-                                    scene.remove(z.mesh);
-                                    zombies.splice(j, 1);
-                                    zombiesKilledThisWave++;
-                                    updateUI();
-                                    playSound('zombieDeath');
-                                    showHitmarker(true);
-                                    if (z.isBoss) {
-                                        activeBoss = null;
-                                        document.getElementById('boss-health-container').style.display = 'none';
-                                    }
+                                    processZombieDeath(z, j);
                                 }
                             }
                         }
 
                         // Player damage if caught in blast
-                        if (camera.position.distanceTo(g.mesh.position) < 15) {
-                            triggerDamage(40);
+                        const px = camera.position.x - g.mesh.position.x;
+                        const pz = camera.position.z - g.mesh.position.z;
+                        if (Math.sqrt(px*px + pz*pz) < 25) {
+                            triggerDamage(75); // Massive self-damage for standing too close!
                         }
 
                         scene.remove(g.mesh);
@@ -1533,6 +1846,9 @@
             for (let hpck of healthPacks) scene.remove(hpck.mesh);
             healthPacks = [];
 
+            for (let gp of grenadePickups) scene.remove(gp.mesh);
+            grenadePickups = [];
+
             for (let p of bossProjectiles) scene.remove(p.mesh);
             bossProjectiles = [];
 
@@ -1554,9 +1870,17 @@
 
         function gameOver() {
             isGameActive = false;
+
+            if (currentWave > highscore) {
+                highscore = currentWave;
+                localStorage.setItem('zombieCityHighscore', highscore);
+                document.getElementById('highscore-display').innerText = highscore;
+            }
+
             document.exitPointerLock();
             document.getElementById('menu').style.display = 'flex';
             document.getElementById('menu-title').innerText = "YOU DIED";
+            document.getElementById('restart-btn').style.display = 'none';
         }
 
         // Leave the game by pressing the kiosk's own "Back to Hub" button.
